@@ -1,0 +1,134 @@
+---
+import Bi from './Bi.astro';
+import { LADDER } from '../lib/domains';
+
+interface Props {
+  /** 'dark' sits on the near-black ground; 'paper' is kept for reuse. */
+  tone?: 'dark' | 'paper';
+}
+const { tone = 'dark' } = Astro.props;
+---
+
+<ol class:list={['ladder', `ladder--${tone}`]}>
+  {
+    LADDER.map((rung, i) => (
+      <li class="rung" data-step={i + 1}>
+        <p class="level mono">
+          <Bi en={rung.level.en} zh={rung.level.zh} />
+        </p>
+        <p class="q">
+          <Bi en={rung.question.en} zh={rung.question.zh} />
+        </p>
+        <span class="arrow" aria-hidden="true">
+          ↓
+        </span>
+      </li>
+    ))
+  }
+  <li class="rung terminus">
+    <p class="here">TAO Garden</p>
+  </li>
+</ol>
+
+<style>
+  .ladder {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    max-width: none;
+    text-align: center;
+  }
+
+  .rung {
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .level {
+    margin: 0 0 0.5rem;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    font-size: 0.6rem;
+  }
+
+  .q {
+    margin: 0;
+    max-width: 30ch;
+    font-family: var(--display);
+    line-height: 1.25;
+    text-wrap: balance;
+  }
+
+  /* Each step is larger than the one above it. The horizon is set small;
+     what can actually be worked on is set large. */
+  .rung[data-step='1'] .q {
+    font-size: clamp(1.05rem, 1.6vw, 1.25rem);
+  }
+  .rung[data-step='2'] .q {
+    font-size: clamp(1.2rem, 2vw, 1.55rem);
+  }
+  .rung[data-step='3'] .q {
+    font-size: clamp(1.4rem, 2.6vw, 1.95rem);
+  }
+  .rung[data-step='4'] .q {
+    font-size: clamp(1.6rem, 3.2vw, 2.4rem);
+  }
+
+  /* The chain: one small arrow per step, carrying you down to the end. */
+  .arrow {
+    display: block;
+    font-size: 0.85rem;
+    line-height: 1;
+    margin-block: clamp(0.9rem, 2.2vh, 1.4rem);
+    color: var(--bronze);
+    opacity: 0.7;
+  }
+
+  .here {
+    margin: 0;
+    font-family: var(--display);
+    font-weight: 300;
+    font-size: clamp(1.9rem, 4.5vw, 3.2rem);
+    letter-spacing: 0.2em;
+    text-indent: 0.2em;
+    text-transform: uppercase;
+    line-height: 1.1;
+    color: var(--mist);
+  }
+
+  .ladder--dark .level {
+    color: var(--text-dim);
+  }
+  .ladder--dark .rung[data-step='1'] .q {
+    color: color-mix(in srgb, var(--mist) 58%, transparent);
+  }
+  .ladder--dark .rung[data-step='2'] .q {
+    color: color-mix(in srgb, var(--mist) 72%, transparent);
+  }
+  .ladder--dark .rung[data-step='3'] .q {
+    color: color-mix(in srgb, var(--mist) 86%, transparent);
+  }
+  .ladder--dark .rung[data-step='4'] .q {
+    color: var(--mist);
+  }
+
+  .ladder--paper .rung[data-step='1'] .q {
+    color: var(--ink-faint);
+  }
+  .ladder--paper .rung[data-step='2'] .q,
+  .ladder--paper .rung[data-step='3'] .q {
+    color: var(--ink-soft);
+  }
+  .ladder--paper .rung[data-step='4'] .q,
+  .ladder--paper .here {
+    color: var(--ink);
+  }
+
+  @media (max-width: 44rem) {
+    .q {
+      max-width: 24ch;
+    }
+  }
+</style>

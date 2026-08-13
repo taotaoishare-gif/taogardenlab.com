@@ -1,0 +1,233 @@
+---
+import Base from '../../layouts/Base.astro';
+import { getCollection } from 'astro:content';
+import { iso } from '../../lib/site';
+
+const entries = (await getCollection('atlas')).sort(
+  (a, b) => b.data.date.getTime() - a.data.date.getTime()
+);
+
+const dimensions = [
+  { id: 'places', label: 'Places' },
+  { id: 'practices', label: 'Practices' },
+  { id: 'spatial-principles', label: 'Spatial principles' },
+  { id: 'materials', label: 'Materials' },
+  { id: 'cultural-references', label: 'Cultural references' },
+];
+---
+
+<Base
+  title="Field Atlas"
+  description="A research archive of places, practices, spatial principles, materials and cultural references — each read for the human problem it solves."
+>
+  <div class="page wrap">
+    <header>
+      <p class="label">Field Atlas</p>
+      <h1>What I have looked at, and what I think it was doing.</h1>
+      <p class="intro dim">
+        Not an inspiration board. Each entry moves through the same five steps —
+        observe, contextualise, interpret, translate, and then question whether
+        the translation is a misreading. The fifth step is the one that makes
+        this cultural research rather than a library of Eastern motifs, and it
+        is never skipped.
+      </p>
+    </header>
+
+    <nav class="filters" aria-label="Filter by dimension">
+      <button type="button" class="chip is-on" data-dim="all" aria-pressed="true">
+        All
+      </button>
+      {
+        dimensions.map((dim) => (
+          <button type="button" class="chip" data-dim={dim.id} aria-pressed="false">
+            {dim.label}
+          </button>
+        ))
+      }
+    </nav>
+
+    <ul class="list" data-list>
+      {
+        entries.map((entry) => (
+          <li
+            class="item reveal"
+            data-dims={entry.data.dimensions.join(' ')}
+          >
+            <a href={`/atlas/${entry.id}`}>
+              <div class="item-meta">
+                <time class="mono" datetime={iso(entry.data.date)}>
+                  {iso(entry.data.date)}
+                </time>
+                {entry.data.place && (
+                  <span class="mono place">{entry.data.place}</span>
+                )}
+              </div>
+              <h2>{entry.data.title}</h2>
+              <p class="summary dim">{entry.data.summary}</p>
+              <p class="mono dims">{entry.data.dimensions.join(' · ')}</p>
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+
+    <p class="mono empty" data-empty hidden>Nothing under that dimension yet.</p>
+  </div>
+</Base>
+
+<style>
+  .page {
+    padding-block: clamp(4rem, 10vh, 7rem) 0;
+  }
+
+  header {
+    margin-bottom: clamp(3rem, 7vh, 4.5rem);
+  }
+
+  h1 {
+    font-family: var(--serif);
+    font-weight: 400;
+    font-size: clamp(1.7rem, 3.4vw, 2.4rem);
+    line-height: 1.35;
+    letter-spacing: 0;
+    max-width: 22ch;
+    margin-top: 1.25rem;
+  }
+
+  .intro {
+    margin-top: 1.75rem;
+    max-width: 56ch;
+  }
+
+  .filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 0.75rem;
+    margin-bottom: 3.5rem;
+  }
+
+  .chip {
+    font-family: var(--mono);
+    font-size: 0.6875rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    background: none;
+    border: 1px solid var(--rule);
+    padding: 0.5rem 0.9rem;
+    cursor: pointer;
+    transition:
+      color var(--dur) var(--ease),
+      border-color var(--dur) var(--ease);
+  }
+
+  .chip:hover {
+    color: var(--ink);
+  }
+
+  .chip.is-on {
+    color: var(--ink);
+    border-color: var(--ink-faint);
+  }
+
+  .list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    max-width: none;
+    border-top: 1px solid var(--rule);
+  }
+
+  .item {
+    margin: 0;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .item[hidden] {
+    display: none;
+  }
+
+  .item a {
+    display: block;
+    padding: 2rem 0;
+    text-decoration: none;
+    transition: background var(--dur) var(--ease);
+  }
+
+  .item a:hover {
+    background: var(--paper-sunk);
+  }
+
+  .item-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.25rem;
+    margin-bottom: 0.85rem;
+  }
+
+  .item h2 {
+    font-family: var(--serif);
+    font-weight: 400;
+    font-size: clamp(1.15rem, 2vw, 1.45rem);
+    line-height: 1.4;
+    letter-spacing: 0;
+    max-width: 34ch;
+  }
+
+  .item a:hover h2 {
+    text-decoration: underline;
+    text-underline-offset: 0.22em;
+    text-decoration-color: var(--ink-faint);
+  }
+
+  .summary {
+    margin-top: 0.8rem;
+    max-width: 60ch;
+    font-size: 1rem;
+    line-height: 1.65;
+  }
+
+  .dims {
+    margin-top: 0.9rem;
+  }
+
+  .empty {
+    padding-block: 3rem;
+  }
+</style>
+
+<script>
+  const chips = document.querySelectorAll<HTMLButtonElement>('.chip');
+  const items = document.querySelectorAll<HTMLElement>('.item');
+  const empty = document.querySelector<HTMLElement>('[data-empty]');
+
+  function apply(dim: string) {
+    let shown = 0;
+    items.forEach((item) => {
+      const dims = (item.dataset.dims || '').split(' ');
+      const show = dim === 'all' || dims.includes(dim);
+      item.hidden = !show;
+      if (show) shown++;
+    });
+    if (empty) empty.hidden = shown > 0;
+    chips.forEach((chip) => {
+      const on = chip.dataset.dim === dim;
+      chip.classList.toggle('is-on', on);
+      chip.setAttribute('aria-pressed', String(on));
+    });
+  }
+
+  chips.forEach((chip) => {
+    chip.addEventListener('click', () => {
+      const dim = chip.dataset.dim || 'all';
+      apply(dim);
+      const url = new URL(window.location.href);
+      if (dim === 'all') url.searchParams.delete('dimension');
+      else url.searchParams.set('dimension', dim);
+      history.replaceState(null, '', url);
+    });
+  });
+
+  const initial = new URL(window.location.href).searchParams.get('dimension');
+  if (initial) apply(initial);
+</script>

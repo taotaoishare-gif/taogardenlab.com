@@ -1,0 +1,30 @@
+---
+/* Rendered only where a claim needs qualifying: the observation section of an
+   experiment, a contested assertion, an atlas entry's provenance. Never on the
+   home page, the preface, observations, or the atlas index (§4.2). */
+interface Props {
+  value: string;
+  prefix?: string;
+}
+const { value, prefix = 'Evidence' } = Astro.props;
+
+const meanings: Record<string, string> = {
+  observed: 'personally observed',
+  built: 'actually constructed',
+  measured: 'supported by collected data',
+  literature: 'supported by external research',
+  interpreted: "author's interpretation",
+  speculative: 'hypothesis / future possibility',
+  unknown: 'currently unresolved',
+};
+---
+
+<p class="evidence" title={meanings[value]}>
+  {prefix}: {value}
+</p>
+
+<style>
+  .evidence {
+    margin: 0;
+  }
+</style>

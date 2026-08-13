@@ -1,0 +1,183 @@
+---
+import Base from '../../layouts/Base.astro';
+import EvidenceTag from '../../components/EvidenceTag.astro';
+import { getCollection, render } from 'astro:content';
+import { iso, longDate } from '../../lib/site';
+
+export async function getStaticPaths() {
+  const [entries, experiments] = await Promise.all([
+    getCollection('atlas'),
+    getCollection('experiments'),
+  ]);
+
+  return entries.map((entry) => ({
+    params: { slug: entry.id },
+    props: {
+      entry,
+      /* The other half of the lineage. Declared once on the experiment and
+         read back here, so the culture-to-experiment line is visible from
+         both ends without anyone maintaining it twice. */
+      ledTo: experiments
+        .filter((e) => e.data.fromAtlas.includes(entry.id))
+        .sort((a, b) => a.data.number - b.data.number)
+        .map((e) => ({ id: e.id, title: e.data.title, number: e.data.number })),
+    },
+  }));
+}
+
+const { entry, ledTo } = Astro.props;
+const { Content } = await render(entry);
+const d = entry.data;
+---
+
+<Base title={d.title} description={d.summary}>
+  <article class="page wrap">
+    <header>
+      <p class="label">Field Atlas</p>
+      <h1>{d.title}</h1>
+      <p class="mono head-meta">
+        {d.place && <>{d.place}{' · '}</>}
+        <time datetime={iso(d.date)}>{longDate(d.date)}</time>
+        {
+          d.revisited && (
+            <>
+              {' · revisited '}
+              <time datetime={iso(d.revisited)}>{longDate(d.revisited)}</time>
+            </>
+          )
+        }
+      </p>
+      <p class="mono dims">{d.dimensions.join(' · ')}</p>
+    </header>
+
+    <div class="prose body">
+      <Content />
+    </div>
+
+    {
+      ledTo.length > 0 && (
+        <aside class="led">
+          <p class="label">This entry led to</p>
+          <ul>
+            {ledTo.map((exp: any) => (
+              <li>
+                <span class="numeral">
+                  {String(exp.number).padStart(2, '0')}
+                </span>
+                <a href={`/experiments/${exp.id}`}>{exp.title}</a>
+              </li>
+            ))}
+          </ul>
+        </aside>
+      )
+    }
+
+    <footer class="foot">
+      <EvidenceTag value={d.evidence} />
+      <p class="mono back"><a href="/atlas">← Field Atlas</a></p>
+    </footer>
+  </article>
+</Base>
+
+<style>
+  .page {
+    padding-block: clamp(4rem, 10vh, 7rem) 0;
+  }
+
+  header {
+    margin-bottom: clamp(3.5rem, 8vh, 5rem);
+    max-width: var(--measure);
+  }
+
+  h1 {
+    font-family: var(--serif);
+    font-weight: 400;
+    font-size: clamp(1.7rem, 3.4vw, 2.4rem);
+    line-height: 1.35;
+    letter-spacing: 0;
+    max-width: 24ch;
+    margin-top: 1.25rem;
+  }
+
+  .head-meta {
+    margin-top: 1.5rem;
+  }
+
+  .dims {
+    margin-top: 0.4rem;
+  }
+
+  .body :global(h2) {
+    font-family: var(--sans);
+    font-size: 0.75rem;
+    font-weight: 500;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin-top: var(--section);
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--rule);
+  }
+
+  .body :global(h2:first-child) {
+    margin-top: 0;
+    padding-top: 0;
+    border-top: 0;
+  }
+
+  .body :global(h2 + p) {
+    margin-top: 1.5rem;
+  }
+
+  .led {
+    margin-top: var(--section);
+    border-top: 1px solid var(--rule);
+    padding-top: 1.5rem;
+    max-width: var(--measure);
+  }
+
+  .led ul {
+    list-style: none;
+    margin: 1.25rem 0 0;
+    padding: 0;
+  }
+
+  .led li {
+    display: flex;
+    align-items: baseline;
+    gap: 1.25rem;
+    margin-bottom: 0.8rem;
+    font-family: var(--serif);
+    font-size: 1.0625rem;
+    line-height: 1.5;
+  }
+
+  .led a {
+    text-decoration: none;
+    border-bottom: 1px solid var(--forest-soft);
+    padding-bottom: 1px;
+  }
+
+  .foot {
+    margin-top: var(--section);
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--rule);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem 2rem;
+    justify-content: space-between;
+  }
+
+  .back {
+    margin: 0;
+  }
+
+  .back a {
+    color: var(--ink-soft);
+    text-decoration: none;
+  }
+
+  .back a:hover {
+    color: var(--ink);
+  }
+</style>

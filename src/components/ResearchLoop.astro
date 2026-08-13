@@ -1,0 +1,115 @@
+---
+/* The full loop lives here and only here — not on the home page (§3). */
+const steps = [
+  { y: 118, label: 'QUESTION' },
+  { y: 178, label: 'INTERPRETATION' },
+  { y: 238, label: 'PROTOTYPE' },
+  { y: 298, label: 'TEST' },
+  { y: 358, label: 'REFLECTION' },
+  { y: 418, label: 'DOCUMENTATION' },
+  { y: 478, label: 'NEW QUESTION' },
+];
+const CX = 300;
+---
+
+<figure class="loop-fig">
+  <svg
+    viewBox="0 0 560 540"
+    role="img"
+    aria-labelledby="loop-title loop-desc"
+    class="loop"
+  >
+    <title id="loop-title">The research loop</title>
+    <desc id="loop-desc">
+      A cycle beginning with the human question, moving through observation —
+      which draws on both field and reading — then question, interpretation,
+      prototype, test, reflection, documentation, and a new question, which
+      returns to observation.
+    </desc>
+
+    <!-- opening -->
+    <text x={CX} y="20" class="node head">THE HUMAN QUESTION</text>
+    <line x1={CX} y1="30" x2={CX} y2="48" class="rule" />
+
+    <text x={CX} y="66" class="node">OBSERVATION</text>
+
+    <!-- branch: field / reading -->
+    <path d={`M ${CX} 76 L ${CX} 84 M 170 84 L 430 84 M 170 84 L 170 94 M 430 84 L 430 94`} class="rule" />
+    <text x="170" y="108" class="node small">FIELD</text>
+    <text x="430" y="108" class="node small">READING</text>
+    <path d={`M 170 116 L 170 128 M 170 128 L 430 128 M 430 128 L 430 116 M ${CX} 128 L ${CX} 140`} class="rule" />
+
+    {
+      steps.map((step, i) => (
+        <>
+          <text x={CX} y={step.y + 24} class="node">
+            {step.label}
+          </text>
+          {i < steps.length - 1 && (
+            <line
+              x1={CX}
+              y1={step.y + 34}
+              x2={CX}
+              y2={step.y + 52}
+              class="rule"
+            />
+          )}
+        </>
+      ))
+    }
+
+    <!-- return path -->
+    <path
+      d={`M ${CX - 62} 498 L 70 498 L 70 66 L ${CX - 62} 66`}
+      class="rule return"
+      fill="none"
+    />
+    <path d={`M ${CX - 74} 61 L ${CX - 62} 66 L ${CX - 74} 71`} class="rule" fill="none" />
+  </svg>
+  <figcaption class="mono">
+    Fieldwork and reading are stages of this loop, not categories of content.
+  </figcaption>
+</figure>
+
+<style>
+  .loop-fig {
+    margin: 3.5rem 0 0;
+    max-width: 34rem;
+  }
+
+  .loop {
+    width: 100%;
+    height: auto;
+    overflow: visible;
+  }
+
+  .node {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.16em;
+    fill: var(--ink);
+    text-anchor: middle;
+  }
+
+  .head {
+    fill: var(--ink-soft);
+  }
+
+  .small {
+    fill: var(--ink-soft);
+    letter-spacing: 0.14em;
+  }
+
+  .rule {
+    stroke: var(--rule);
+    stroke-width: 1;
+  }
+
+  .return {
+    stroke-dasharray: 2 4;
+  }
+
+  figcaption {
+    margin-top: 1.5rem;
+  }
+</style>

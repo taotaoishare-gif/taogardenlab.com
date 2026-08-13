@@ -1,0 +1,631 @@
+/* ============================================================
+   TAO GARDEN — design system
+   Spec §15. A quiet research notebook, not a technology product.
+   No counts, no metrics, no infinite scroll, no attention traps.
+   ============================================================ */
+
+/* ---------- 1. Self-hosted fonts (no CDN, no Google Fonts) ---------- */
+
+@font-face {
+  font-family: 'Newsreader';
+  src: url('/fonts/newsreader-latin-400-normal.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Newsreader';
+  src: url('/fonts/newsreader-latin-400-italic.woff2') format('woff2');
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Newsreader';
+  src: url('/fonts/newsreader-latin-500-normal.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Newsreader';
+  src: url('/fonts/newsreader-latin-600-normal.woff2') format('woff2');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Inter';
+  src: url('/fonts/inter-latin-400-normal.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Inter';
+  src: url('/fonts/inter-latin-500-normal.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Cormorant Garamond';
+  src: url('/fonts/cormorant-garamond-latin-400-normal.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Cormorant Garamond';
+  src: url('/fonts/cormorant-garamond-latin-400-italic.woff2') format('woff2');
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Cormorant Garamond';
+  src: url('/fonts/cormorant-garamond-latin-300-normal.woff2') format('woff2');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'IBM Plex Mono';
+  src: url('/fonts/ibm-plex-mono-latin-400-normal.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ---------- 2. Tokens ---------- */
+
+:root {
+  /* One surface for the whole site: dark everywhere, reading pages included.
+     The names stay `paper` / `ink` so every existing rule keeps working —
+     only what they point at changed. */
+  --paper: #0a0e10;
+  --paper-sunk: #10151a;
+  --ink: #e8e6e0;
+  --ink-soft: #c8c5bd;
+  /* 5.1:1 on the dark ground — passes AA for the 11–13px mono it carries. */
+  --ink-faint: #85837c;
+  --rule: rgba(232, 230, 224, 0.16);
+
+  /* ---- The immersive front -------------------------------------------
+     Taken from 0515-brandingwebsite: near-black with a cool cast, warm
+     off-white mist, bronze as the primary accent and jade as the second.
+     Contrast on --void: mist 15.5, mist-2 11.2, bronze 7.0, jade 6.4,
+     mist-dim 5.1 (nudged from the reference's #7a7872, which was 4.4). */
+  --void: #0a0e10;
+  --void-soft: #10151a;
+  --void-raised: #1a2026;
+  --mist: #e8e6e0;
+  --mist-2: #c8c5bd;
+  --bronze: #b8956a;
+  --bronze-deep: #8a6a4a; /* 4.7:1 on paper — the paper-side accent */
+  --jade: #7a9b8e;
+  --line: rgba(232, 230, 224, 0.08);
+  --line-2: rgba(232, 230, 224, 0.16);
+
+  --text-clean: var(--mist);
+  --text-dim: #85837c;
+  --dark: var(--void);
+  --dark-glow: var(--mist);
+
+  /* Kept as aliases so every existing rule keeps working while the whole
+     site moves onto the reference palette in one place. */
+  --forest-glow: var(--bronze);
+  --forest-deep: rgba(122, 155, 142, 0.16);
+
+  /* ---- The one accent -------------------------------------------------
+     A garden is quiet and its structure is violent: it never stops telling
+     you what to look at first. Quiet is strong structure at low noise, not
+     an absence of hierarchy. Bronze carries the structure.
+
+     Permitted in exactly five places. Everywhere else is ink or mist.
+       1. the current research question
+       2. the current nav item
+       3. links (underline; fills on hover)
+       4. section numerals
+       5. diagram strokes and key nodes
+
+     Bronze is 7.0:1 on the dark ground, which is now the only ground. */
+  --forest: var(--bronze);
+  --forest-soft: color-mix(in srgb, var(--bronze) 55%, transparent);
+  --tag: var(--bronze);
+
+  /* Display voice, from the reference: Cormorant for titles and pull-quotes,
+     Newsreader for anything you actually have to read at length. */
+  --display: 'Cormorant Garamond', 'Source Han Serif SC', 'Songti SC', Georgia,
+    serif;
+  --serif: 'Newsreader', 'Source Han Serif SC', 'Songti SC', Georgia, serif;
+  --sans: 'Inter', 'Source Han Sans SC', 'PingFang SC', system-ui, sans-serif;
+  --mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+
+  /* ---- Type scale ------------------------------------------------------
+     Display to body is ~4:1, not the ~2:1 it was. Display appears once per
+     screen and never twice. h3 and body share a size and separate by weight
+     and colour — if every level has its own size, no level reads as louder. */
+  --size-display: clamp(2.5rem, 6vw, 4.5rem);
+  --size-h1: clamp(1.6rem, 3.2vw, 2rem);
+  --size-h2: clamp(1.3rem, 2.2vw, 1.5rem);
+  --size-h3: 1.15rem;
+  --size-body: 1.15rem;
+  --size-meta: 0.8rem;
+  --size-label: 0.6875rem;
+
+  --measure: 66ch;
+
+  /* ---- Rhythm ----------------------------------------------------------
+     Whitespace must be uneven. Even spacing is not restraint, it is the
+     absence of grouping: paragraphs sit close, sections sit far apart. */
+  --step: 1.6rem; /* between paragraphs */
+  --section: 6rem; /* between sections inside a page */
+  --screen: clamp(5rem, 12vh, 8rem); /* between full screens */
+
+  --gutter: clamp(1.5rem, 5vw, 4rem);
+  --nav-h: 4.25rem; /* measured and overwritten on load; see Base.astro */
+  --ease: cubic-bezier(0.4, 0, 0.2, 1);
+  --dur: 520ms;
+}
+
+/* ---------- 3. Reset ---------- */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  /* `clip`, never `hidden`: overflow-x:hidden forces overflow-y to auto, which
+     turns the element into its own scroll container and decouples it from the
+     window. `clip` contains stray horizontal overflow without doing that. */
+  overflow-x: clip;
+  -webkit-text-size-adjust: 100%;
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  overflow-x: clip;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--serif);
+  font-size: var(--size-body);
+  line-height: 1.75;
+  font-synthesis-weight: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+img,
+video,
+svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+/* CJK sits optically smaller than latin at the same size — even it out.
+
+   Scoped to the CJK spans themselves, never to `:lang(zh)`: switching the
+   document language to Chinese would otherwise apply font-size-adjust to
+   latin text as well, and on a small-x-height face like Cormorant that
+   silently inflates the wordmark until it wraps. */
+.zh-only,
+.cjk {
+  font-size-adjust: 0.52;
+}
+
+/* ---------- 4. Typography ---------- */
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--sans);
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  line-height: 1.28;
+  margin: 0;
+  text-wrap: balance;
+}
+
+h1 {
+  font-size: var(--size-h1);
+}
+h2 {
+  font-size: var(--size-h2);
+}
+h3 {
+  font-size: var(--size-h3);
+}
+
+/* One line per screen may be display size. Never two. */
+.display {
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: var(--size-display);
+  line-height: 1.12;
+  letter-spacing: -0.015em;
+  text-wrap: balance;
+  margin: 0;
+}
+
+p {
+  margin: 0 0 var(--step);
+  max-width: var(--measure);
+  text-wrap: pretty;
+}
+
+/* Links keep ink text and take forest only in the underline, so a page with
+   eight links does not speckle green. The colour arrives on hover. */
+a {
+  color: inherit;
+  text-decoration-line: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.22em;
+  text-decoration-color: var(--forest-soft);
+  transition:
+    color var(--dur) var(--ease),
+    text-decoration-color var(--dur) var(--ease);
+}
+a:hover {
+  color: var(--forest);
+  text-decoration-color: var(--forest);
+}
+
+strong {
+  font-weight: 600;
+}
+
+blockquote {
+  margin: var(--section) 0;
+  padding-left: 1.5rem;
+  border-left: 1px solid var(--rule);
+  color: var(--ink-soft);
+  font-style: italic;
+  max-width: var(--measure);
+}
+blockquote p:last-child {
+  margin-bottom: 0;
+}
+
+hr {
+  border: 0;
+  border-top: 1px solid var(--rule);
+  margin: var(--section) 0;
+}
+
+code {
+  font-family: var(--mono);
+  font-size: 0.85em;
+  background: var(--paper-sunk);
+  padding: 0.1em 0.35em;
+  border-radius: 2px;
+}
+pre {
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  line-height: 1.7;
+  background: var(--paper-sunk);
+  padding: 1.5rem;
+  overflow-x: auto;
+  border-radius: 2px;
+  max-width: 100%;
+}
+pre code {
+  background: none;
+  padding: 0;
+  font-size: inherit;
+}
+
+ul,
+ol {
+  max-width: var(--measure);
+  padding-left: 1.25rem;
+  margin: 0 0 var(--step);
+}
+li {
+  margin-bottom: 0.5rem;
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 0.95rem;
+  margin: 0 0 var(--step);
+}
+th,
+td {
+  text-align: left;
+  padding: 0.6rem 1rem 0.6rem 0;
+  border-bottom: 1px solid var(--rule);
+  vertical-align: top;
+}
+th {
+  font-family: var(--sans);
+  font-weight: 500;
+  font-size: 0.8rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+/* ---------- 5. Utilities ---------- */
+
+.mono {
+  font-family: var(--mono);
+  font-size: var(--size-meta);
+  letter-spacing: 0.02em;
+  color: var(--ink-faint);
+}
+
+.label {
+  font-family: var(--mono);
+  font-size: var(--size-label);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+/* Section numerals — one of the five permitted forest uses. */
+.numeral {
+  font-family: var(--mono);
+  font-size: var(--size-label);
+  letter-spacing: 0.16em;
+  color: var(--forest);
+}
+
+/* A section opens with a hairline and a numeral, and is separated from its
+   neighbour by --section, not by a box. */
+.band {
+  padding-block: var(--screen);
+}
+.band--sunk {
+  background: var(--paper-sunk);
+}
+
+body[data-theme='void'] {
+  background: var(--void);
+  color: var(--text-clean);
+}
+
+/* ---------- Immersive screens ----------------------------------------
+   The front of the site is a dark scroll; the reading pages stay paper.
+   A 900-word experiment page set on near-black is a worse read, and the
+   door/book split is the point: dark to enter, light to study. */
+.screen {
+  position: relative;
+  min-height: 100svh;
+  display: flex;
+  align-items: center;
+  background: var(--void);
+  color: var(--text-clean);
+  overflow: hidden;
+  padding-block: clamp(6rem, 14vh, 9rem);
+}
+
+.screen--tight {
+  min-height: auto;
+  padding-block: clamp(5rem, 12vh, 8rem);
+}
+
+/* Wide-tracked, light-weight headers — the "zen tech" register. */
+.tracked {
+  font-family: var(--sans);
+  font-weight: 400;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+}
+
+.screen .label,
+.screen .mono {
+  color: var(--text-dim);
+}
+
+.screen a {
+  color: inherit;
+  text-decoration-color: color-mix(in srgb, var(--forest-glow) 60%, transparent);
+}
+.screen a:hover {
+  color: var(--forest-glow);
+  text-decoration-color: var(--forest-glow);
+}
+
+.wrap {
+  width: 100%;
+  max-width: 78rem;
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+}
+
+.prose {
+  max-width: var(--measure);
+}
+.prose > * + * {
+  margin-top: var(--step);
+}
+.prose h2 {
+  margin-top: var(--section);
+  margin-bottom: 0;
+}
+.prose h2 + * {
+  margin-top: 1rem;
+}
+.prose h3 {
+  margin-top: 3rem;
+  margin-bottom: 0;
+}
+
+.dim {
+  color: var(--ink-soft);
+}
+
+/* ---------- 5b. Bilingual ----------------------------------------------
+   One DOM, both languages, switched by CSS. Not two sites — a second set of
+   routes doubles the cost of every edit, and the Chinese half would be
+   abandoned within a season.
+
+   Interface chrome and the fixed pages carry both. Research entries do NOT:
+   an entry is written in whatever language it was thought in, and a 2022
+   garden note is partly valuable *because* it is in Chinese and dated. Those
+   get a `lang` field and a marker in listings, never a translation. */
+html[data-lang='en'] .zh-only {
+  display: none;
+}
+html[data-lang='zh'] .en-only {
+  display: none;
+}
+
+/* Chinese sets tighter than latin at the same size; give it more leading. */
+html[data-lang='zh'] body {
+  line-height: 1.85;
+}
+
+.lang-toggle {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.35em;
+  font-family: var(--mono);
+  font-size: var(--size-label);
+  letter-spacing: 0.1em;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  color: var(--ink-faint);
+}
+.lang-toggle b {
+  font-weight: 400;
+  color: var(--ink);
+}
+.site-nav[data-over] .lang-toggle {
+  color: color-mix(in srgb, var(--dark-glow) 55%, transparent);
+}
+.site-nav[data-over] .lang-toggle b {
+  color: var(--dark-glow);
+}
+
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  background: var(--ink);
+  color: var(--paper);
+  padding: 0.75rem 1.25rem;
+  z-index: 100;
+  font-family: var(--sans);
+  font-size: 0.85rem;
+}
+.skip-link:focus {
+  left: 0;
+}
+
+:focus-visible {
+  outline: 2px solid var(--tag);
+  outline-offset: 3px;
+}
+
+/* ---------- 6. Evidence labels (§4.2 — visually restrained) ----------
+   11px mono, --ink-faint, no border, no background. Rendered only where
+   a claim actually needs qualifying — never on the home page, the preface,
+   observations, or the atlas index. */
+
+.evidence {
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  border: 0;
+  background: none;
+  padding: 0;
+}
+.evidence::before {
+  content: '';
+  display: inline-block;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--tag);
+  margin-right: 0.55em;
+  vertical-align: 0.22em;
+  opacity: 0.65;
+}
+
+/* ---------- 7. Motion (§15.5) ---------- */
+
+/* Cross-document transitions, CSS-only. No router script. */
+@view-transition {
+  navigation: auto;
+}
+
+::view-transition-old(root) {
+  animation: fade-out 260ms var(--ease) both;
+}
+::view-transition-new(root) {
+  animation: fade-in 420ms var(--ease) both;
+}
+
+@keyframes fade-out {
+  to {
+    opacity: 0;
+  }
+}
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+/* Gentle reveal. Opacity + a few pixels. No parallax, no bounce.
+   Scoped to `.js` so that without scripting — or if the observer never fires —
+   the content is simply visible. Research must never be hidden behind an
+   animation that did not run. */
+.js .reveal {
+  opacity: 0;
+  transform: translateY(12px);
+  transition:
+    opacity 700ms var(--ease),
+    transform 700ms var(--ease);
+}
+.js .reveal.is-in {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+  .js .reveal {
+    opacity: 1;
+    transform: none;
+  }
+  @view-transition {
+    navigation: none;
+  }
+}
+
+/* ---------- 8. Print ---------- */
+
+@media print {
+  .site-nav,
+  .site-footer,
+  video {
+    display: none;
+  }
+  body {
+    background: #fff;
+    font-size: 11pt;
+  }
+}

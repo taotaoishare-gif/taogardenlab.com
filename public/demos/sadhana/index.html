@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<!-- user-scalable=no is normally an accessibility sin. Here pinch IS the
+     camera-distance gesture, and letting it zoom the document instead would
+     break the only 3D control a phone has. Nothing on the page is small
+     text the visitor needs to magnify. -->
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>聚沙成塔 · Sadhana — Gather Sand, Form Pagoda</title>
+<style>
+  :root{
+    --ink:      #060504;
+    --gold:     #d8b169;
+    --gold-dim: #8a6f3f;
+    --jade:     #7fc9a8;
+    --sand:     #c8ab7e;
+    --fog:      rgba(232,220,198,.58);
+    --fog-dim:  rgba(232,220,198,.30);
+    --cn: "Songti SC","Noto Serif CJK SC","STSong",serif;
+    --en: "Optima","Palatino Linotype","Georgia",serif;
+    --pad: clamp(16px,3.2vw,42px);
+    --sa-t: env(safe-area-inset-top, 0px);
+    --sa-b: env(safe-area-inset-bottom, 0px);
+    --sa-l: env(safe-area-inset-left, 0px);
+    --sa-r: env(safe-area-inset-right, 0px);
+  }
+
+  *{ box-sizing:border-box; margin:0; padding:0; }
+
+  html,body{
+    width:100%; height:100%; overflow:hidden;
+    background:var(--ink); color:var(--fog);
+    font-family:var(--en);
+    -webkit-font-smoothing:antialiased;
+    /* Kiosk hygiene: no rubber-banding, no pull-to-refresh, no text
+       selection or callout menus from a long press on the artwork. */
+    overscroll-behavior:none;
+    -webkit-user-select:none; user-select:none;
+    -webkit-touch-callout:none;
+    -webkit-tap-highlight-color:transparent;
+  }
+
+  /* Warm dark room behind the transparent canvas. */
+  #bg{
+    position:fixed; inset:0; z-index:0;
+    background:
+      radial-gradient(ellipse 90% 60% at 50% 74%, #1c1509 0%, transparent 62%),
+      radial-gradient(ellipse 120% 90% at 50% 40%, #0d0a06 0%, #050403 70%, #030202 100%);
+  }
+  /* width/height are required: <canvas> is a replaced element, so inset:0
+     alone leaves it at its intrinsic drawing-buffer size (= viewport × DPR). */
+  #stage{
+    position:fixed; inset:0; z-index:1; display:block;
+    width:100%; height:100%; touch-action:none;
+  }
+
+  /* ───────── HUD ───────── */
+  #hud{ position:fixed; inset:0; z-index:3; pointer-events:none; }
+
+  .corner{ position:absolute; padding:var(--pad); }
+  .tl{ top:0; left:0;
+       padding-top:calc(var(--pad) + var(--sa-t));
+       padding-left:calc(var(--pad) + var(--sa-l)); }
+  .bl{ bottom:0; left:0;
+       padding-bottom:calc(var(--pad) + var(--sa-b));
+       padding-left:calc(var(--pad) + var(--sa-l)); }
+  .br{ bottom:0; right:0; text-align:right;
+       padding-bottom:calc(var(--pad) + var(--sa-b));
+       padding-right:calc(var(--pad) + var(--sa-r)); }
+
+  .title-cn{
+    font-family:var(--cn); font-size:clamp(19px,2.1vw,27px);
+    letter-spacing:.42em; color:var(--fog);
+    font-weight:400; text-indent:.42em;
+  }
+  .title-en{
+    margin-top:.85em; font-size:clamp(8px,.78vw,10px);
+    letter-spacing:.34em; text-transform:uppercase;
+    color:var(--fog-dim);
+  }
+
+  /* metric bars */
+  .metric{ margin-bottom:16px; width:clamp(140px,15vw,190px); }
+  .metric-row{
+    display:flex; align-items:baseline; justify-content:space-between;
+    margin-bottom:7px;
+  }
+  .metric-name{ font-family:var(--cn); font-size:12px; letter-spacing:.3em; }
+  .metric-en{
+    font-size:7.5px; letter-spacing:.26em; text-transform:uppercase;
+    color:var(--fog-dim); margin-left:.9em; flex:1;
+  }
+  .metric-val{
+    font-size:10px; letter-spacing:.12em; color:var(--gold);
+    font-variant-numeric:tabular-nums;
+  }
+  .bar{ height:1px; background:rgba(232,220,198,.14); position:relative; }
+  .bar > i{
+    position:absolute; inset:0 auto 0 0; width:0%;
+    background:var(--gold); display:block;
+    transition:width .18s linear;
+  }
+  #barGold > i{ background:linear-gradient(90deg,var(--jade),var(--gold)); }
+
+  .state{
+    font-family:var(--cn); font-size:13px; letter-spacing:.5em;
+    color:var(--gold); margin-top:22px; text-indent:.5em;
+    transition:opacity .6s;
+  }
+  .state-en{
+    font-size:7.5px; letter-spacing:.28em; text-transform:uppercase;
+    color:var(--fog-dim); margin-top:.9em;
+  }
+
+  /* breath guide */
+  #breath{
+    position:absolute; left:50%;
+    bottom:calc(clamp(22px,3.4vw,44px) + var(--sa-b));
+    transform:translateX(-50%); text-align:center;
+  }
+  #breathRing{
+    width:38px; height:38px; border:1px solid var(--fog-dim);
+    border-radius:50%; margin:0 auto;
+    transition:border-color .8s;
+  }
+  #breathTxt{
+    margin-top:11px; font-size:7.5px; letter-spacing:.32em;
+    text-transform:uppercase; color:var(--fog-dim);
+  }
+
+  .hint{ font-size:7.5px; letter-spacing:.26em; text-transform:uppercase; color:var(--fog-dim); line-height:2.2; }
+
+  /* ───────── Veil ───────── */
+  #veil{
+    position:fixed; inset:0; z-index:20;
+    background:radial-gradient(ellipse at 50% 50%, #0b0906 0%, #030202 78%);
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    text-align:center; transition:opacity 1.9s ease, visibility 1.9s;
+  }
+  #veil.gone{ opacity:0; visibility:hidden; pointer-events:none; }
+  #veil .rule{ width:1px; height:52px; background:linear-gradient(var(--gold-dim),transparent); }
+  #veil h1{
+    font-family:var(--cn); font-weight:400;
+    font-size:clamp(30px,5.2vw,60px); letter-spacing:.5em;
+    text-indent:.5em; color:var(--fog); margin:30px 0 0;
+  }
+  #veil .sub{
+    margin-top:1.9em; font-size:clamp(8.5px,.92vw,11px);
+    letter-spacing:.44em; text-transform:uppercase; color:var(--gold-dim);
+  }
+  #veil .poem{
+    font-family:var(--cn); margin-top:3.2em; font-size:13px;
+    letter-spacing:.34em; line-height:2.5; color:var(--fog-dim); text-indent:.34em;
+  }
+  #begin{
+    margin-top:4em; background:none; cursor:pointer;
+    border:1px solid var(--gold-dim); color:var(--gold);
+    font-family:var(--cn); font-size:14px; letter-spacing:.62em;
+    padding:19px 46px 19px 56px;
+    transition:background .7s, color .7s, border-color .7s, letter-spacing .7s;
+  }
+  #begin:hover{
+    background:rgba(216,177,105,.09); color:#f0dcb4;
+    border-color:var(--gold); letter-spacing:.72em;
+  }
+  #begin small{
+    display:block; font-family:var(--en); font-size:7.5px;
+    letter-spacing:.3em; margin-top:1.1em; color:var(--fog-dim);
+    text-transform:uppercase; text-indent:0;
+  }
+  #veil .note{
+    position:absolute; bottom:calc(clamp(20px,3vw,38px) + var(--sa-b));
+    /* Absolutely positioned text has no natural width limit and this line is
+       long enough to run off a narrow phone. */
+    width:100%; padding:0 18px;
+    font-size:7.5px; letter-spacing:.26em; text-transform:uppercase;
+    color:rgba(232,220,198,.20); line-height:2.4;
+  }
+
+  /* ───────── Debug panel ───────── */
+  #panelBtn{
+    position:fixed; z-index:12; top:0; right:0;
+    padding:calc(var(--pad) + var(--sa-t)) calc(var(--pad) + var(--sa-r)) var(--pad) var(--pad);
+    background:none; border:0; cursor:pointer;
+    color:var(--fog-dim); font-family:var(--en);
+    font-size:7.5px; letter-spacing:.3em; text-transform:uppercase;
+    transition:color .4s;
+  }
+  #panelBtn:hover{ color:var(--gold); }
+
+  #panel{
+    position:fixed; z-index:11; top:0; right:0; height:100%;
+    width:min(310px, 84vw); overflow-y:auto;
+    -webkit-overflow-scrolling:touch; overscroll-behavior:contain;
+    padding:calc(74px + var(--sa-t)) calc(30px + var(--sa-r))
+            calc(34px + var(--sa-b)) 30px;
+    background:rgba(4,3,2,.90);
+    border-left:1px solid rgba(216,177,105,.14);
+    backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
+    transform:translateX(100%); transition:transform .55s cubic-bezier(.5,0,.2,1);
+  }
+  #panel.open{ transform:none; }
+
+  .sec{
+    font-size:7.5px; letter-spacing:.3em; text-transform:uppercase;
+    color:var(--gold-dim); margin:30px 0 15px;
+    padding-bottom:9px; border-bottom:1px solid rgba(216,177,105,.14);
+  }
+  .sec:first-child{ margin-top:0; }
+
+  .graph{ margin-bottom:15px; }
+  .graph-head{
+    display:flex; justify-content:space-between; align-items:baseline; margin-bottom:5px;
+  }
+  .graph-lab{ font-size:7.5px; letter-spacing:.26em; text-transform:uppercase; color:var(--fog-dim); }
+  .graph-lab b{ font-family:var(--cn); font-weight:400; letter-spacing:.2em; color:var(--fog); }
+  .graph-val{ font-size:10px; color:var(--gold); font-variant-numeric:tabular-nums; letter-spacing:.08em; }
+  .graph canvas{ display:block; width:100%; height:46px; background:rgba(232,220,198,.028); }
+
+  .ctl{ margin-bottom:17px; }
+  .ctl-head{ display:flex; justify-content:space-between; align-items:baseline; margin-bottom:7px; }
+  .ctl-lab{ font-size:7.5px; letter-spacing:.24em; text-transform:uppercase; color:var(--fog-dim); }
+  .ctl-lab b{ font-family:var(--cn); font-weight:400; letter-spacing:.22em; color:var(--fog); margin-right:.7em; }
+  .ctl-val{ font-size:10px; color:var(--gold); font-variant-numeric:tabular-nums; }
+
+  input[type=range]{
+    -webkit-appearance:none; appearance:none; width:100%; height:15px;
+    background:none; cursor:pointer; display:block;
+  }
+  input[type=range]::-webkit-slider-runnable-track{
+    height:1px; background:rgba(232,220,198,.20);
+  }
+  input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none; width:9px; height:9px; border-radius:50%;
+    background:var(--gold); margin-top:-4px;
+    box-shadow:0 0 0 3px rgba(216,177,105,.12);
+  }
+  input[type=range]::-moz-range-track{ height:1px; background:rgba(232,220,198,.20); }
+  input[type=range]::-moz-range-thumb{
+    width:9px; height:9px; border:0; border-radius:50%; background:var(--gold);
+  }
+
+  .toggles{ display:flex; gap:8px; flex-wrap:wrap; }
+  .tg{
+    flex:1 1 auto; background:none; cursor:pointer;
+    border:1px solid rgba(232,220,198,.16); color:var(--fog-dim);
+    font-family:var(--en); font-size:7.5px; letter-spacing:.22em;
+    text-transform:uppercase; padding:10px 6px; transition:all .35s;
+  }
+  .tg:hover{ border-color:rgba(216,177,105,.4); color:var(--fog); }
+  .tg.on{ border-color:var(--gold); color:var(--gold); background:rgba(216,177,105,.09); }
+
+  .readout{
+    font-size:8px; letter-spacing:.14em; line-height:2.1;
+    color:var(--fog-dim); font-variant-numeric:tabular-nums;
+  }
+  .readout span{ color:var(--gold); }
+
+  /* ───────── Touch / small screens ───────── */
+
+  /* Finger-sized controls. A 9px thumb is fine for a cursor and useless for
+     a fingertip, so the hit area grows on any coarse pointer — including a
+     large tablet, which the width query alone would miss. */
+  .only-touch{ display:none; }
+
+  @media (pointer:coarse){
+    .only-touch{ display:inline; }
+    input[type=range]{ height:34px; }
+    input[type=range]::-webkit-slider-thumb{ width:17px; height:17px; margin-top:-8px; }
+    input[type=range]::-moz-range-thumb{ width:17px; height:17px; }
+    .tg{ padding:15px 8px; }
+    #panelBtn{ font-size:9px; }
+    .graph canvas{ height:52px; }
+  }
+
+  @media (max-width:620px){
+    .metric{ width:min(148px, 40vw); margin-bottom:13px; }
+    #panel{ width:100%; }
+    .title-cn{ letter-spacing:.3em; text-indent:.3em; }
+    /* The keyboard hint is meaningless on a phone. The veil carries the touch
+       instructions instead — and the vacated corner gives the breath guide
+       somewhere to go, since centred it lands on top of the metric bars. */
+    .br{ display:none; }
+    #breath{
+      left:auto; transform:none; text-align:right;
+      right:calc(var(--pad) + var(--sa-r));
+      bottom:calc(var(--pad) + var(--sa-b));
+    }
+    #breathRing{ margin:0 0 0 auto; }
+    #veil .poem{ margin-top:2.4em; font-size:12px; }
+    #begin{ margin-top:3em; }
+    #veil .note{ letter-spacing:.16em; line-height:2.2; }
+  }
+
+  /* Landscape phone: almost no vertical room, so the veil has to compress
+     rather than overflow — the button must stay reachable without scrolling. */
+  @media (max-height:460px){
+    #veil .rule{ height:22px; }
+    #veil h1{ font-size:clamp(24px,6vh,34px); margin-top:14px; }
+    #veil .poem{ margin-top:1.2em; line-height:1.9; font-size:11px; }
+    #begin{ margin-top:1.6em; padding:13px 34px 13px 44px; }
+    #veil .note{ display:none; }
+    .bl .state, .bl .state-en{ display:none; }
+  }
+</style>
+</head>
+<body>
+
+<div id="bg"></div>
+<canvas id="stage"></canvas>
+
+<!-- ───────── HUD ───────── -->
+<div id="hud">
+  <div class="corner tl">
+    <div class="title-cn">聚沙成塔</div>
+    <div class="title-en">Sadhana · Gather Sand, Form Pagoda</div>
+  </div>
+
+  <div class="corner bl">
+    <div class="metric">
+      <div class="metric-row">
+        <span class="metric-name">聚</span>
+        <span class="metric-en">Cohesion</span>
+        <span class="metric-val" id="valCohesion">0.00</span>
+      </div>
+      <div class="bar" id="barCohesion"><i></i></div>
+    </div>
+    <div class="metric">
+      <div class="metric-row">
+        <span class="metric-name">金</span>
+        <span class="metric-en">Gold Index</span>
+        <span class="metric-val" id="valGold">0.00</span>
+      </div>
+      <div class="bar" id="barGold"><i></i></div>
+    </div>
+    <div class="state" id="stateCn">风 沙</div>
+    <div class="state-en" id="stateEn">Scattered</div>
+  </div>
+
+  <div class="corner br">
+    <div class="hint">
+      Drag to orbit · Scroll to approach<br>
+      D — instrument panel
+    </div>
+  </div>
+
+  <div id="breath">
+    <div id="breathRing"></div>
+    <div id="breathTxt">—</div>
+  </div>
+</div>
+
+<!-- ───────── Instrument panel ───────── -->
+<button id="panelBtn">Panel</button>
+<div id="panel">
+  <div class="sec">Physiological Signals</div>
+
+  <div class="graph">
+    <div class="graph-head">
+      <span class="graph-lab"><b>心率</b> Heart Rate</span>
+      <span class="graph-val" id="gvHr">—</span>
+    </div>
+    <canvas id="cvHr"></canvas>
+  </div>
+
+  <div class="graph">
+    <div class="graph-head">
+      <span class="graph-lab"><b>脉变</b> HRV · RMSSD</span>
+      <span class="graph-val" id="gvHrv">—</span>
+    </div>
+    <canvas id="cvHrv"></canvas>
+  </div>
+
+  <div class="graph">
+    <div class="graph-head">
+      <span class="graph-lab"><b>息</b> Respiration</span>
+      <span class="graph-val" id="gvResp">—</span>
+    </div>
+    <canvas id="cvResp"></canvas>
+  </div>
+
+  <div class="sec">Calibration</div>
+
+  <div class="ctl">
+    <div class="ctl-head">
+      <span class="ctl-lab"><b>息频</b> Breath Rate</span>
+      <span class="ctl-val" id="lbBreath">12.0 / min</span>
+    </div>
+    <input type="range" id="sBreath" min="0" max="1" step="0.001" value="0.485">
+  </div>
+
+  <div class="ctl">
+    <div class="ctl-head">
+      <span class="ctl-lab"><b>息深</b> Breath Depth</span>
+      <span class="ctl-val" id="lbDepth">0.50</span>
+    </div>
+    <input type="range" id="sDepth" min="0" max="1" step="0.001" value="0.5">
+  </div>
+
+  <div class="ctl">
+    <div class="ctl-head">
+      <span class="ctl-lab"><b>张力</b> Stress · EDA</span>
+      <span class="ctl-val" id="lbEda">5.00</span>
+    </div>
+    <input type="range" id="sEda" min="0" max="1" step="0.001" value="0.5">
+  </div>
+
+  <div class="ctl">
+    <div class="ctl-head">
+      <span class="ctl-lab"><b>脉容</b> HRV Capacity</span>
+      <span class="ctl-val" id="lbHrv">0.30</span>
+    </div>
+    <input type="range" id="sHrv" min="0" max="1" step="0.001" value="0.3">
+  </div>
+
+  <div class="ctl">
+    <div class="ctl-head">
+      <span class="ctl-lab"><b>心率</b> Resting HR</span>
+      <span class="ctl-val" id="lbHr">72 bpm</span>
+    </div>
+    <input type="range" id="sHr" min="0" max="1" step="0.001" value="0.415">
+  </div>
+
+  <div class="ctl">
+    <div class="ctl-head">
+      <span class="ctl-lab">RMSSD Window</span>
+      <span class="ctl-val" id="lbWin">12 beats</span>
+    </div>
+    <input type="range" id="sWin" min="3" max="30" step="1" value="12">
+  </div>
+
+  <div class="sec">Mode</div>
+  <div class="toggles">
+    <button class="tg" id="tgGuided">Guided</button>
+    <button class="tg on" id="tgAudio">Audio</button>
+  </div>
+
+  <div class="sec">Sensor</div>
+  <div class="toggles">
+    <button class="tg" id="tgBle">连接心率带 · Connect</button>
+  </div>
+  <div class="readout" id="bleStatus" style="margin-top:12px">
+    SOURCE <span>SIMULATED</span>
+  </div>
+
+  <div class="sec">Diagnostics</div>
+  <div class="readout">
+    FPS <span id="roFps">—</span><br>
+    PARTICLES <span id="roCount">—</span><br>
+    RESP PHASE <span id="roPhase">—</span><br>
+    RESP SCORE <span id="roScore">—</span><br>
+    BEATS <span id="roBeats">—</span>
+  </div>
+</div>
+
+<!-- ───────── Veil ───────── -->
+<div id="veil">
+  <div class="rule"></div>
+  <h1>聚沙成塔</h1>
+  <div class="sub">Sadhana</div>
+  <div class="poem">
+    息 深 则 沙 聚<br>
+    脉 和 则 塔 金
+  </div>
+  <button id="begin">
+    入 定
+    <small>Begin Meditation</small>
+  </button>
+  <div class="note">
+    Sound on · Headphones recommended<br>
+    <span class="only-touch">Drag to orbit · Pinch to approach<br></span>
+    模拟生理信号 · Simulated biosignals — no camera, no microphone
+  </div>
+</div>
+
+<script src="/vendor/tone/Tone.js"></script>
+<script type="importmap">
+{
+  "imports": {
+    "three": "/vendor/three/three.module.js"
+  }
+}
+</script>
+<script type="module" src="./js/app.js"></script>
+
+</body>
+</html>

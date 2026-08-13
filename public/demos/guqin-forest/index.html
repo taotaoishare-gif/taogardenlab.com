@@ -1,0 +1,1405 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+<title>TAO Garden · Somatic Guqin (v8)</title>
+<style>
+  :root{ --ink:#04100a; --jade:#7fae6f; --gold:#e8c873; --mist:#dfe8e0; }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html,body{
+    width:100%;height:100%;overflow:hidden;background:#04100a;
+    font-family:"Noto Serif SC","Songti SC","STSong",Georgia,serif;
+    -webkit-font-smoothing:antialiased;color:var(--mist);
+  }
+  #scene{ position:fixed;inset:0;width:100%;height:100%;display:block;cursor:none; }
+  #inputVideo{ position:fixed;top:0;left:0;width:2px;height:2px;opacity:0;pointer-events:none;transform:scaleX(-1); }
+
+  /* ---------- entry overlay ---------- */
+  #overlay{
+    position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;
+    background:radial-gradient(ellipse at 50% 45%,#0c1c14 0%,#04100a 75%);
+    transition:opacity 1.4s ease, visibility 1.4s ease;
+  }
+  #overlay.hidden{opacity:0;visibility:hidden;pointer-events:none;}
+  .overlay-inner{ text-align:center;padding:40px;max-width:600px; }
+  .glyph{ font-size:13px;letter-spacing:0.6em;color:var(--jade);opacity:0.65;margin-bottom:18px;text-transform:uppercase; }
+  .overlay-inner h1{ font-weight:300;font-size:clamp(28px,5vw,46px);letter-spacing:0.28em;color:var(--mist);margin-bottom:22px;text-transform:uppercase; }
+  .overlay-inner .sub{ font-size:14px;line-height:1.9;letter-spacing:0.04em;color:rgba(223,232,224,0.55);font-family:Georgia,serif;font-style:italic;margin-bottom:38px; }
+  #beginBtn{
+    background:transparent;border:1px solid rgba(232,200,115,0.45);color:var(--gold);
+    font-family:inherit;font-size:13px;letter-spacing:0.32em;text-transform:uppercase;
+    padding:16px 38px;cursor:pointer;transition:all .5s ease;border-radius:2px;
+  }
+  #beginBtn:hover:not(:disabled){ background:rgba(232,200,115,0.08);box-shadow:0 0 30px rgba(232,200,115,0.18);letter-spacing:0.4em; }
+  #beginBtn:disabled{opacity:0.4;cursor:wait;}
+  #demoBtn{
+    display:block;margin:20px auto 0;background:none;border:none;cursor:pointer;
+    color:rgba(223,232,224,0.4);font-family:Georgia,serif;font-size:12px;letter-spacing:0.12em;
+    text-decoration:underline dotted rgba(223,232,224,0.3);transition:color .4s ease;
+  }
+  #demoBtn:hover{ color:rgba(223,232,224,0.75); }
+  .status{ margin-top:20px;min-height:18px;font-size:12px;letter-spacing:0.08em;color:rgba(223,232,224,0.5);font-family:Georgia,serif; }
+
+  /* ---------- hud ---------- */
+  #hud{
+    position:fixed;right:22px;bottom:18px;z-index:20;display:flex;gap:14px;
+    font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:rgba(223,232,224,0.32);
+    pointer-events:none;user-select:none;
+  }
+  #hud span{display:flex;align-items:center;gap:6px;}
+  .dot{ width:6px;height:6px;border-radius:50%;background:rgba(223,232,224,0.18);transition:background .3s ease, box-shadow .3s ease; }
+  .dot.on{background:var(--jade);box-shadow:0 0 8px var(--jade);}
+  .dot.on.vib{background:var(--gold);box-shadow:0 0 8px var(--gold);}
+  #titleMark{
+    position:fixed;left:22px;top:18px;z-index:20;font-size:12px;letter-spacing:0.42em;
+    color:rgba(223,232,224,0.34);pointer-events:none;user-select:none;text-transform:uppercase;
+  }
+
+  /* ---------- session bar ---------- */
+  #sessionBar{
+    position:fixed;left:50%;bottom:20px;transform:translateX(-50%);
+    z-index:22;display:flex;align-items:center;gap:12px;
+    padding:8px 16px;border-radius:20px;
+    background:rgba(6,18,12,0.55);border:1px solid rgba(223,232,224,0.10);
+    backdrop-filter:blur(6px);
+    font-size:11px;letter-spacing:0.14em;color:rgba(223,232,224,0.6);
+    transition:opacity .6s ease, visibility .6s ease;
+  }
+  #sessionBar.hidden{opacity:0;visibility:hidden;pointer-events:none;}
+  #recDot{ width:8px;height:8px;border-radius:50%;background:#c25b4e;animation:recpulse 1.6s ease-in-out infinite; }
+  @keyframes recpulse{ 0%,100%{opacity:0.4;} 50%{opacity:1;} }
+  #finishBtn{
+    background:transparent;border:1px solid rgba(232,200,115,0.4);color:var(--gold);
+    font-family:inherit;font-size:10px;letter-spacing:0.2em;padding:5px 14px;border-radius:14px;
+    cursor:pointer;transition:all .4s ease;
+  }
+  #finishBtn:hover{ background:rgba(232,200,115,0.1); }
+
+  /* ---------- export overlay ---------- */
+  #exportOverlay{
+    position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;
+    background:rgba(3,10,7,0.72);backdrop-filter:blur(8px);
+    transition:opacity .8s ease, visibility .8s ease;
+  }
+  #exportOverlay.hidden{opacity:0;visibility:hidden;pointer-events:none;}
+  .export-inner{
+    text-align:center;padding:44px 48px;max-width:640px;
+    background:rgba(8,22,14,0.82);border:1px solid rgba(223,232,224,0.10);border-radius:6px;
+  }
+  .export-inner h2{ font-weight:300;font-size:26px;letter-spacing:0.22em;margin-bottom:12px;color:var(--mist); }
+  .export-inner .esub{ font-size:13px;line-height:1.8;color:rgba(223,232,224,0.5);font-family:Georgia,serif;font-style:italic;margin-bottom:30px; }
+  .export-grid{ display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-bottom:24px; }
+  .export-grid button{
+    flex:1;min-width:150px;padding:18px 14px;
+    background:rgba(127,174,111,0.06);border:1px solid rgba(127,174,111,0.30);border-radius:4px;
+    color:var(--mist);font-family:inherit;font-size:14px;letter-spacing:0.1em;cursor:pointer;
+    transition:all .4s ease;line-height:1.5;
+  }
+  .export-grid button span{ display:block;margin-top:6px;font-size:10px;letter-spacing:0.15em;color:rgba(223,232,224,0.45); }
+  .export-grid button:hover:not(:disabled){ background:rgba(127,174,111,0.14);box-shadow:0 0 24px rgba(127,174,111,0.15); }
+  .export-grid button:disabled{ opacity:0.35;cursor:not-allowed; }
+  .enote{ font-size:11px;letter-spacing:0.08em;color:rgba(223,232,224,0.35);margin-bottom:26px;font-family:Georgia,serif; }
+  #encoreBtn{
+    background:transparent;border:1px solid rgba(232,200,115,0.45);color:var(--gold);
+    font-family:inherit;font-size:12px;letter-spacing:0.28em;text-transform:uppercase;
+    padding:12px 32px;cursor:pointer;transition:all .5s ease;border-radius:2px;
+  }
+  #encoreBtn:hover{ background:rgba(232,200,115,0.08);letter-spacing:0.36em; }
+</style>
+</head>
+<body>
+
+  <canvas id="scene"></canvas>
+  <video id="inputVideo" playsinline></video>
+
+  <div id="titleMark">TAO GARDEN</div>
+  <div id="hud">
+    <span><i class="dot" id="dotMelody"></i> left / melody</span>
+    <span><i class="dot vib" id="dotVibration"></i> right / vibration</span>
+  </div>
+
+  <div id="sessionBar" class="hidden">
+    <i id="recDot"></i>
+    <span id="sessTime">00:00 / 01:00</span>
+    <button id="finishBtn">完成演奏 · Finish</button>
+  </div>
+
+  <div id="overlay">
+    <div class="overlay-inner">
+      <div class="glyph">tao garden</div>
+      <h1>Somatic Guqin</h1>
+      <p class="sub">远山入湖，竹影摇风。你将坐于石畔琴前，以身入画 —— 挥动左手，五声琴音自成旋律：手越高音越高，动越快节奏越急。右手轻颤，山谷共鸣。一分钟后，收获属于你的独一无二的氛围包。</p>
+      <button id="beginBtn">Begin Somatic Ritual</button>
+      <button id="demoBtn">无摄像头 · 演示模式（鼠标即琴手）</button>
+      <p class="status" id="overlayStatus"></p>
+    </div>
+  </div>
+
+  <div id="exportOverlay" class="hidden">
+    <div class="export-inner">
+      <div class="glyph">mood pack</div>
+      <h2>你的专属氛围包</h2>
+      <p class="esub">This minute of mountains and strings belongs only to you.<br>这一分钟的山水与琴音，独一无二。</p>
+      <div class="export-grid">
+        <button id="dlWallpaper">🖼 竹林壁纸<span>静态 · PNG</span></button>
+        <button id="dlAudio">🎵 治愈环境音<span>音频 · WAV</span></button>
+        <button id="dlVideo">🎬 专属 MV<span>动态壁纸 / 视频</span></button>
+      </div>
+      <p class="enote" id="exportNote">MV 视频亦可用作动态壁纸 · 均在本地生成，不上传任何数据</p>
+      <button id="encoreBtn">再来一曲 · Encore</button>
+    </div>
+  </div>
+
+<script src="/vendor/mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+<script src="/vendor/mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+<script src="/vendor/mediapipe/selfie_segmentation/selfie_segmentation.js" crossorigin="anonymous"></script>
+
+<script>
+(function(){
+  'use strict';
+
+  /* =========================================================  UTILITIES  ========================================================= */
+  const clamp = (v,a,b)=> v<a?a:(v>b?b:v);
+  const lerp  = (a,b,t)=> a+(b-a)*t;
+  const dist  = (a,b)=> Math.hypot(a.x-b.x, a.y-b.y);
+  const easeOutCubic = t => 1 - Math.pow(1-t,3);
+  const smoothstep = (e0,e1,x)=>{ const t=clamp((x-e0)/(e1-e0),0,1); return t*t*(3-2*t); };
+
+  function mulberry32(seed){
+    let s = seed >>> 0;
+    return function(){
+      s |= 0; s = (s + 0x6D2B79F5) | 0;
+      let t = Math.imul(s ^ (s >>> 15), 1 | s);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  class PerlinNoise{
+    constructor(seed=1337){
+      const rand = mulberry32(seed);
+      const p = new Uint8Array(256);
+      for(let i=0;i<256;i++) p[i]=i;
+      for(let i=255;i>0;i--){ const j=Math.floor(rand()*(i+1)); const t=p[i]; p[i]=p[j]; p[j]=t; }
+      this.perm = new Uint8Array(512);
+      for(let i=0;i<512;i++) this.perm[i]=p[i & 255];
+    }
+    fade(t){ return t*t*t*(t*(t*6-15)+10); }
+    lerp(t,a,b){ return a+t*(b-a); }
+    grad(hash,x,y,z){
+      const h=hash&15; const u=h<8?x:y; const v=h<4?y:(h===12||h===14?x:z);
+      return ((h&1)===0?u:-u)+((h&2)===0?v:-v);
+    }
+    noise(x,y,z=0){
+      const X=Math.floor(x)&255, Y=Math.floor(y)&255, Z=Math.floor(z)&255;
+      x-=Math.floor(x); y-=Math.floor(y); z-=Math.floor(z);
+      const u=this.fade(x), v=this.fade(y), w=this.fade(z); const perm=this.perm;
+      const A=perm[X]+Y, AA=perm[A]+Z, AB=perm[A+1]+Z;
+      const B=perm[X+1]+Y, BA=perm[B]+Z, BB=perm[B+1]+Z;
+      return this.lerp(w,
+        this.lerp(v, this.lerp(u,this.grad(perm[AA],x,y,z),this.grad(perm[BA],x-1,y,z)),
+                     this.lerp(u,this.grad(perm[AB],x,y-1,z),this.grad(perm[BB],x-1,y-1,z))),
+        this.lerp(v, this.lerp(u,this.grad(perm[AA+1],x,y,z-1),this.grad(perm[BA+1],x-1,y,z-1)),
+                     this.lerp(u,this.grad(perm[AB+1],x,y-1,z-1),this.grad(perm[BB+1],x-1,y-1,z-1))));
+    }
+  }
+  const noise = new PerlinNoise(20260630);
+
+  class OneEuroFilter{
+    constructor(minCutoff=1.1, beta=0.025, dCutoff=1.0){
+      this.minCutoff=minCutoff; this.beta=beta; this.dCutoff=dCutoff;
+      this.xPrev=null; this.dxPrev=0; this.tPrev=null; this.freq=30;
+    }
+    alpha(c){ const te=1/this.freq, tau=1/(2*Math.PI*c); return 1/(1+tau/te); }
+    filter(x,tMs){
+      if(this.tPrev!==null){ const dt=Math.max((tMs-this.tPrev)/1000,1e-3); this.freq=1/dt; }
+      this.tPrev=tMs;
+      if(this.xPrev===null){ this.xPrev=x; this.dxPrev=0; return x; }
+      const dx=(x-this.xPrev)*this.freq;
+      const aD=this.alpha(this.dCutoff);
+      const dxHat=aD*dx+(1-aD)*this.dxPrev;
+      const cutoff=this.minCutoff+this.beta*Math.abs(dxHat);
+      const a=this.alpha(cutoff);
+      const xHat=a*x+(1-a)*this.xPrev;
+      this.xPrev=xHat; this.dxPrev=dxHat;
+      return xHat;
+    }
+  }
+
+  /* =========================================================
+     AUDIO — guqin pluck voice + ambient pad + sparse water drops
+  ========================================================= */
+  class GuqinAudioEngine{
+    constructor(){ this.ctx=null; this.recordTap=null; }
+    async init(){
+      if(this.ctx) return;
+      const Ctx = window.AudioContext || window.webkitAudioContext;
+      if(!Ctx) throw new Error('Web Audio API unsupported');
+      const ctx = this.ctx = new Ctx();
+
+      this.master = ctx.createGain(); this.master.gain.value=0.72;
+      this.comp = ctx.createDynamicsCompressor();
+      this.comp.threshold.value=-20; this.comp.knee.value=26; this.comp.ratio.value=3.5;
+      this.master.connect(this.comp); this.comp.connect(ctx.destination);
+      this.recordTap = this.comp;
+
+      this.air = ctx.createBiquadFilter();
+      this.air.type='highshelf'; this.air.frequency.value=5000; this.air.gain.value=3;
+      this.air.connect(this.master);
+
+      this.bodyPeak = ctx.createBiquadFilter();
+      this.bodyPeak.type='peaking'; this.bodyPeak.frequency.value=300; this.bodyPeak.Q.value=0.8; this.bodyPeak.gain.value=3.5;
+      this.bodyPeak.connect(this.air);
+
+      this.bus = ctx.createGain(); this.bus.gain.value=1.0;
+
+      this.dry = ctx.createGain(); this.dry.gain.value=0.72;
+      this.bus.connect(this.dry); this.dry.connect(this.bodyPeak);
+
+      this.convolver = ctx.createConvolver();
+      this.convolver.buffer = this.makeReverbIR(4.4, 2.8);
+      this.reverbGain = ctx.createGain(); this.reverbGain.gain.value=0.95;
+      this.bus.connect(this.convolver); this.convolver.connect(this.reverbGain); this.reverbGain.connect(this.bodyPeak);
+
+      this.delay = ctx.createDelay(3.0); this.delay.delayTime.value=0.4;
+      const dF = ctx.createBiquadFilter(); dF.type='lowpass'; dF.frequency.value=2600;
+      this.feedback = ctx.createGain(); this.feedback.gain.value=0.32;
+      this.delayWet = ctx.createGain(); this.delayWet.gain.value=0.4;
+      this.bus.connect(this.delay);
+      this.delay.connect(dF); dF.connect(this.feedback); this.feedback.connect(this.delay);
+      this.delay.connect(this.delayWet); this.delayWet.connect(this.bodyPeak);
+
+      await ctx.resume();
+      this.startAmbientBed();
+      this.startWaterDrops();
+      this.startDrone();
+    }
+    makeReverbIR(seconds, decay){
+      const rate=this.ctx.sampleRate, len=Math.floor(rate*seconds);
+      const buf=this.ctx.createBuffer(2,len,rate);
+      for(let ch=0;ch<2;ch++){
+        const d=buf.getChannelData(ch); let last=0;
+        for(let i=0;i<len;i++){ const t=i/len; const env=Math.pow(1-t, decay); const n=(Math.random()*2-1)*env; last+=0.26*(n-last); d[i]=last*1.5; }
+      }
+      return buf;
+    }
+    setReverbAmount(x01){
+      if(!this.ctx) return;
+      const x=clamp(x01,0,1);
+      this.feedback.gain.setTargetAtTime(lerp(0.18,0.7,x), this.ctx.currentTime, 0.1);
+      this.delay.delayTime.setTargetAtTime(lerp(0.26,0.6,x), this.ctx.currentTime, 0.1);
+      this.reverbGain.gain.setTargetAtTime(lerp(0.78,1.35,x), this.ctx.currentTime, 0.12);
+    }
+    playNote(freq, opts){
+      if(!this.ctx) return;
+      const o=opts||{};
+      const gain=o.gain!==undefined?o.gain:0.4;
+      const decaySec=o.decaySec!==undefined?o.decaySec:4.0;
+      const accent=!!o.accent;
+      const ctx=this.ctx, t0=ctx.currentTime;
+
+      if(o.harmonic){
+        const osc=ctx.createOscillator(); osc.type='sine'; osc.frequency.value=freq;
+        const g=ctx.createGain(); g.gain.setValueAtTime(0.0001,t0);
+        g.gain.exponentialRampToValueAtTime(Math.max(0.0002,gain),t0+0.02);
+        g.gain.exponentialRampToValueAtTime(0.0005,t0+decaySec);
+        osc.connect(g).connect(this.bus); osc.start(t0); osc.stop(t0+decaySec+0.1);
+        osc.onended=()=>{ g.disconnect(); osc.disconnect(); };
+        return;
+      }
+
+      const vgain=ctx.createGain(); vgain.gain.value=1.0; vgain.connect(this.bus);
+
+      const saw=ctx.createOscillator(); saw.type='sawtooth'; saw.frequency.value=freq;
+      const tri=ctx.createOscillator(); tri.type='triangle'; tri.frequency.value=freq;
+      const sg=ctx.createGain(); sg.gain.value=0.5;
+      const tg=ctx.createGain(); tg.gain.value=0.34;
+
+      const lp=ctx.createBiquadFilter(); lp.type='lowpass'; lp.Q.value=0.6;
+      lp.frequency.setValueAtTime(accent?3600:2900, t0);
+      lp.frequency.exponentialRampToValueAtTime(460, t0+decaySec*0.6);
+
+      const env=ctx.createGain();
+      env.gain.setValueAtTime(0.0001,t0);
+      env.gain.exponentialRampToValueAtTime(Math.max(0.02,gain), t0+0.006);
+      env.gain.exponentialRampToValueAtTime(0.0005, t0+decaySec);
+
+      saw.connect(sg).connect(lp); tri.connect(tg).connect(lp);
+      lp.connect(env).connect(vgain);
+
+      const nlen=Math.floor(ctx.sampleRate*0.02);
+      const nbuf=ctx.createBuffer(1,nlen,ctx.sampleRate);
+      const nd=nbuf.getChannelData(0);
+      for(let i=0;i<nlen;i++) nd[i]=(Math.random()*2-1)*(1-i/nlen);
+      const nb=ctx.createBufferSource(); nb.buffer=nbuf;
+      const bp=ctx.createBiquadFilter(); bp.type='bandpass'; bp.frequency.value=freq*2.5; bp.Q.value=1.0;
+      const ng=ctx.createGain(); ng.gain.value=(accent?0.09:0.05)*Math.max(gain,0.2);
+      nb.connect(bp).connect(ng).connect(vgain);
+
+      saw.start(t0); tri.start(t0); nb.start(t0);
+      saw.stop(t0+decaySec+0.2); tri.stop(t0+decaySec+0.2); nb.stop(t0+0.025);
+      saw.onended=()=>{ sg.disconnect(); tg.disconnect(); lp.disconnect(); env.disconnect(); saw.disconnect(); tri.disconnect(); };
+      nb.onended=()=>{ bp.disconnect(); ng.disconnect(); nb.disconnect(); };
+    }
+    /* ---- looping ambient pad only (bamboo-wind noise removed) ---- */
+    startAmbientBed(){
+      const ctx=this.ctx;
+      const padGain=ctx.createGain(); padGain.gain.value=0.05;
+      const padFilter=ctx.createBiquadFilter(); padFilter.type='lowpass'; padFilter.frequency.value=340; padFilter.Q.value=0.5;
+      padFilter.connect(padGain); padGain.connect(this.master);
+      const padVoices=[[73.42,'sine',0.5],[110.00,'sine',0.34],[146.83,'triangle',0.22]];
+      padVoices.forEach(([f,type,amp],i)=>{
+        const osc=ctx.createOscillator(); osc.type=type; osc.frequency.value=f;
+        if(i===1) osc.detune.value=4;
+        const g=ctx.createGain(); g.gain.value=amp;
+        osc.connect(g).connect(padFilter);
+        osc.start();
+      });
+      const padLFO=ctx.createOscillator(); padLFO.type='sine'; padLFO.frequency.value=0.05;
+      const padLFOGain=ctx.createGain(); padLFOGain.gain.value=0.02;
+      padLFO.connect(padLFOGain); padLFOGain.connect(padGain.gain);
+      padLFO.start();
+    }
+    /* ---- 空灵水滴 — irregular, airy water drops through the long reverb ---- */
+    _drop(gainMul){
+      const ctx=this.ctx, t0=ctx.currentTime;
+      const f0=520+Math.random()*950;
+      const osc=ctx.createOscillator(); osc.type='sine';
+      osc.frequency.setValueAtTime(f0,t0);
+      osc.frequency.exponentialRampToValueAtTime(f0*1.42, t0+0.045);  // rising "bloop" chirp of a real droplet
+      const g=ctx.createGain();
+      const peak=(0.045+Math.random()*0.05)*(gainMul||1);
+      g.gain.setValueAtTime(0.0001,t0);
+      g.gain.exponentialRampToValueAtTime(peak, t0+0.004);
+      g.gain.exponentialRampToValueAtTime(0.0004, t0+0.28);
+      osc.connect(g).connect(this.bus);                                // bus -> convolver: long ethereal tail
+      osc.start(t0); osc.stop(t0+0.35);
+      osc.onended=()=>{ g.disconnect(); osc.disconnect(); };
+    }
+    startWaterDrops(){
+      const tick=()=>{
+        if(!this.ctx) return;
+        this._drop(1);
+        if(Math.random()<0.3) setTimeout(()=>this._drop(0.55), 130+Math.random()*220); // occasional echo-drip
+        setTimeout(tick, 2600+Math.random()*6500);                     // irregular spacing
+      };
+      setTimeout(tick, 1800+Math.random()*2000);
+    }
+    startDrone(){
+      const tonics=[146.83,220.00,293.66];
+      const tick=()=>{
+        if(!this.ctx) return;
+        if(Math.random()<0.4) this.playNote(tonics[Math.floor(Math.random()*tonics.length)], {gain:0.045, decaySec:6.0, harmonic:true});
+        setTimeout(tick, 4600+Math.random()*3800);
+      };
+      setTimeout(tick, 2800);
+    }
+  }
+
+  /* =========================================================
+     MELODY — procedural pentatonic generator (宫商角徵羽)
+  ========================================================= */
+  class MelodyEngine{
+    constructor(audio){
+      this.audio=audio;
+      this.reg=[
+        146.83,164.81,185.00,220.00,246.94,
+        293.66,329.63,369.99,440.00,493.88,
+        587.33,659.25,739.99,880.00,987.77
+      ];
+      this.BPM=66;
+      this.cur=6; this.target=6; this.energy=0;
+      this.handX=0.5; this.handY=0.5; this.visible=false;
+      this.running=false; this.lastActive=0; this.onNote=null;
+    }
+    get pitch01(){ return this.cur/(this.reg.length-1); }
+    setGesture(g){
+      this.visible=g.visible;
+      if(g.visible){
+        this.handX=g.x; this.handY=g.y; this.energy=g.energy;
+        const yUp=1-clamp(g.y,0,1);
+        const octave=clamp(Math.floor(yUp*3),0,2);
+        const degree=clamp(Math.floor(clamp(g.x,0,1)*5),0,4);
+        const lift=Math.round(this.energy*4);
+        this.target=clamp(octave*5 + degree + lift, 0, this.reg.length-1);
+        if(this.energy>0.05) this.lastActive=performance.now();
+      } else { this.energy=this.energy*0.9; }
+    }
+    _advance(){
+      const diff=this.target-this.cur;
+      if(diff!==0){
+        const step=Math.sign(diff)*(Math.abs(diff)>=5?3:(Math.abs(diff)>=3?2:1));
+        this.cur=clamp(this.cur+step,0,this.reg.length-1);
+      } else if(Math.random()<0.55){
+        this.cur=clamp(this.cur+(Math.random()<0.5?1:-1)*(Math.random()<0.3?2:1),0,this.reg.length-1);
+      }
+    }
+    _durationBeats(e){
+      if(e>=0.72) return 0.25;
+      if(e>=0.50) return 0.5;
+      if(e>=0.28) return 1;
+      if(e>=0.10) return 2;
+      return Math.random()<0.5?3:4;
+    }
+    _play(accent){
+      this._advance();
+      const e=this.energy;
+      const freq=this.reg[this.cur];
+      const gain=clamp(lerp(0.14,0.55,e)+(accent?0.18:0),0.12,0.8);
+      const decaySec=lerp(6.0,2.0,e);
+      this.audio.playNote(freq,{gain,decaySec,accent});
+      if(this.onNote) this.onNote(this.pitch01, gain, accent);
+      if(this.cur>=10 && e<0.35 && Math.random()<0.22)
+        this.audio.playNote(this.reg[this.cur]*2,{gain:gain*0.3,decaySec:5.0,harmonic:true});
+    }
+    accent(){ if(this.running) this._play(true); }
+    start(){ if(this.running) return; this.running=true; this._tick(); }
+    _tick(){
+      if(!this.running) return;
+      const now=performance.now();
+      const recentlyActive=(now-this.lastActive)<2600;
+      const e=recentlyActive?this.energy:this.energy*0.4;
+      const beatSec=60/this.BPM;
+      let interval=this._durationBeats(clamp(e,0,1))*beatSec*1000;
+      interval*=0.94+Math.random()*0.12;
+      if(this.visible||recentlyActive){ if(e>0.04||Math.random()<0.5) this._play(false); }
+      setTimeout(()=>this._tick(), interval);
+    }
+  }
+
+  /* =========================================================  FIELDS (V4)  ========================================================= */
+  class ForceField{
+    constructor(w,h,cols=26,rows=15){ this.cols=cols; this.rows=rows; this.fx=new Float32Array(cols*rows); this.fy=new Float32Array(cols*rows); this.resize(w,h); }
+    resize(w,h){ this.w=w; this.h=h; this.cw=w/this.cols; this.ch=h/this.rows; }
+    idx(cx,cy){ return cy*this.cols+cx; }
+    decay(m){ for(let i=0;i<this.fx.length;i++){ this.fx[i]*=m; this.fy[i]*=m; } }
+    inject(px,py,vx,vy,s){
+      const cx=clamp(Math.floor(px/this.cw),0,this.cols-1), cy=clamp(Math.floor(py/this.ch),0,this.rows-1);
+      for(let oy=-1;oy<=1;oy++) for(let ox=-1;ox<=1;ox++){
+        const x=cx+ox, y=cy+oy; if(x<0||x>=this.cols||y<0||y>=this.rows) continue;
+        const f=(ox===0&&oy===0)?1:0.45; const i=this.idx(x,y);
+        this.fx[i]=clamp(this.fx[i]+vx*s*f*0.012,-300,300);
+        this.fy[i]=clamp(this.fy[i]+vy*s*f*0.012,-300,300);
+      }
+    }
+    sample(px,py){
+      const fcx=clamp(px/this.cw,0,this.cols-1.001), fcy=clamp(py/this.ch,0,this.rows-1.001);
+      const x0=Math.floor(fcx), y0=Math.floor(fcy), x1=Math.min(x0+1,this.cols-1), y1=Math.min(y0+1,this.rows-1);
+      const tx=fcx-x0, ty=fcy-y0;
+      const i00=this.idx(x0,y0), i10=this.idx(x1,y0), i01=this.idx(x0,y1), i11=this.idx(x1,y1);
+      return { x:lerp(lerp(this.fx[i00],this.fx[i10],tx),lerp(this.fx[i01],this.fx[i11],tx),ty),
+               y:lerp(lerp(this.fy[i00],this.fy[i10],tx),lerp(this.fy[i01],this.fy[i11],tx),ty) };
+    }
+  }
+
+  class NoiseField{
+    constructor(w,h,cols=44,rows=26){ this.cols=cols; this.rows=rows; this.ang=new Float32Array(cols*rows); this.val=new Float32Array(cols*rows); this.resize(w,h); }
+    resize(w,h){ this.w=w; this.h=h; this.cw=w/this.cols; this.ch=h/this.rows; }
+    update(tSec){
+      for(let y=0;y<this.rows;y++) for(let x=0;x<this.cols;x++){
+        const i=y*this.cols+x;
+        this.ang[i]=noise.noise(x*0.18, y*0.18, tSec*0.06)*Math.PI*2;
+        this.val[i]=noise.noise(x*0.18+50, y*0.18+50, tSec*0.05);
+      }
+    }
+    sample(px,py){
+      const fcx=clamp(px/this.cw,0,this.cols-1.001), fcy=clamp(py/this.ch,0,this.rows-1.001);
+      const x0=Math.floor(fcx), y0=Math.floor(fcy), x1=Math.min(x0+1,this.cols-1), y1=Math.min(y0+1,this.rows-1);
+      const tx=fcx-x0, ty=fcy-y0;
+      const i00=y0*this.cols+x0, i10=y0*this.cols+x1, i01=y1*this.cols+x0, i11=y1*this.cols+x1;
+      const cxv=lerp(lerp(Math.cos(this.ang[i00]),Math.cos(this.ang[i10]),tx),lerp(Math.cos(this.ang[i01]),Math.cos(this.ang[i11]),tx),ty);
+      const cyv=lerp(lerp(Math.sin(this.ang[i00]),Math.sin(this.ang[i10]),tx),lerp(Math.sin(this.ang[i01]),Math.sin(this.ang[i11]),tx),ty);
+      const v=lerp(lerp(this.val[i00],this.val[i10],tx),lerp(this.val[i01],this.val[i11],tx),ty);
+      return { angle:Math.atan2(cyv,cxv), val:v };
+    }
+  }
+
+  /* =========================================================
+     INK-WASH MOUNTAIN LANDSCAPE (V4) — now continuing across the full width.
+     Ridges are sampled in absolute units of the original 0.6-width region,
+     so the left side looks exactly like V4 and flows on seamlessly rightward.
+  ========================================================= */
+  class InkMountains{
+    constructor(w,h){ this.resize(w,h); this.build(); }
+    build(){
+      this.layers = [
+        { y:0.30, amp:0.085, col:[96,122,108], a:0.30, seed:11,  N:74, sp:0.018 },
+        { y:0.37, amp:0.110, col:[64,92,76],  a:0.42, seed:131, N:74, sp:0.022 },
+        { y:0.45, amp:0.140, col:[38,64,50],  a:0.60, seed:251, N:76, sp:0.026 },
+        { y:0.53, amp:0.165, col:[18,40,30],  a:0.82, seed:373, N:80, sp:0.030 }
+      ];
+      this.waterY = 0.64;
+    }
+    resize(w,h){ this.w=w; this.h=h; }
+    _ridgeY(layer,tAbs,time,energy){
+      const n  = noise.noise(tAbs*3.0 + layer.seed, layer.seed*0.31, time*0.03);
+      const n2 = noise.noise(tAbs*7.3 + layer.seed, 5.0, time*0.018)*0.38;
+      const breathe = Math.sin(time*0.28 + layer.seed)*0.005*(0.4+energy);
+      return (layer.y+breathe)*this.h - (n+n2)*layer.amp*this.h;
+    }
+    render(ctx, time, energy){
+      const W=this.w, wy=this.waterY*this.h;
+      const unit=this.w*0.60;   // V4's original region width = the noise unit
+      for(const layer of this.layers){
+        ctx.beginPath();
+        ctx.moveTo(0, wy);
+        for(let i=0;i<=layer.N;i++){
+          const x=(i/layer.N)*W;
+          ctx.lineTo(x, this._ridgeY(layer, x/unit, time, energy));
+        }
+        ctx.lineTo(W, wy); ctx.closePath();
+        const [r,g,b]=layer.col;
+        const grad=ctx.createLinearGradient(0, this.h*0.18, 0, wy);
+        grad.addColorStop(0, `rgba(${r},${g},${b},${layer.a})`);
+        grad.addColorStop(1, `rgba(${r},${g},${b},${layer.a*0.22})`);
+        ctx.fillStyle=grad; ctx.fill();
+      }
+      this._drawWater(ctx, W, unit, time, energy);
+      this._drawMist(ctx, W, time, energy);
+    }
+    _drawWater(ctx, W, unit, time, energy){
+      const wy=this.waterY*this.h, bottom=this.h;
+      const g=ctx.createLinearGradient(0,wy,0,bottom);
+      g.addColorStop(0,'rgba(10,26,20,0.55)');
+      g.addColorStop(1,'rgba(4,12,9,0.85)');
+      ctx.fillStyle=g; ctx.fillRect(0,wy,W,bottom-wy);
+      const near=this.layers[this.layers.length-1];
+      ctx.save();
+      ctx.globalAlpha=0.16;
+      ctx.beginPath();
+      ctx.moveTo(0,wy);
+      for(let i=0;i<=near.N;i++){
+        const x=(i/near.N)*W;
+        const ry=this._ridgeY(near, x/unit, time, energy);
+        ctx.lineTo(x, wy + (wy-ry)*0.5);
+      }
+      ctx.lineTo(W,wy); ctx.closePath();
+      ctx.fillStyle='rgba(30,56,44,1)'; ctx.fill();
+      ctx.restore();
+      ctx.save();
+      ctx.globalCompositeOperation='lighter';
+      const lines=7;
+      for(let i=0;i<lines;i++){
+        const ly=wy + (bottom-wy)*((i+0.5)/lines);
+        const drift=Math.sin(time*(0.25+i*0.05)+i)*30*(0.5+energy);
+        ctx.strokeStyle=`rgba(150,185,165,${0.05+0.03*Math.sin(time+i)})`;
+        ctx.lineWidth=1;
+        ctx.beginPath();
+        for(let x=0;x<=W;x+=18){
+          const yy=ly + Math.sin(x*0.02 + time*0.6 + i)*2.2 + drift*0.04;
+          x===0?ctx.moveTo(x,yy):ctx.lineTo(x,yy);
+        }
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+    _drawMist(ctx, W, time, energy){
+      ctx.save();
+      ctx.globalCompositeOperation='lighter';
+      const bands=3;
+      for(let i=0;i<bands;i++){
+        const by=this.h*(0.30+i*0.10);
+        const drift=Math.sin(time*0.12+i*2)* W*0.06*(0.6+energy);
+        const cx=W*0.5+drift;
+        const grad=ctx.createRadialGradient(cx,by,0,cx,by,W*0.62);
+        const a=0.05+0.025*Math.sin(time*0.4+i);
+        grad.addColorStop(0,`rgba(170,200,182,${a})`);
+        grad.addColorStop(1,'rgba(170,200,182,0)');
+        ctx.fillStyle=grad;
+        ctx.fillRect(0,by-this.h*0.12,W,this.h*0.24);
+      }
+      ctx.restore();
+    }
+  }
+
+  /* =========================================================
+     PARTICLE SYSTEM (V4 vortex + V4 bamboo, verbatim) + clearing scene
+  ========================================================= */
+  class ParticleSystem{
+    constructor(canvas){
+      this.canvas=canvas; this.ctx=canvas.getContext('2d');
+      this.w=window.innerWidth; this.h=window.innerHeight;
+      this.field=new ForceField(this.w,this.h);
+      this.noiseField=new NoiseField(this.w,this.h);
+      this.mountains=new InkMountains(this.w,this.h);
+      this.flow=[]; this.culms=[]; this.pulses=[]; this.decor=[];
+      this.turbulence=0; this.playEnergy=0; this.time=0;
+      this.rand=mulberry32(424242);
+      this.MAX_CULMS=26;
+      this.personCanvas=null; this.personReady=false;
+
+      this.off=document.createElement('canvas');
+      this.offCtx=this.off.getContext('2d');
+      this._sizeOffscreen();
+
+      this.COUNT=Math.min(13000, Math.floor(this.w*this.h/124));
+      for(let i=0;i<this.COUNT;i++) this.flow.push(this._spawn());
+
+      this.seedGrove();
+      this.seedClearing();
+    }
+    _sizeOffscreen(){ this.off.width=Math.max(1,Math.floor(this.w)); this.off.height=Math.max(1,Math.floor(this.h)); }
+    _spawn(){ const x=this.rand()*this.w, y=this.rand()*this.h; return { x,y,px:x,py:y, life:this.rand()*7+3, lum:0.5, region:0.5 }; }
+    resize(w,h){
+      const sx=w/this.w, sy=h/this.h;
+      this.w=w; this.h=h;
+      this.field.resize(w,h); this.noiseField.resize(w,h); this.mountains.resize(w,h);
+      this._sizeOffscreen(); this.offCtx.clearRect(0,0,w,h);
+      this.flow.forEach(p=>{ p.x*=sx; p.y*=sy; p.px=p.x; p.py=p.y; });
+      this.culms.forEach(c=>{ c.x*=sx; c.yBase*=sy; });
+      this.decor.forEach(c=>{ c.x*=sx; c.yBase*=sy; });
+    }
+
+    /* ---------- V4 bamboo generation ---------- */
+    seedGrove(){
+      const n=18;
+      for(let i=0;i<n;i++){
+        const x=this.w*(0.42 + 0.57*((i+0.5)/n)) + (this.rand()-0.5)*40;
+        const depth=this.rand();
+        this._addCulm(x, depth, true);
+      }
+      this.culms.sort((a,b)=>a.depth-b.depth);
+    }
+    _culmObject(x, depth, instant){
+      const r=this.rand.bind(this);
+      const baseW = lerp(5,21,depth) * (0.82+r()*0.42);
+      const target = (lerp(0.26,0.62,depth)*this.h) * (0.82+r()*0.5);
+      const yBase  = lerp(0.60,0.97,depth)*this.h;
+      const segLen = lerp(34,66, r());
+      const segCount = Math.max(4, Math.round(target/segLen));
+      const lean = (r()-0.5)*0.16;
+      const curveAmt = (r()-0.5)*0.6;
+      const baseCol = [
+        Math.round(lerp(118,40,depth)+(r()-0.5)*16),
+        Math.round(lerp(150,92,depth)+(r()-0.5)*14),
+        Math.round(lerp(120,52,depth)+(r()-0.5)*12)
+      ];
+      const tipCol = [ Math.min(220,baseCol[0]+60), Math.min(235,baseCol[1]+55), Math.min(215,baseCol[2]+50) ];
+      const alpha = lerp(0.5,0.97,depth);
+      const branches=[];
+      for(let i=Math.ceil(segCount*0.5);i<segCount;i++){
+        if(r()<0.78){
+          branches.push({
+            node:i, side: (i%2===0?1:-1)*(r()<0.2?-1:1),
+            len: baseW*(2.4+r()*3.2),
+            up: 0.5+r()*0.5,
+            leafSeed: Math.floor(r()*1e9),
+            leaves: 3+Math.floor(r()*4)
+          });
+        }
+      }
+      return {
+        x, yBase, target, baseW, segLen, segCount,
+        height: instant?target:0,
+        age: instant?99:0, growDur: 1.5,
+        lean, curveAmt, baseCol, tipCol, alpha, depth,
+        swayPhase:r()*Math.PI*2, branches,
+        tipLeafSeed: Math.floor(r()*1e9),
+        fade:1, fadingOut:false
+      };
+    }
+    _addCulm(x, depth, instant){
+      if(this.culms.length>=this.MAX_CULMS){
+        const old=this.culms.find(c=>!c.fadingOut);
+        if(old) old.fadingOut=true;
+      }
+      this.culms.push(this._culmObject(x,depth,instant));
+      this.culms.sort((a,b)=>a.depth-b.depth);
+    }
+    growBamboo(xNorm, pitch01, strength){
+      // clearing at bottom-left stays open; low notes grow big culms, high notes slender ones
+      const x=clamp(xNorm,0.30,0.96)*this.w;
+      const depth=clamp((1-clamp(pitch01,0,1)) + (this.rand()-0.5)*0.22, 0, 1);
+      const c=this._culmObject(x, depth, false);
+      c.target*=lerp(0.85,1.25,clamp(strength,0,1));
+      if(this.culms.length>=this.MAX_CULMS){
+        const old=this.culms.find(cc=>!cc.fadingOut);
+        if(old) old.fadingOut=true;
+      }
+      this.culms.push(c);
+      this.culms.sort((a,b)=>a.depth-b.depth);
+    }
+
+    /* ---------- fixed clearing decor: two culms by the rock ---------- */
+    seedClearing(){
+      const a=this._culmObject(this.w*0.035, 0.72, true);
+      a.target=this.h*0.36; a.height=a.target; a.baseW=8;  a.yBase=this.h*0.955;
+      const b=this._culmObject(this.w*0.082, 0.6, true);
+      b.target=this.h*0.29; b.height=b.target; b.baseW=6;  b.yBase=this.h*0.965;
+      this.decor=[a,b];
+    }
+
+    setTurbulence(v){ this.turbulence=clamp(v,0,1); }
+    injectForce(px,py,vx,vy,s){ this.field.inject(px,py,vx,vy,s); }
+    addPulse(x,y,strength){
+      this.pulses.push({ x,y, age:0, maxAge:1.1, strength:clamp(strength,0,1.6) });
+      if(this.pulses.length>40) this.pulses.shift();
+      const a=Math.random()*Math.PI*2;
+      this.field.inject(x,y, Math.cos(a)*120*strength, Math.sin(a)*120*strength, strength*0.6);
+    }
+
+    /* ---------- V4 vortex update ---------- */
+    update(dt,tSec){
+      this.time=tSec;
+      this.field.decay(Math.pow(0.90,dt*60));
+      this.noiseField.update(tSec);
+      const cx=this.w*0.5, cy=this.h*0.52;
+      const A=48, swirlMax=26, R=this.w*0.34;
+      const mistDrift = Math.sin(tSec*0.1)*16;
+      const trem=this.turbulence;
+
+      for(const p of this.flow){
+        const nf=this.noiseField.sample(p.x,p.y);
+        p.lum=(nf.val+1)/2;
+        const region=smoothstep(0.42,0.60, p.x/this.w);
+        const dxc=p.x-cx, dyc=p.y-cy, dC=Math.hypot(dxc,dyc);
+        const swirl=swirlMax*Math.exp(-(dC*dC)/(R*R));
+        const ang=Math.atan2(dyc,dxc)+Math.PI*0.5;
+        const f=this.field.sample(p.x,p.y);
+        let vx=Math.cos(nf.angle)*A + Math.cos(ang)*swirl + f.x*1.2;
+        let vy=Math.sin(nf.angle)*A*(0.45+region*0.55) + Math.sin(ang)*swirl + f.y*1.2;
+        vx += (1-region)*mistDrift;
+        vy += region*(-12);
+        if(region<0.5) vy*=lerp(0.55,1.0,region*2);
+        if(trem>0.01){ vx+=Math.sin(tSec*9+p.x*0.05)*trem*14; vy+=Math.cos(tSec*8+p.y*0.05)*trem*10; }
+        p.px=p.x; p.py=p.y; p.x+=vx*dt; p.y+=vy*dt;
+        p.region=region;
+        p.life-=dt;
+        if(p.life<=0 || p.x<-20||p.x>this.w+20||p.y<-20||p.y>this.h+20){
+          const np=this._spawn(); p.x=np.x; p.y=np.y; p.px=np.x; p.py=np.y; p.life=this.rand()*7+3;
+        }
+      }
+      for(let i=this.culms.length-1;i>=0;i--){
+        const c=this.culms[i];
+        if(c.age<c.growDur){ c.age+=dt; c.height=c.target*easeOutCubic(clamp(c.age/c.growDur,0,1)); }
+        if(c.fadingOut){ c.fade-=dt/0.6; if(c.fade<=0){ this.culms.splice(i,1); } }
+      }
+      for(let i=this.pulses.length-1;i>=0;i--){ this.pulses[i].age+=dt; if(this.pulses[i].age>=this.pulses[i].maxAge) this.pulses.splice(i,1); }
+    }
+
+    /* ---------- V4 bamboo drawing ---------- */
+    _culmNodes(c){
+      const nodes=[]; const h=c.height;
+      const sway=Math.sin(this.time*0.5 + c.swayPhase)*(0.5+this.turbulence*1.8);
+      for(let i=0;i<=c.segCount;i++){
+        const t=i/c.segCount;
+        const bend = c.lean*h*t + c.curveAmt*Math.sin(t*Math.PI)*c.baseW*2.2;
+        const swayOff = sway*(4+t*t*30);
+        nodes.push({ x:c.x+bend+swayOff, y:c.yBase-h*t, w:c.baseW*(1-0.52*t), t });
+      }
+      return nodes;
+    }
+    _drawCulm(ctx,c){
+      if(c.height<6) return;
+      const FA=(c.fade!==undefined?c.fade:1);
+      const nodes=this._culmNodes(c);
+      const [br,bg,bb]=c.baseCol, [tr,tg,tb]=c.tipCol;
+      const A=c.alpha*FA;
+      const grad=ctx.createLinearGradient(c.x-c.baseW,0,c.x+c.baseW,0);
+      grad.addColorStop(0,`rgba(${Math.round(br*0.6)},${Math.round(bg*0.62)},${Math.round(bb*0.6)},${A})`);
+      grad.addColorStop(0.55,`rgba(${br},${bg},${bb},${A})`);
+      grad.addColorStop(1,`rgba(${tr},${tg},${tb},${A})`);
+      ctx.fillStyle=grad;
+      ctx.beginPath();
+      ctx.moveTo(nodes[0].x-nodes[0].w/2, nodes[0].y);
+      for(let i=0;i<nodes.length;i++) ctx.lineTo(nodes[i].x-nodes[i].w/2, nodes[i].y);
+      for(let i=nodes.length-1;i>=0;i--) ctx.lineTo(nodes[i].x+nodes[i].w/2, nodes[i].y);
+      ctx.closePath(); ctx.fill();
+      for(let i=1;i<nodes.length-1;i++){
+        const p=nodes[i];
+        ctx.strokeStyle=`rgba(${Math.round(br*0.45)},${Math.round(bg*0.5)},${Math.round(bb*0.45)},${A})`;
+        ctx.lineWidth=Math.max(1,p.w*0.18);
+        ctx.beginPath(); ctx.moveTo(p.x-p.w/2,p.y); ctx.lineTo(p.x+p.w/2,p.y); ctx.stroke();
+        ctx.strokeStyle=`rgba(200,225,200,${0.28*A})`;
+        ctx.lineWidth=1;
+        ctx.beginPath(); ctx.moveTo(p.x-p.w/2,p.y-p.w*0.22); ctx.lineTo(p.x+p.w/2,p.y-p.w*0.22); ctx.stroke();
+      }
+      ctx.strokeStyle=`rgba(210,235,205,${0.30*A})`;
+      ctx.lineWidth=Math.max(0.8,c.baseW*0.10);
+      ctx.beginPath();
+      for(let i=0;i<nodes.length;i++){ const p=nodes[i]; const xx=p.x+p.w*0.24; i===0?ctx.moveTo(xx,p.y):ctx.lineTo(xx,p.y); }
+      ctx.stroke();
+      for(const br_ of c.branches){
+        const n=nodes[br_.node]; if(!n) continue;
+        const bx=n.x + br_.side*n.w*0.4, by=n.y;
+        const ang = br_.side>0 ? -0.5*br_.up : Math.PI+0.5*br_.up;
+        const ex = bx + Math.cos(ang)*br_.len, ey = by - Math.abs(Math.sin(ang))*br_.len - br_.len*br_.up*0.5;
+        ctx.strokeStyle=`rgba(${br},${bg},${bb},${A*0.85})`;
+        ctx.lineWidth=Math.max(0.8,c.baseW*0.12);
+        ctx.beginPath(); ctx.moveTo(bx,by); ctx.quadraticCurveTo((bx+ex)/2, by-br_.len*0.3, ex,ey); ctx.stroke();
+        this._drawLeafCluster(ctx, ex,ey, br_.side, c.baseW*1.5+br_.len*0.5, A, br_.leafSeed, br_.leaves, c);
+      }
+      const tip=nodes[nodes.length-1];
+      this._drawLeafCluster(ctx, tip.x, tip.y, 0, c.baseW*2.0, A, c.tipLeafSeed, 5, c);
+    }
+    _drawLeafCluster(ctx, ox,oy, side, scale, alpha, seed, count, c){
+      const r=mulberry32(seed);
+      const baseDir = side>0 ? -0.35 : (side<0 ? Math.PI+0.35 : -Math.PI/2);
+      const spread = 1.5;
+      const swayT = Math.sin(this.time*0.7 + seed*0.0001)*(0.12+this.turbulence*0.55);
+      for(let k=0;k<count;k++){
+        const f=(k-(count-1)/2)/Math.max(1,count-1);
+        const ang = baseDir + f*spread + swayT + (r()-0.5)*0.2 - 0.25;
+        const len = scale*(0.85+r()*0.6);
+        this._drawLeaf(ctx, ox,oy, ang, len, len*0.16, alpha, (r()-0.5)*0.5, c);
+      }
+    }
+    _drawLeaf(ctx, bx,by, angle, len, wid, alpha, curve, c){
+      const tx=bx+Math.cos(angle)*len, ty=by+Math.sin(angle)*len;
+      const perp=angle+Math.PI/2;
+      const bowX=Math.cos(perp)*curve*len, bowY=Math.sin(perp)*curve*len;
+      const mx=(bx+tx)/2+bowX, my=(by+ty)/2+bowY;
+      const c1x=mx+Math.cos(perp)*wid, c1y=my+Math.sin(perp)*wid;
+      const c2x=mx-Math.cos(perp)*wid, c2y=my-Math.sin(perp)*wid;
+      const [br,bg,bb]=c.baseCol;
+      const g=ctx.createLinearGradient(bx,by,tx,ty);
+      g.addColorStop(0,`rgba(${Math.round(br*0.85)},${Math.round(bg*0.9)},${Math.round(bb*0.85)},${alpha})`);
+      g.addColorStop(1,`rgba(${Math.min(210,br+70)},${Math.min(232,bg+62)},${Math.min(200,bb+58)},${alpha*0.92})`);
+      ctx.fillStyle=g;
+      ctx.beginPath();
+      ctx.moveTo(bx,by);
+      ctx.quadraticCurveTo(c1x,c1y,tx,ty);
+      ctx.quadraticCurveTo(c2x,c2y,bx,by);
+      ctx.closePath(); ctx.fill();
+      ctx.strokeStyle=`rgba(${Math.round(br*0.55)},${Math.round(bg*0.62)},${Math.round(bb*0.55)},${alpha*0.7})`;
+      ctx.lineWidth=Math.max(0.5,wid*0.14);
+      ctx.beginPath(); ctx.moveTo(bx,by); ctx.quadraticCurveTo(mx,my,tx,ty); ctx.stroke();
+    }
+
+    /* ---------- the bottom-left clearing: ground, rock, person, guqin ---------- */
+    _drawGround(ctx){
+      const w=this.w, h=this.h;
+      const g=ctx.createRadialGradient(w*0.14,h*0.965,0, w*0.14,h*0.965,w*0.17);
+      g.addColorStop(0,'rgba(64,94,66,0.34)');
+      g.addColorStop(0.7,'rgba(46,72,52,0.22)');
+      g.addColorStop(1,'rgba(46,72,52,0)');
+      ctx.fillStyle=g;
+      ctx.beginPath(); ctx.ellipse(w*0.14,h*0.965,w*0.165,h*0.05,0,0,Math.PI*2); ctx.fill();
+    }
+    _drawRock(ctx){
+      const w=this.w, h=this.h;
+      const shapes=[
+        { cx:w*0.048, cy:h*0.915, rx:w*0.030, ry:h*0.075, col:'rgba(44,62,52,0.95)', seed:7 },
+        { cx:w*0.070, cy:h*0.940, rx:w*0.020, ry:h*0.046, col:'rgba(30,46,38,0.95)', seed:23 },
+        { cx:w*0.030, cy:h*0.948, rx:w*0.015, ry:h*0.034, col:'rgba(56,76,62,0.92)', seed:41 }
+      ];
+      for(const s of shapes){
+        const r=mulberry32(s.seed);
+        ctx.beginPath();
+        const K=9;
+        for(let i=0;i<=K;i++){
+          const a=(i/K)*Math.PI*2;
+          const wob=0.78+r()*0.4;
+          const px=s.cx+Math.cos(a)*s.rx*wob;
+          const py=s.cy+Math.sin(a)*s.ry*wob;
+          i===0?ctx.moveTo(px,py):ctx.lineTo(px,py);
+        }
+        ctx.closePath();
+        ctx.fillStyle=s.col; ctx.fill();
+        ctx.strokeStyle='rgba(178,202,182,0.20)';
+        ctx.lineWidth=1.1;
+        ctx.beginPath();
+        ctx.arc(s.cx-s.rx*0.15, s.cy-s.ry*0.55, s.rx*0.7, Math.PI*1.15, Math.PI*1.85);
+        ctx.stroke();
+      }
+      ctx.fillStyle='rgba(0,0,0,0.28)';
+      ctx.beginPath(); ctx.ellipse(w*0.05,h*0.975,w*0.042,h*0.012,0,0,Math.PI*2); ctx.fill();
+    }
+    _drawPerson(ctx){
+      if(!this.personReady || !this.personCanvas) return;
+      const w=this.w, h=this.h;
+      const ph=h*0.28;                       // scaled down to sit in proportion with the guqin
+      const ar=this.personCanvas.width/Math.max(1,this.personCanvas.height);
+      const pw=ph*ar;
+      const cx=w*0.148;
+      const bottomY=h*0.975;
+      ctx.save();
+      ctx.fillStyle='rgba(0,0,0,0.30)';
+      ctx.beginPath(); ctx.ellipse(cx,bottomY-h*0.003,pw*0.30,h*0.014,0,0,Math.PI*2); ctx.fill();
+      ctx.globalAlpha=0.96;
+      ctx.translate(cx,0); ctx.scale(-1,1);
+      ctx.drawImage(this.personCanvas, -pw/2, bottomY-ph, pw, ph);
+      ctx.restore();
+    }
+    _drawGuqin(ctx){
+      const w=this.w, h=this.h;
+      const cx=w*0.150, cy=h*0.930;
+      const L=w*0.150, T=h*0.026;
+      ctx.save();
+      ctx.translate(cx,cy); ctx.rotate(-0.05);
+      ctx.fillStyle='rgba(0,0,0,0.32)';
+      ctx.beginPath(); ctx.ellipse(0,T*0.85,L*0.52,T*0.5,0,0,Math.PI*2); ctx.fill();
+      const half=T/2;
+      const grad=ctx.createLinearGradient(0,-half,0,half);
+      grad.addColorStop(0,'#2e2318');
+      grad.addColorStop(0.45,'#1c150e');
+      grad.addColorStop(1,'#0e0a06');
+      ctx.fillStyle=grad;
+      ctx.beginPath();
+      ctx.moveTo(-L/2, -half);
+      ctx.lineTo(L/2, -half*0.72);
+      ctx.quadraticCurveTo(L/2+half*0.7, 0, L/2, half*0.72);
+      ctx.lineTo(-L/2, half);
+      ctx.quadraticCurveTo(-L/2-half*0.8, 0, -L/2, -half);
+      ctx.closePath(); ctx.fill();
+      ctx.strokeStyle='rgba(214,196,150,0.22)';
+      ctx.lineWidth=1;
+      ctx.beginPath(); ctx.moveTo(-L*0.46,-half*0.55); ctx.lineTo(L*0.46,-half*0.42); ctx.stroke();
+      for(let i=0;i<7;i++){
+        const sy=-half*0.52 + (i/6)*half*1.04*0.8;
+        ctx.strokeStyle=`rgba(222,212,184,${0.34+0.05*(i%2)})`;
+        ctx.lineWidth=0.55+i*0.05;
+        ctx.beginPath();
+        ctx.moveTo(-L*0.47, sy*0.9);
+        ctx.lineTo(L*0.47, sy*0.75);
+        ctx.stroke();
+      }
+      ctx.fillStyle='rgba(232,208,150,0.5)';
+      for(let i=0;i<13;i++){
+        const hx=-L*0.44 + (i/12)*L*0.88;
+        ctx.beginPath(); ctx.arc(hx, -half*0.78, 1.1, 0, Math.PI*2); ctx.fill();
+      }
+      ctx.restore();
+    }
+
+    /* ---------- V4 render (trail-fade offscreen, 6-tier ink/jade strokes) ---------- */
+    render(ctx){
+      const w=this.w, h=this.h, t=this.time, e=this.playEnergy;
+      const g=ctx.createRadialGradient(w*0.5,h*0.5,h*0.05,w*0.5,h*0.5,h*0.95);
+      g.addColorStop(0,'#0a1c12'); g.addColorStop(0.6,'#06140d'); g.addColorStop(1,'#030c08');
+      ctx.fillStyle=g; ctx.fillRect(0,0,w,h);
+
+      this.mountains.render(ctx, t, e);
+
+      const o=this.offCtx;
+      o.globalCompositeOperation='source-over';
+      o.fillStyle='rgba(0,0,0,0.12)';
+      o.fillRect(0,0,w,h);
+      o.globalCompositeOperation='lighter';
+      o.lineCap='round';
+      const lD=new Path2D(),lM=new Path2D(),lB=new Path2D(),rD=new Path2D(),rM=new Path2D(),rB=new Path2D();
+      for(const p of this.flow){
+        const lum=p.lum, reg=p.region;
+        let path;
+        if(reg<0.5){ path = lum<0.4?lD : (lum<0.7?lM:lB); }
+        else       { path = lum<0.4?rD : (lum<0.7?rM:rB); }
+        path.moveTo(p.px,p.py); path.lineTo(p.x,p.y);
+      }
+      o.strokeStyle='rgba(70,96,86,0.13)';   o.lineWidth=1.3; o.stroke(lD);
+      o.strokeStyle='rgba(120,150,135,0.17)';o.lineWidth=1.5; o.stroke(lM);
+      o.strokeStyle='rgba(186,208,192,0.20)';o.lineWidth=1.8; o.stroke(lB);
+      o.strokeStyle='rgba(40,92,55,0.14)';   o.lineWidth=1.4; o.stroke(rD);
+      o.strokeStyle='rgba(96,168,110,0.18)'; o.lineWidth=1.7; o.stroke(rM);
+      o.strokeStyle='rgba(176,214,168,0.22)';o.lineWidth=2.0; o.stroke(rB);
+
+      ctx.save();
+      ctx.globalCompositeOperation='lighter';
+      ctx.drawImage(this.off,0,0,w,h);
+      ctx.restore();
+
+      for(const c of this.culms) this._drawCulm(ctx,c);
+
+      this._drawGround(ctx);
+      this._drawRock(ctx);
+      for(const c of this.decor) this._drawCulm(ctx,c);
+      this._drawPerson(ctx);
+      this._drawGuqin(ctx);
+
+      ctx.save();
+      ctx.globalCompositeOperation='lighter';
+      for(const pu of this.pulses){
+        const k=pu.age/pu.maxAge;
+        const rad=18+k*150*(0.6+pu.strength);
+        ctx.globalAlpha=(1-k)*0.22*pu.strength;
+        ctx.strokeStyle='rgba(220,235,205,0.9)';
+        ctx.lineWidth=1.3;
+        ctx.beginPath(); ctx.ellipse(pu.x,pu.y,rad,rad*0.7,0,0,Math.PI*2); ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    drawHandGlow(ctx,x,y,gold){
+      ctx.save();
+      ctx.globalCompositeOperation='lighter';
+      const c=gold?'232,200,115':'200,225,205';
+      const g=ctx.createRadialGradient(x,y,0,x,y,28);
+      g.addColorStop(0,`rgba(${c},0.4)`); g.addColorStop(1,`rgba(${c},0)`);
+      ctx.fillStyle=g; ctx.beginPath(); ctx.arc(x,y,28,0,Math.PI*2); ctx.fill();
+      ctx.restore();
+    }
+  }
+
+  /* =========================================================
+     RECORDER — 1-minute session: MV video + WAV audio + PNG still
+  ========================================================= */
+  const Recorder={
+    supported: typeof MediaRecorder!=='undefined',
+    mime:'', ext:'webm', mr:null, chunks:[], videoBlob:null, stream:null,
+    pcmL:[], pcmR:[], samples:0, maxSamples:0, capturing:false, sampleRate:44100,
+    init(audioCtx, tapNode, canvasEl){
+      this.sampleRate=audioCtx.sampleRate;
+      this.maxSamples=Math.floor(this.sampleRate*62);
+      const dest=audioCtx.createMediaStreamDestination();
+      tapNode.connect(dest);
+      const sp=audioCtx.createScriptProcessor(4096,2,2);
+      const mute=audioCtx.createGain(); mute.gain.value=0;
+      tapNode.connect(sp); sp.connect(mute); mute.connect(audioCtx.destination);
+      sp.onaudioprocess=(ev)=>{
+        if(!this.capturing || this.samples>=this.maxSamples) return;
+        const L=ev.inputBuffer.getChannelData(0);
+        const R=ev.inputBuffer.numberOfChannels>1?ev.inputBuffer.getChannelData(1):L;
+        this.pcmL.push(new Float32Array(L));
+        this.pcmR.push(new Float32Array(R));
+        this.samples+=L.length;
+      };
+      this._sp=sp;
+      if(this.supported && canvasEl.captureStream){
+        const vs=canvasEl.captureStream(30);
+        this.stream=new MediaStream([...vs.getVideoTracks(), ...dest.stream.getAudioTracks()]);
+        const cands=['video/webm;codecs=vp9,opus','video/webm;codecs=vp8,opus','video/webm','video/mp4'];
+        this.mime=cands.find(m=>{ try{ return MediaRecorder.isTypeSupported(m); }catch(e){ return false; } })||'';
+        this.ext=this.mime.indexOf('mp4')>=0?'mp4':'webm';
+      } else { this.supported=false; }
+    },
+    start(){
+      this.chunks=[]; this.videoBlob=null;
+      this.pcmL=[]; this.pcmR=[]; this.samples=0;
+      this.capturing=true;
+      if(this.supported && this.stream){
+        try{
+          this.mr = this.mime ? new MediaRecorder(this.stream,{mimeType:this.mime}) : new MediaRecorder(this.stream);
+          this.mr.ondataavailable=(e)=>{ if(e.data && e.data.size) this.chunks.push(e.data); };
+          this.mr.start(1000);
+        }catch(err){ console.warn('MediaRecorder start failed', err); this.mr=null; }
+      }
+    },
+    stop(done){
+      this.capturing=false;
+      if(this.mr && this.mr.state!=='inactive'){
+        this.mr.onstop=()=>{ this.videoBlob=new Blob(this.chunks,{type:this.mime||'video/webm'}); if(done) done(); };
+        try{ this.mr.stop(); }catch(e){ if(done) done(); }
+      } else { if(done) done(); }
+    },
+    wavBlob(){
+      const total=this.samples;
+      if(!total) return null;
+      const L=new Float32Array(total), R=new Float32Array(total);
+      let off=0;
+      for(let i=0;i<this.pcmL.length && off<total;i++){
+        const n=Math.min(this.pcmL[i].length, total-off);
+        L.set(this.pcmL[i].subarray(0,n),off);
+        R.set(this.pcmR[i].subarray(0,n),off);
+        off+=n;
+      }
+      const sr=this.sampleRate, numCh=2, bytesPerSample=2;
+      const dataLen=total*numCh*bytesPerSample;
+      const buf=new ArrayBuffer(44+dataLen);
+      const dv=new DataView(buf);
+      const ws=(o,s)=>{ for(let i=0;i<s.length;i++) dv.setUint8(o+i,s.charCodeAt(i)); };
+      ws(0,'RIFF'); dv.setUint32(4,36+dataLen,true); ws(8,'WAVE');
+      ws(12,'fmt '); dv.setUint32(16,16,true); dv.setUint16(20,1,true); dv.setUint16(22,numCh,true);
+      dv.setUint32(24,sr,true); dv.setUint32(28,sr*numCh*bytesPerSample,true);
+      dv.setUint16(32,numCh*bytesPerSample,true); dv.setUint16(34,16,true);
+      ws(36,'data'); dv.setUint32(40,dataLen,true);
+      let idx=44;
+      for(let i=0;i<total;i++){
+        let s=clamp(L[i],-1,1); dv.setInt16(idx, s<0?s*0x8000:s*0x7FFF, true); idx+=2;
+        s=clamp(R[i],-1,1); dv.setInt16(idx, s<0?s*0x8000:s*0x7FFF, true); idx+=2;
+      }
+      return new Blob([buf],{type:'audio/wav'});
+    }
+  };
+
+  function downloadBlob(blob, name){
+    if(!blob) return;
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);
+    a.download=name;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); }, 4000);
+  }
+  function stamp(){
+    const d=new Date();
+    const p=(n)=>String(n).padStart(2,'0');
+    return `${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}`;
+  }
+
+  /* =========================================================  MAIN APP  ========================================================= */
+  const canvas=document.getElementById('scene');
+  const ctx=canvas.getContext('2d');
+  const video=document.getElementById('inputVideo');
+  const overlay=document.getElementById('overlay');
+  const beginBtn=document.getElementById('beginBtn');
+  const demoBtn=document.getElementById('demoBtn');
+  const overlayStatus=document.getElementById('overlayStatus');
+  const dotMelody=document.getElementById('dotMelody');
+  const dotVibration=document.getElementById('dotVibration');
+  const sessionBar=document.getElementById('sessionBar');
+  const sessTime=document.getElementById('sessTime');
+  const finishBtn=document.getElementById('finishBtn');
+  const exportOverlay=document.getElementById('exportOverlay');
+  const dlWallpaper=document.getElementById('dlWallpaper');
+  const dlAudio=document.getElementById('dlAudio');
+  const dlVideo=document.getElementById('dlVideo');
+  const encoreBtn=document.getElementById('encoreBtn');
+  const exportNote=document.getElementById('exportNote');
+
+  const SESSION_MS=60000;
+  const audioEngine=new GuqinAudioEngine();
+  const melody=new MelodyEngine(audioEngine);
+  let particles=null;
+  const session={ active:false, start:0 };
+  let demoMode=false;
+
+  function resizeCanvas(){
+    const dpr=Math.min(window.devicePixelRatio||1,2);
+    const w=window.innerWidth, h=window.innerHeight;
+    canvas.width=Math.floor(w*dpr); canvas.height=Math.floor(h*dpr);
+    canvas.style.width=w+'px'; canvas.style.height=h+'px';
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    if(particles) particles.resize(w,h);
+  }
+  window.addEventListener('resize', resizeCanvas);
+
+  const melFilterX=new OneEuroFilter(1.3,0.030), melFilterY=new OneEuroFilter(1.3,0.030);
+  const vibFilterX=new OneEuroFilter(1.0,0.015);
+
+  const melHand={ visible:false, x:0.5, y:0.5 };
+  const vibHand={ visible:false, x:0.5, y:0.5 };
+  const melRawTrail=[];
+  const vibRawBuffer=[];
+  let motionEnergy=0, turbulenceSmoothed=0;
+  let lastAccentAt=0;
+
+  function processMelodyPoint(nx, ny, tMs){
+    const fx=melFilterX.filter(nx,tMs), fy=melFilterY.filter(ny,tMs);
+    melHand.x=fx; melHand.y=fy;
+    melRawTrail.push({x:nx,y:ny,t:tMs});
+    while(melRawTrail.length>8) melRawTrail.shift();
+    let vx=0, vy=0;
+    if(melRawTrail.length>=2){
+      const a=melRawTrail[melRawTrail.length-2], b=melRawTrail[melRawTrail.length-1];
+      const dt=Math.max((b.t-a.t)/1000,1/120);
+      vx=(b.x-a.x)/dt; vy=(b.y-a.y)/dt;
+    }
+    const speed=Math.hypot(vx,vy);
+    const inst=clamp(speed/2.5,0,1);
+    motionEnergy = inst>motionEnergy ? lerp(motionEnergy,inst,0.6) : lerp(motionEnergy,inst,0.08);
+    if(particles && speed>0.10){
+      particles.injectForce(fx*window.innerWidth, fy*window.innerHeight, vx*window.innerWidth*0.55, vy*window.innerHeight*0.55, clamp(speed/2.2,0,1));
+    }
+    if(speed>1.35 && tMs-lastAccentAt>130){ lastAccentAt=tMs; melody.accent(); }
+  }
+
+  function handleMelody(lm,tMs){
+    const raw=lm[9];
+    processMelodyPoint(1-raw.x, raw.y, tMs);
+  }
+  function handleVibration(lm,tMs){
+    const tips=[8,12,16,20].map(i=>lm[i]);
+    const rawX=1-(tips.reduce((s,t)=>s+t.x,0)/4);
+    const rawY=tips.reduce((s,t)=>s+t.y,0)/4;
+    vibRawBuffer.push({x:rawX,y:rawY});
+    if(vibRawBuffer.length>10) vibRawBuffer.shift();
+    let wobble=0;
+    if(vibRawBuffer.length>2){
+      let pathLen=0;
+      for(let i=1;i<vibRawBuffer.length;i++) pathLen+=dist(vibRawBuffer[i],vibRawBuffer[i-1]);
+      wobble=Math.max(0, pathLen - dist(vibRawBuffer[0], vibRawBuffer[vibRawBuffer.length-1]));
+    }
+    turbulenceSmoothed=lerp(turbulenceSmoothed, clamp(wobble*55,0,1), 0.3);
+    const fx=vibFilterX.filter(rawX,tMs);
+    vibHand.x=fx; vibHand.y=rawY;
+    audioEngine.setReverbAmount(fx);
+    if(particles) particles.setTurbulence(turbulenceSmoothed);
+  }
+
+  function onHandsResults(results){
+    const tMs=performance.now();
+    let foundMel=false, foundVib=false;
+    if(results.multiHandLandmarks && results.multiHandedness){
+      for(let i=0;i<results.multiHandLandmarks.length;i++){
+        const label=results.multiHandedness[i].label;
+        const lm=results.multiHandLandmarks[i];
+        if(label==='Left'){ foundMel=true; handleMelody(lm,tMs); }
+        else if(label==='Right'){ foundVib=true; handleVibration(lm,tMs); }
+      }
+    }
+    melHand.visible=foundMel; vibHand.visible=foundVib;
+    if(!foundMel) motionEnergy*=0.9;
+    if(!foundVib){ turbulenceSmoothed=lerp(turbulenceSmoothed,0,0.08); if(particles) particles.setTurbulence(turbulenceSmoothed); }
+    melody.setGesture({ visible:foundMel, x:melHand.x, y:melHand.y, energy:motionEnergy });
+    dotMelody.classList.toggle('on', foundMel);
+    dotVibration.classList.toggle('on', foundVib);
+  }
+
+  /* ---------- selfie segmentation ---------- */
+  const personCanvas=document.createElement('canvas');
+  const personCtx=personCanvas.getContext('2d');
+  let segmenter=null;
+  function onSegResults(res){
+    if(!res || !res.segmentationMask) return;
+    const vw=res.image.width||640, vh=res.image.height||480;
+    if(personCanvas.width!==vw || personCanvas.height!==vh){ personCanvas.width=vw; personCanvas.height=vh; }
+    const pc=personCtx;
+    pc.save();
+    pc.clearRect(0,0,vw,vh);
+    pc.filter='blur(2px)';
+    pc.drawImage(res.segmentationMask,0,0,vw,vh);
+    pc.filter='none';
+    pc.globalCompositeOperation='source-in';
+    pc.drawImage(res.image,0,0,vw,vh);
+    pc.globalCompositeOperation='source-atop';
+    pc.fillStyle='rgba(18,52,36,0.30)';
+    pc.fillRect(0,0,vw,vh);
+    pc.restore();
+    if(particles){ particles.personCanvas=personCanvas; particles.personReady=true; }
+  }
+
+  let lastFrameT=performance.now();
+  function renderLoop(t){
+    const dt=Math.min((t-lastFrameT)/1000,0.05); lastFrameT=t;
+    if(particles){
+      particles.playEnergy=motionEnergy;
+      particles.update(dt, t/1000);
+      particles.render(ctx);
+      if(melHand.visible) particles.drawHandGlow(ctx, melHand.x*window.innerWidth, melHand.y*window.innerHeight, true);
+      if(vibHand.visible) particles.drawHandGlow(ctx, vibHand.x*window.innerWidth, vibHand.y*window.innerHeight, false);
+    }
+    if(session.active){
+      const el=performance.now()-session.start;
+      const s=Math.min(Math.floor(el/1000),60);
+      sessTime.textContent=`00:${String(s).padStart(2,'0')} / 01:00`;
+      if(el>=SESSION_MS) finishPerformance();
+    }
+    requestAnimationFrame(renderLoop);
+  }
+
+  async function startCamera(){
+    if(typeof Hands==='undefined' || typeof Camera==='undefined') throw new Error('Could not load MediaPipe from CDN. Check your connection.');
+    const hands=new Hands({ locateFile:(f)=>`/vendor/mediapipe/hands/${f}` });
+    hands.setOptions({ maxNumHands:2, modelComplexity:1, minDetectionConfidence:0.7, minTrackingConfidence:0.6 });
+    hands.onResults(onHandsResults);
+
+    try{
+      if(typeof SelfieSegmentation!=='undefined'){
+        segmenter=new SelfieSegmentation({ locateFile:(f)=>`/vendor/mediapipe/selfie_segmentation/${f}` });
+        segmenter.setOptions({ modelSelection:1 });
+        segmenter.onResults(onSegResults);
+      }
+    }catch(err){ console.warn('Selfie segmentation unavailable', err); segmenter=null; }
+
+    let frameC=0;
+    const camera=new Camera(video, {
+      onFrame:async()=>{
+        await hands.send({image:video});
+        if(segmenter && (frameC++ % 2===0)){
+          try{ await segmenter.send({image:video}); }catch(e){}
+        }
+      },
+      width:640, height:480
+    });
+    await camera.start();
+  }
+
+  function bindDemoInput(){
+    demoMode=true;
+    let lastMove=0;
+    window.addEventListener('pointermove',(ev)=>{
+      const now=performance.now();
+      lastMove=now;
+      melHand.visible=true;
+      processMelodyPoint(ev.clientX/window.innerWidth, ev.clientY/window.innerHeight, now);
+      melody.setGesture({ visible:true, x:melHand.x, y:melHand.y, energy:motionEnergy });
+      dotMelody.classList.add('on');
+    });
+    setInterval(()=>{
+      if(performance.now()-lastMove>1400 && melHand.visible){
+        melHand.visible=false;
+        motionEnergy*=0.9;
+        melody.setGesture({ visible:false, x:melHand.x, y:melHand.y, energy:motionEnergy });
+        dotMelody.classList.remove('on');
+      }
+    }, 400);
+  }
+
+  /* ---------- session / export flow ---------- */
+  function startSession(){
+    Recorder.start();
+    session.start=performance.now();
+    session.active=true;
+    sessionBar.classList.remove('hidden');
+    exportOverlay.classList.add('hidden');
+  }
+  function finishPerformance(){
+    if(!session.active) return;
+    session.active=false;
+    sessionBar.classList.add('hidden');
+    dlVideo.disabled=true;
+    Recorder.stop(()=>{
+      dlVideo.disabled = !(Recorder.videoBlob && Recorder.videoBlob.size>0);
+      if(dlVideo.disabled) exportNote.textContent='此浏览器不支持视频录制 · 壁纸与音频仍可下载';
+    });
+    if(!Recorder.supported){
+      dlVideo.disabled=true;
+      exportNote.textContent='此浏览器不支持视频录制 · 壁纸与音频仍可下载';
+    }
+    exportOverlay.classList.remove('hidden');
+  }
+  finishBtn.addEventListener('click', finishPerformance);
+  encoreBtn.addEventListener('click', ()=>{ startSession(); });
+
+  dlWallpaper.addEventListener('click', ()=>{
+    canvas.toBlob((b)=>{ downloadBlob(b, `TAO-Garden-${stamp()}.png`); }, 'image/png');
+  });
+  dlAudio.addEventListener('click', ()=>{
+    const b=Recorder.wavBlob();
+    if(b) downloadBlob(b, `TAO-Garden-${stamp()}.wav`);
+  });
+  dlVideo.addEventListener('click', ()=>{
+    if(Recorder.videoBlob) downloadBlob(Recorder.videoBlob, `TAO-Garden-${stamp()}.${Recorder.ext}`);
+  });
+
+  /* ---------- begin ---------- */
+  async function beginRitual(withCamera){
+    beginBtn.disabled=true; demoBtn.disabled=true;
+    overlayStatus.textContent='awakening the senses…';
+    try{
+      resizeCanvas();
+      particles=new ParticleSystem(canvas);
+      melody.onNote=(pitch01, gain, accent)=>{
+        if(!particles || !melHand.visible) return;
+        const x=melHand.x*window.innerWidth, y=melHand.y*window.innerHeight;
+        particles.addPulse(x,y, gain*(accent?1.4:1));
+        particles.growBamboo(melHand.x, pitch01, clamp(gain*1.7,0,1));
+      };
+      await audioEngine.init();
+      Recorder.init(audioEngine.ctx, audioEngine.recordTap, canvas);
+      melody.start();
+      if(withCamera){ await startCamera(); }
+      else { bindDemoInput(); }
+      overlay.classList.add('hidden');
+      startSession();
+      requestAnimationFrame(renderLoop);
+    }catch(err){
+      console.error(err);
+      overlayStatus.textContent='摄像头或音频被拒绝 · 可尝试下方演示模式';
+      beginBtn.disabled=false; demoBtn.disabled=false;
+    }
+  }
+  beginBtn.addEventListener('click', ()=>beginRitual(true));
+  demoBtn.addEventListener('click', ()=>beginRitual(false));
+
+  resizeCanvas();
+  (function paintIdle(){
+    const g=ctx.createRadialGradient(window.innerWidth*0.5,window.innerHeight*0.5,window.innerHeight*0.05,window.innerWidth*0.5,window.innerHeight*0.5,window.innerHeight*0.95);
+    g.addColorStop(0,'#0a1c12'); g.addColorStop(0.6,'#06140d'); g.addColorStop(1,'#030c08');
+    ctx.fillStyle=g; ctx.fillRect(0,0,window.innerWidth,window.innerHeight);
+  })();
+
+})();
+</script>
+</body>
+</html>

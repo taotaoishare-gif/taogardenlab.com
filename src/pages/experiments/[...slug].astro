@@ -1,0 +1,405 @@
+---
+import Base from '../../layouts/Base.astro';
+import VideoLoop from '../../components/VideoLoop.astro';
+import EvidenceTag from '../../components/EvidenceTag.astro';
+import Bi from '../../components/Bi.astro';
+import { getCollection, render } from 'astro:content';
+import { iso, longDate } from '../../lib/site';
+import { UI } from '../../lib/ui';
+
+export async function getStaticPaths() {
+  const [experiments, atlas, readings] = await Promise.all([
+    getCollection('experiments'),
+    getCollection('atlas'),
+    getCollection('readings'),
+  ]);
+
+  const atlasById = new Map(atlas.map((a) => [a.id, a.data.title]));
+  const readingById = new Map(readings.map((r) => [r.id, r.data.author]));
+  const expById = new Map(experiments.map((e) => [e.id, e.data]));
+
+  return experiments.map((entry) => ({
+    params: { slug: entry.id },
+    props: {
+      entry,
+      lineage: {
+        field: entry.data.fromAtlas.map((id) => ({
+          id,
+          label: atlasById.get(id) ?? id,
+        })),
+        reading: entry.data.fromReadings.map((id) => ({
+          id,
+          label: readingById.get(id) ?? id,
+        })),
+        follows: entry.data.followsFrom.map((id) => ({
+          id,
+          label: expById.get(id)?.title ?? id,
+          number: expById.get(id)?.number,
+        })),
+      },
+    },
+  }));
+}
+
+const { entry, lineage } = Astro.props;
+const { Content } = await render(entry);
+const d = entry.data;
+const hasLineage =
+  lineage.field.length || lineage.reading.length || lineage.follows.length;
+---
+
+<Base title={d.title} description={d.summary}>
+  <article class="page">
+    <header class="wrap">
+      <p class="numeral">
+        <Bi en={UI.experiment.en} zh={UI.experiment.zh} />
+        {' '}{String(d.number).padStart(2, '0')}
+      </p>
+      <h1 class="title">{d.title}</h1>
+      <p class="mono head-meta">
+        <time datetime={iso(d.date)}>{longDate(d.date)}</time>
+        {' · '}{d.status}
+      </p>
+    </header>
+
+    <!-- The demo is the argument, so it comes before the argument. -->
+    <div class="film wrap">
+      <VideoLoop
+        src={d.video}
+        poster={d.poster}
+        sound
+        label={`Screen recording of ${entry.id.replace(/-/g, ' ')} running`}
+        caption="Screen recording of the piece running. Starts muted — sound is in the corner."
+      />
+    </div>
+
+    {
+      hasLineage && (
+        <div class="wrap">
+          <div class="lineage">
+            <p class="label lineage-label">
+              <Bi en={UI.lineage.en} zh={UI.lineage.zh} />
+            </p>
+            <ol>
+              {lineage.field.length > 0 && (
+                <li>
+                  <span class="numeral">
+                    <Bi en={UI.field.en} zh={UI.field.zh} />
+                  </span>
+                  <span class="items">
+                    {lineage.field.map((x, i) => (
+                      <>
+                        {i > 0 && <span class="sep"> · </span>}
+                        <a href={`/atlas/${x.id}`}>{x.label}</a>
+                      </>
+                    ))}
+                  </span>
+                </li>
+              )}
+              {lineage.reading.length > 0 && (
+                <li>
+                  <span class="numeral">
+                    <Bi en={UI.reading.en} zh={UI.reading.zh} />
+                  </span>
+                  <span class="items">
+                    {lineage.reading.map((x, i) => (
+                      <>
+                        {i > 0 && <span class="sep"> · </span>}
+                        <a href={`/notes/${x.id}`}>{x.label}</a>
+                      </>
+                    ))}
+                  </span>
+                </li>
+              )}
+              {lineage.follows.length > 0 && (
+                <li>
+                  <span class="numeral">
+                    <Bi en="Follows" zh="承接" />
+                  </span>
+                  <span class="items">
+                    {lineage.follows.map((x, i) => (
+                      <>
+                        {i > 0 && <span class="sep"> · </span>}
+                        <a href={`/experiments/${x.id}`}>{x.label}</a>
+                      </>
+                    ))}
+                  </span>
+                </li>
+              )}
+            </ol>
+          </div>
+        </div>
+      )
+    }
+
+    <div class="wrap columns">
+      <aside class="side">
+        <dl>
+          <dt class="label"><Bi en={UI.builtWith.en} zh={UI.builtWith.zh} /></dt>
+          <dd class="mono">{d.stack.join(', ')}</dd>
+
+          <dt class="label"><Bi en={UI.lenses.en} zh={UI.lenses.zh} /></dt>
+          <dd class="mono">{d.lenses.join(', ')}</dd>
+
+          <dt class="label"><Bi en={UI.role.en} zh={UI.role.zh} /></dt>
+          <dd class="mono">
+            <Bi
+              en="Concept, design and code — all of it mine."
+              zh="概念、设计与代码，全部由我完成。"
+            />
+          </dd>
+        </dl>
+
+        {
+          d.demo && (
+            <div class="try">
+              <a class="action" href={d.demo}>
+                <Bi en={UI.openDemo.en} zh={UI.openDemo.zh} /> →
+              </a>
+              {d.demoNote && <p class="mono note">{d.demoNote}</p>}
+            </div>
+          )
+        }
+      </aside>
+
+      <div class="prose body">
+        <Content />
+
+        {
+          d.process.length > 0 && (
+            <section class="process">
+              <h2><Bi en={UI.process.en} zh={UI.process.zh} /></h2>
+              <ol class="versions">
+                {d.process.map((step) => (
+                  <li>
+                    <p class="numeral v">{step.version}</p>
+                    <p class="vnote">{step.note}</p>
+                  </li>
+                ))}
+              </ol>
+            </section>
+          )
+        }
+
+        <div class="evidence-foot">
+          <EvidenceTag value={d.evidence} />
+        </div>
+      </div>
+    </div>
+  </article>
+</Base>
+
+<style>
+  .page {
+    padding-block: clamp(3rem, 8vh, 5rem) 0;
+  }
+
+  header {
+    max-width: 78rem;
+  }
+
+  .numeral {
+    margin: 0 0 1rem;
+  }
+
+  /* The question is the loudest thing on the page. */
+  .title {
+    font-family: var(--serif);
+    font-weight: 400;
+    font-size: clamp(1.9rem, 4.4vw, 3rem);
+    line-height: 1.2;
+    letter-spacing: -0.012em;
+    max-width: 20ch;
+    text-wrap: balance;
+  }
+
+  .head-meta {
+    margin-top: 1.5rem;
+  }
+
+  .film {
+    margin-block: clamp(2.5rem, 6vh, 3.5rem) 0;
+  }
+
+  /* Lineage — where this came from, before any prose. */
+  .lineage {
+    margin-block: clamp(2.5rem, 6vh, 4rem);
+    border-top: 1px solid var(--rule);
+    border-bottom: 1px solid var(--rule);
+    padding-block: 1.5rem;
+  }
+
+  .lineage-label {
+    margin: 0 0 1.1rem;
+  }
+
+  .lineage ol {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    max-width: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.65rem 2.5rem;
+  }
+
+  .lineage li {
+    margin: 0;
+    display: flex;
+    align-items: baseline;
+    gap: 0.9rem;
+  }
+
+  .lineage .items {
+    font-family: var(--serif);
+    font-size: 1rem;
+  }
+
+  .lineage a {
+    text-decoration: none;
+    border-bottom: 1px solid var(--forest-soft);
+    padding-bottom: 1px;
+  }
+
+  .sep {
+    color: var(--ink-faint);
+  }
+
+  .columns {
+    display: grid;
+    grid-template-columns: 15rem minmax(0, 1fr);
+    gap: clamp(2rem, 5vw, 4.5rem);
+    align-items: start;
+    margin-top: clamp(2rem, 5vh, 3.5rem);
+  }
+
+  .side {
+    position: sticky;
+    top: calc(var(--nav-h) + 1.5rem);
+  }
+
+  dl {
+    margin: 0 0 2.5rem;
+  }
+
+  dt {
+    margin-bottom: 0.4rem;
+  }
+
+  dd {
+    margin: 0 0 1.6rem;
+    line-height: 1.6;
+  }
+
+  .action {
+    display: inline-block;
+    font-family: var(--sans);
+    font-size: var(--size-meta);
+    letter-spacing: 0.08em;
+    text-decoration: none;
+    color: var(--ink);
+    border: 1px solid var(--forest-soft);
+    padding: 0.8rem 1.25rem;
+    transition:
+      border-color var(--dur) var(--ease),
+      background var(--dur) var(--ease);
+  }
+
+  .action:hover {
+    color: var(--forest);
+    border-color: var(--forest);
+    background: color-mix(in srgb, var(--forest) 5%, transparent);
+  }
+
+  .note {
+    margin-top: 0.9rem;
+    line-height: 1.6;
+  }
+
+  .body :global(h2),
+  .process h2 {
+    font-family: var(--sans);
+    font-size: var(--size-label);
+    font-weight: 500;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--forest);
+    margin-top: var(--section);
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--rule);
+  }
+
+  .body :global(h2:first-child) {
+    margin-top: 0;
+    padding-top: 0;
+    border-top: 0;
+  }
+
+  .body :global(h2 + p),
+  .body :global(h2 + table) {
+    margin-top: 1.5rem;
+  }
+
+  .body :global(li) {
+    line-height: 1.7;
+    margin-bottom: 0.9rem;
+  }
+
+  /* Process — the evolution, as a sequence rather than a claim. */
+  .versions {
+    list-style: none;
+    margin: 1.75rem 0 0;
+    padding: 0;
+    max-width: var(--measure);
+  }
+
+  .versions li {
+    display: grid;
+    grid-template-columns: 8.5rem 1fr;
+    gap: 1.5rem;
+    padding-block: 1.1rem;
+    border-top: 1px solid var(--rule);
+    margin: 0;
+  }
+
+  .versions li:last-child {
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .v {
+    margin: 0.15rem 0 0;
+  }
+
+  .vnote {
+    margin: 0;
+    font-size: 1rem;
+    line-height: 1.65;
+    color: var(--ink-soft);
+    max-width: none;
+  }
+
+  .evidence-foot {
+    margin-top: var(--section);
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--rule);
+  }
+
+  @media (max-width: 56rem) {
+    .columns {
+      grid-template-columns: 1fr;
+    }
+    .side {
+      position: static;
+      padding-bottom: 2.5rem;
+      border-bottom: 1px solid var(--rule);
+      margin-bottom: 3rem;
+    }
+    dl {
+      margin-bottom: 2rem;
+    }
+    .versions li {
+      grid-template-columns: 1fr;
+      gap: 0.35rem;
+    }
+  }
+</style>

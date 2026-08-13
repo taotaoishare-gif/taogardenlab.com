@@ -1,0 +1,184 @@
+---
+/* A ring of particles breathing at 0.1 Hz — six breaths a minute, the rate at
+   which respiratory sinus arrhythmia tends to resonate with the baroreflex.
+
+   It also mirrors the pointer: move slowly and the ring draws together, move
+   sharply and it scatters like flung sand. That is the whole argument of this
+   practice performed on the visitor before a word of it is read — and it is
+   the only place on the site where the interface makes a point by itself.
+
+   Nothing is measured. Nothing is transmitted. It is a mirror, not a sensor. */
+---
+
+<canvas class="field" data-field aria-hidden="true"></canvas>
+
+<style>
+  .field {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+    pointer-events: none;
+  }
+</style>
+
+<script>
+  const canvas = document.querySelector<HTMLCanvasElement>('[data-field]');
+  if (canvas) {
+    const ctx = canvas.getContext('2d', { alpha: true })!;
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+    let w = 0,
+      h = 0,
+      dpr = 1;
+    let count = 0;
+    let px!: Float32Array,
+      py!: Float32Array,
+      ang!: Float32Array,
+      rad!: Float32Array,
+      jit!: Float32Array,
+      spd!: Float32Array;
+
+    // Pointer speed → agitation. Slow hand gathers, sharp hand scatters.
+    let agitation = 0;
+    let lastX = 0,
+      lastY = 0,
+      lastT = 0,
+      seeded = false;
+
+    function resize() {
+      const rect = canvas!.getBoundingClientRect();
+      dpr = Math.min(window.devicePixelRatio || 1, 2);
+      w = Math.max(1, Math.round(rect.width));
+      h = Math.max(1, Math.round(rect.height));
+      canvas!.width = Math.round(w * dpr);
+      canvas!.height = Math.round(h * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+      // Scale the population to the area, and keep phones out of trouble.
+      const target = Math.round((w * h) / 260);
+      count = Math.max(600, Math.min(6000, target));
+      px = new Float32Array(count);
+      py = new Float32Array(count);
+      ang = new Float32Array(count);
+      rad = new Float32Array(count);
+      jit = new Float32Array(count);
+      spd = new Float32Array(count);
+
+      for (let i = 0; i < count; i++) {
+        ang[i] = Math.random() * Math.PI * 2;
+        // Cluster toward the ring, with a long tail inward and outward.
+        const t = Math.random();
+        rad[i] = 0.62 + (t * t - 0.5) * 0.5;
+        jit[i] = Math.random() * 2 - 1;
+        spd[i] = 0.35 + Math.random() * 0.85;
+        px[i] = NaN;
+      }
+    }
+
+    function frame(now: number) {
+      const cx = w / 2;
+      const cy = h / 2;
+      const base = Math.min(w, h) * 0.34;
+
+      // 0.1 Hz — one full cycle every ten seconds.
+      const breath = Math.sin((now / 1000) * 2 * Math.PI * 0.1);
+      const scale = 1 + breath * 0.11;
+
+      agitation *= 0.955;
+
+      ctx.clearRect(0, 0, w, h);
+
+      for (let i = 0; i < count; i++) {
+        const a = ang[i] + (now / 1000) * 0.012 * spd[i];
+        const spread = 1 + agitation * (1.6 + jit[i] * 1.5);
+        const r = base * rad[i] * scale * spread;
+
+        const wob = agitation * jit[i] * 26;
+        const tx = cx + Math.cos(a) * r + wob;
+        const ty = cy + Math.sin(a) * r * 0.82 + wob * 0.6;
+
+        // Ease toward the target so scatter and gather both take time.
+        if (Number.isNaN(px[i])) {
+          px[i] = tx;
+          py[i] = ty;
+        } else {
+          px[i] += (tx - px[i]) * 0.055;
+          py[i] += (ty - py[i]) * 0.055;
+        }
+
+        const near = 1 - Math.min(1, Math.abs(rad[i] - 0.62) / 0.42);
+        const alpha = (0.1 + near * 0.34) * (1 - agitation * 0.35);
+        ctx.fillStyle = `rgba(143, 168, 130, ${alpha.toFixed(3)})`;
+        ctx.fillRect(px[i], py[i], 1.15, 1.15);
+      }
+
+      raf = requestAnimationFrame(frame);
+    }
+
+    function still() {
+      // Reduced motion: one static exhale, drawn once.
+      const cx = w / 2,
+        cy = h / 2,
+        base = Math.min(w, h) * 0.34;
+      ctx.clearRect(0, 0, w, h);
+      for (let i = 0; i < count; i++) {
+        const r = base * rad[i];
+        const x = cx + Math.cos(ang[i]) * r;
+        const y = cy + Math.sin(ang[i]) * r * 0.82;
+        const near = 1 - Math.min(1, Math.abs(rad[i] - 0.62) / 0.42);
+        ctx.fillStyle = `rgba(143, 168, 130, ${(0.1 + near * 0.3).toFixed(3)})`;
+        ctx.fillRect(x, y, 1.15, 1.15);
+      }
+    }
+
+    let raf = 0;
+    function start() {
+      if (reduce.matches) {
+        still();
+        return;
+      }
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(frame);
+    }
+    function stop() {
+      cancelAnimationFrame(raf);
+      raf = 0;
+    }
+
+    window.addEventListener('pointermove', (e) => {
+      const t = performance.now();
+      if (seeded && t > lastT) {
+        const v =
+          Math.hypot(e.clientX - lastX, e.clientY - lastY) / (t - lastT); // px/ms
+        agitation = Math.min(1, agitation + Math.min(0.4, v * 0.055));
+      }
+      lastX = e.clientX;
+      lastY = e.clientY;
+      lastT = t;
+      seeded = true;
+    });
+
+    // Only run while on screen, and never in a hidden tab.
+    const io = new IntersectionObserver(
+      ([entry]) => (entry.isIntersecting && !document.hidden ? start() : stop()),
+      { threshold: 0 }
+    );
+
+    resize();
+    io.observe(canvas);
+    document.addEventListener('visibilitychange', () =>
+      document.hidden ? stop() : start()
+    );
+
+    let rt = 0;
+    window.addEventListener('resize', () => {
+      clearTimeout(rt);
+      rt = window.setTimeout(() => {
+        resize();
+        if (reduce.matches) still();
+      }, 180);
+    });
+  }
+</script>

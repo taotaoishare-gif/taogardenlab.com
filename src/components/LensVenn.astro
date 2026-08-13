@@ -1,0 +1,313 @@
+---
+import Bi from './Bi.astro';
+import { DOMAINS } from '../lib/domains';
+
+/* A large Venn drawn in CSS rather than SVG, so the text inside it wraps,
+   switches language, and stays selectable. Each lobe carries its own name and
+   keywords; the centre — where all three overlap — is the practice itself.
+
+   Below 52rem the circles keep the geometry but hand their text to a stacked
+   list underneath, because three text blocks inside a phone-width diagram is
+   unreadable at any size. */
+---
+
+<div class="lens" data-lens>
+  <div class="venn" role="img" aria-labelledby="lv-t lv-d">
+    <p id="lv-t" class="sr">Three overlapping research domains</p>
+    <p id="lv-d" class="sr">
+      Heaven — culture and contemplation; Earth — intelligent environments;
+      Human — human experience. TAO Garden sits where all three overlap.
+    </p>
+
+    {DOMAINS.map((_, i) => <span class:list={['circle', `c${i}`]} data-ring={i} />)}
+
+    {
+      DOMAINS.map((d, i) => (
+        <div class:list={['lobe', `l${i}`]} data-lobe={i}>
+          <p class="lmark">
+            <span class="glyph">{d.mark}</span>
+            <span class="classical tracked">
+              <Bi en={d.classical.en} zh={d.classical.zh} />
+            </span>
+          </p>
+          <p class="lname">
+            <Bi en={d.name.en} zh={d.name.zh} />
+          </p>
+          <ul class="kw">
+            {d.keywords.map((k) => (
+              <li class="mono">
+                <Bi en={k.en} zh={k.zh} />
+              </li>
+            ))}
+          </ul>
+        </div>
+      ))
+    }
+
+    <div class="core">
+      <p class="core-name tracked">TAO Garden</p>
+      <p class="core-sub mono">
+        <Bi en="where the three meet" zh="三才交汇" />
+      </p>
+    </div>
+  </div>
+
+  <!-- Narrow-screen text, same data. -->
+  <ul class="stack">
+    {
+      DOMAINS.map((d) => (
+        <li>
+          <p class="smark">
+            <span class="glyph">{d.mark}</span>
+            <span class="classical tracked">
+              <Bi en={d.classical.en} zh={d.classical.zh} />
+            </span>
+          </p>
+          <p class="sname">
+            <Bi en={d.name.en} zh={d.name.zh} />
+          </p>
+          <p class="sq">
+            <Bi en={d.question.en} zh={d.question.zh} />
+          </p>
+          <ul class="kw">
+            {d.keywords.map((k) => (
+              <li class="mono">
+                <Bi en={k.en} zh={k.zh} />
+              </li>
+            ))}
+          </ul>
+        </li>
+      ))
+    }
+  </ul>
+</div>
+
+<style>
+  .sr {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    margin: 0;
+  }
+
+  .lens {
+    /* Also capped by viewport height, so the whole diagram — including the
+       bottom lobe — stays on one screen instead of running past the fold. */
+    --w: min(46rem, 100%, 66vh);
+  }
+
+  .venn {
+    position: relative;
+    width: var(--w);
+    aspect-ratio: 1 / 0.94;
+    margin-inline: auto;
+  }
+
+  .circle {
+    position: absolute;
+    width: 62%;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    border: 1px solid color-mix(in srgb, var(--forest-glow) 45%, transparent);
+    background: color-mix(in srgb, var(--forest-deep) 62%, transparent);
+    mix-blend-mode: screen;
+    transition:
+      opacity var(--dur) var(--ease),
+      background var(--dur) var(--ease),
+      border-color var(--dur) var(--ease);
+  }
+
+  /* Centres at (33,33) (67,33) (50,60) of the width. */
+  .c0 {
+    left: 2%;
+    top: 2%;
+  }
+  .c1 {
+    right: 2%;
+    top: 2%;
+  }
+  .c2 {
+    left: 19%;
+    top: 31%;
+  }
+
+  .lobe {
+    position: absolute;
+    z-index: 3;
+    width: 27%;
+    text-align: center;
+    transition: opacity var(--dur) var(--ease);
+  }
+
+  .l0 {
+    left: 4.5%;
+    top: 15%;
+  }
+  .l1 {
+    right: 4.5%;
+    top: 15%;
+  }
+  .l2 {
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: 5%;
+    width: 30%;
+  }
+
+  .lmark {
+    margin: 0 0 0.35rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.15rem;
+  }
+
+  .glyph {
+    font-family: var(--serif);
+    font-size: clamp(1.1rem, 2.4vw, 1.6rem);
+    color: var(--forest-glow);
+    line-height: 1;
+  }
+
+  .classical {
+    font-size: 0.6rem;
+    letter-spacing: 0.22em;
+    color: var(--text-dim);
+  }
+
+  .lname {
+    margin: 0 0 0.6rem;
+    font-family: var(--sans);
+    font-size: clamp(0.72rem, 1.15vw, 0.9rem);
+    line-height: 1.35;
+    color: var(--text-clean);
+  }
+
+  .kw {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    max-width: none;
+  }
+
+  .kw li {
+    margin: 0 0 0.22rem;
+    font-size: clamp(0.55rem, 0.86vw, 0.68rem);
+    line-height: 1.45;
+    letter-spacing: 0.04em;
+    color: color-mix(in srgb, var(--text-clean) 62%, transparent);
+  }
+
+  /* The intersection. */
+  .core {
+    position: absolute;
+    z-index: 4;
+    left: 50%;
+    top: 45%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    width: 34%;
+  }
+
+  .core-name {
+    margin: 0 0 0.3rem;
+    font-size: clamp(0.78rem, 1.5vw, 1.05rem);
+    letter-spacing: 0.2em;
+    color: var(--text-clean);
+    text-shadow: 0 0 18px rgba(10, 9, 8, 0.9);
+  }
+
+  .core-sub {
+    margin: 0;
+    font-size: clamp(0.52rem, 0.8vw, 0.65rem);
+    letter-spacing: 0.14em;
+    color: var(--forest-glow);
+  }
+
+  /* Hover a lobe: the other two recede. */
+  .lens[data-active='0'] .circle:not([data-ring='0']),
+  .lens[data-active='1'] .circle:not([data-ring='1']),
+  .lens[data-active='2'] .circle:not([data-ring='2']) {
+    opacity: 0.3;
+  }
+  .lens[data-active='0'] .lobe:not([data-lobe='0']),
+  .lens[data-active='1'] .lobe:not([data-lobe='1']),
+  .lens[data-active='2'] .lobe:not([data-lobe='2']) {
+    opacity: 0.35;
+  }
+  .lens[data-active='0'] .circle[data-ring='0'],
+  .lens[data-active='1'] .circle[data-ring='1'],
+  .lens[data-active='2'] .circle[data-ring='2'] {
+    background: color-mix(in srgb, var(--forest-deep) 95%, transparent);
+    border-color: var(--forest-glow);
+  }
+
+  .stack {
+    display: none;
+  }
+
+  @media (max-width: 52rem) {
+    .venn {
+      width: min(22rem, 100%);
+      aspect-ratio: 1 / 0.94;
+    }
+    .lobe {
+      display: none;
+    }
+    .core {
+      width: 60%;
+    }
+
+    .stack {
+      display: block;
+      list-style: none;
+      margin: 2.5rem 0 0;
+      padding: 0;
+      max-width: none;
+    }
+    .stack > li {
+      margin: 0;
+      padding-block: 1.5rem;
+      border-top: 1px solid
+        color-mix(in srgb, var(--text-clean) 14%, transparent);
+    }
+    .smark {
+      margin: 0 0 0.4rem;
+      display: flex;
+      align-items: baseline;
+      gap: 0.6rem;
+    }
+    .sname {
+      margin: 0 0 0.5rem;
+      font-family: var(--sans);
+      font-size: var(--size-h3);
+      color: var(--text-clean);
+    }
+    .sq {
+      margin: 0 0 0.8rem;
+      font-size: 0.95rem;
+      line-height: 1.6;
+      color: color-mix(in srgb, var(--text-clean) 76%, transparent);
+      max-width: none;
+    }
+    .stack .kw li {
+      font-size: 0.7rem;
+    }
+  }
+</style>
+
+<script>
+  const lens = document.querySelector<HTMLElement>('[data-lens]');
+  if (lens && window.matchMedia('(hover: hover)').matches) {
+    const set = (v: string | null) =>
+      v
+        ? lens.setAttribute('data-active', v)
+        : lens.removeAttribute('data-active');
+    lens.querySelectorAll<HTMLElement>('[data-lobe]').forEach((lobe) => {
+      lobe.addEventListener('mouseenter', () => set(lobe.dataset.lobe!));
+      lobe.addEventListener('mouseleave', () => set(null));
+    });
+  }
+</script>

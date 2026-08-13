@@ -1,0 +1,151 @@
+---
+import Base from '../../layouts/Base.astro';
+import { getCollection } from 'astro:content';
+import { iso } from '../../lib/site';
+
+const experiments = (await getCollection('experiments')).sort(
+  (a, b) => b.data.number - a.data.number
+);
+---
+
+<Base
+  title="Experiments"
+  description="Things I built to think with. Small browser pieces, each with what failed in it."
+>
+  <div class="page wrap">
+    <header>
+      <p class="label">Experiments</p>
+      <h1>Things I built to think with.</h1>
+      <p class="intro dim">
+        Each one exists because I could not reason my way to the answer. Every
+        page includes a section on what did not work, because that is usually
+        where the result is.
+      </p>
+    </header>
+
+    <ul class="grid">
+      {
+        experiments.map((exp) => (
+          <li class="card reveal">
+            <a href={`/experiments/${exp.id}`}>
+              <div class="thumb">
+                <img
+                  src={exp.data.thumb ?? exp.data.poster}
+                  alt={`Still from ${exp.id.replace(/-/g, ' ')}`}
+                  loading="lazy"
+                  width="1280"
+                  height="720"
+                />
+              </div>
+              <div class="meta">
+                <span class="mono">
+                  {String(exp.data.number).padStart(2, '0')}
+                </span>
+                <time class="mono" datetime={iso(exp.data.date)}>
+                  {iso(exp.data.date)}
+                </time>
+              </div>
+              <h2>{exp.data.title}</h2>
+              <p class="summary dim">{exp.data.summary}</p>
+              <p class="mono lenses">
+                {exp.data.status} · {exp.data.lenses.join(' · ')}
+              </p>
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+</Base>
+
+<style>
+  .page {
+    padding-block: clamp(4rem, 10vh, 7rem) 0;
+  }
+
+  header {
+    margin-bottom: clamp(3.5rem, 9vh, 6rem);
+  }
+
+  h1 {
+    font-family: var(--serif);
+    font-weight: 400;
+    font-size: clamp(1.8rem, 3.6vw, 2.5rem);
+    letter-spacing: 0;
+    margin-top: 1.25rem;
+  }
+
+  .intro {
+    margin-top: 1.75rem;
+    max-width: 52ch;
+  }
+
+  .grid {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    max-width: none;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 22rem), 1fr));
+    gap: clamp(3rem, 6vw, 4.5rem) clamp(2rem, 4vw, 3.5rem);
+  }
+
+  .card {
+    margin: 0;
+  }
+
+  .card a {
+    text-decoration: none;
+    display: block;
+  }
+
+  .thumb {
+    background: var(--dark);
+    border: 1px solid var(--rule);
+    overflow: hidden;
+    aspect-ratio: 16 / 9;
+  }
+
+  .thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: opacity var(--dur) var(--ease);
+  }
+
+  .card a:hover .thumb img {
+    opacity: 0.82;
+  }
+
+  .meta {
+    display: flex;
+    gap: 1.25rem;
+    margin-top: 1.1rem;
+  }
+
+  .card h2 {
+    font-family: var(--serif);
+    font-weight: 400;
+    font-size: 1.1875rem;
+    line-height: 1.45;
+    letter-spacing: 0;
+    margin-top: 0.7rem;
+  }
+
+  .card a:hover h2 {
+    text-decoration: underline;
+    text-underline-offset: 0.22em;
+    text-decoration-color: var(--ink-faint);
+  }
+
+  .summary {
+    font-size: 0.95rem;
+    line-height: 1.65;
+    margin-top: 0.75rem;
+    max-width: none;
+  }
+
+  .lenses {
+    margin-top: 0.9rem;
+  }
+</style>

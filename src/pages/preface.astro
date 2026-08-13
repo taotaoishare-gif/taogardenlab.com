@@ -1,0 +1,123 @@
+---
+import Base from '../layouts/Base.astro';
+---
+
+<Base
+  title="Preface"
+  description="Why this question took hold, in the first person. No claims, no evidence labels."
+>
+  <article class="page wrap">
+    <header>
+      <p class="label">Preface</p>
+      <h1>序</h1>
+    </header>
+
+    <!-- No evidence labels on this page. Nothing here is a claim. -->
+    <div class="body">
+      <p>
+        I did not choose this question. It arrived in a garden in Suzhou, on an
+        afternoon when I was tired and not looking for anything, and it arrived
+        as a physical fact rather than as an idea: I had been walking for
+        twenty minutes and had covered perhaps eighty metres, and at some point
+        my breathing had changed without my noticing.
+      </p>
+
+      <p>
+        I have spent a long time since then trying to work out what did that.
+        Not what it felt like — I know what it felt like — but what in the
+        arrangement of walls and openings and paving was responsible, and
+        whether it was in the arrangement at all or only in me, on that
+        particular afternoon, being tired.
+      </p>
+
+      <p>
+        My background is not in research. I studied advertising. I have spent
+        years making things look like something — objects, exhibitions, cultural
+        products for museums and gardens — which is a training in surfaces, and
+        I am aware that it has left me able to produce the appearance of depth
+        rather quickly. It is the habit I most distrust in myself, and it is
+        also, I think, why I notice framing and sequencing at all. You learn to
+        see the devices when you have spent years operating them.
+      </p>
+
+      <p>
+        A few years ago I started building instead of designing, which mostly
+        meant learning to program badly and in public. The things on this site
+        are the result. They are small, they run in a browser, and each one
+        exists because I could not think my way to an answer and wanted to find
+        out what the thing would do if it existed. Most of what I have learned
+        came from the versions that did not work.
+      </p>
+
+      <p>
+        What I do not know is substantial and I would rather say it here than
+        have it inferred. I do not know whether any of this affects anyone. I
+        have never measured a person. I do not know whether the principles I
+        take from gardens and rituals survive being moved onto a screen, or
+        whether I am collecting motifs and calling them mechanisms. I do not
+        know whether the fact that a thousand years of practice arrived at these
+        forms is evidence that they work, or only evidence that they were
+        available.
+      </p>
+
+      <p>
+        There is also a question underneath this one that I am not equipped to
+        approach directly and cannot stop approaching indirectly, which is why
+        people suffer, and what has ever helped. I mention it because it is the
+        actual horizon, and because a research practice that pretends its
+        horizon is nearer than it is will keep producing answers to questions
+        nobody asked.
+      </p>
+
+      <p>
+        I am giving this ten years. Not because ten years is the right number
+        but because it is long enough that I cannot get to the end of it by
+        being clever, and I have noticed that being clever is my usual way out.
+      </p>
+
+      <p class="sign">
+        TAO<br />
+        <span class="mono">2026</span>
+      </p>
+    </div>
+  </article>
+</Base>
+
+<style>
+  .page {
+    padding-block: clamp(4rem, 10vh, 7rem) 0;
+  }
+
+  header {
+    margin-bottom: clamp(3rem, 8vh, 5rem);
+  }
+
+  h1 {
+    font-family: var(--serif);
+    font-weight: 400;
+    font-size: clamp(2.2rem, 5vw, 3.2rem);
+    letter-spacing: 0.2em;
+    margin-top: 1.25rem;
+  }
+
+  .body {
+    max-width: 60ch;
+  }
+
+  .body p {
+    font-size: clamp(1.0625rem, 1.5vw, 1.2rem);
+    line-height: 1.85;
+    margin-bottom: 2.4rem;
+    max-width: none;
+  }
+
+  .sign {
+    margin-top: 4.5rem;
+    color: var(--ink-soft);
+    font-style: italic;
+  }
+
+  .sign .mono {
+    font-style: normal;
+  }
+</style>

@@ -1,0 +1,101 @@
+---
+import type { Entry } from '../lib/entries';
+import { iso } from '../lib/site';
+
+interface Props {
+  entries: Entry[];
+}
+const { entries } = Astro.props;
+---
+
+<ol class="archive">
+  {
+    entries.map((entry) => (
+      <li>
+        <a href={entry.href}>
+          <time class="mono" datetime={iso(entry.date)}>
+            {iso(entry.date)}
+          </time>
+          <span class="kind mono">{entry.kindLabel}</span>
+          <span class="title">
+            {entry.title}
+            {entry.lang !== 'en' && <span class="mono langmark">中文</span>}
+          </span>
+        </a>
+      </li>
+    ))
+  }
+</ol>
+
+<style>
+  .archive {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    max-width: none;
+    border-top: 1px solid var(--rule);
+  }
+
+  li {
+    margin: 0;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  a {
+    display: grid;
+    grid-template-columns: 7.5rem 8rem 1fr;
+    gap: 1.5rem;
+    align-items: baseline;
+    padding: 1.15rem 0;
+    text-decoration: none;
+    transition: background var(--dur) var(--ease);
+  }
+
+  a:hover {
+    background: var(--paper-sunk);
+  }
+
+  a:hover .title {
+    text-decoration: underline;
+    text-underline-offset: 0.22em;
+    text-decoration-color: var(--ink-faint);
+  }
+
+  .kind {
+    letter-spacing: 0.08em;
+  }
+
+  .langmark {
+    margin-left: 0.75em;
+    letter-spacing: 0.08em;
+  }
+
+  .title {
+    font-family: var(--serif);
+    font-size: 1.0625rem;
+    line-height: 1.5;
+    color: var(--ink);
+    text-wrap: pretty;
+  }
+
+  @media (max-width: 46rem) {
+    a {
+      grid-template-columns: 1fr;
+      gap: 0.4rem;
+      padding: 1.1rem 0;
+    }
+    .kind {
+      grid-row: 1;
+      justify-self: start;
+    }
+    time {
+      grid-row: 1;
+    }
+    a {
+      grid-template-columns: 7.5rem 1fr;
+    }
+    .title {
+      grid-column: 1 / -1;
+    }
+  }
+</style>

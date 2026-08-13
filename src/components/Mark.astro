@@ -1,0 +1,51 @@
+---
+/* The TAOGarden.icns mark reduced to line-work: an eye whose iris is a spiral.
+   Drawn rather than traced, so it inherits currentColor, stays crisp at any
+   size, and can be thinned to sit beside the wordmark without competing with
+   it. The icns keeps the filled version for the favicon and app icon. */
+interface Props {
+  class?: string;
+}
+const { class: className } = Astro.props;
+---
+
+<svg
+  class:list={['mark-glyph', className]}
+  viewBox="0 0 64 64"
+  fill="none"
+  aria-hidden="true"
+  focusable="false"
+>
+  <path
+    d="M 4 32 C 14 17 50 17 60 32 C 50 47 14 47 4 32 Z"
+    stroke="currentColor"
+    stroke-width="2"
+    stroke-linejoin="round"
+  ></path>
+  <path
+    d="M 33.5 32
+       A 1.98 1.98 0 0 1 32 34.45
+       A 2.93 2.93 0 0 1 28.6 32
+       A 3.88 3.88 0 0 1 32 27.65
+       A 4.83 4.83 0 0 1 37.3 32
+       A 5.78 5.78 0 0 1 32 38.25
+       A 6.73 6.73 0 0 1 24.8 32
+       A 7.68 7.68 0 0 1 32 23.85
+       A 8.63 8.63 0 0 1 41.1 32
+       A 9.58 9.58 0 0 1 32 42.05
+       A 10.53 10.53 0 0 1 21 32"
+    stroke="currentColor"
+    stroke-width="1.7"
+    stroke-linecap="round"
+  ></path>
+</svg>
+
+<style>
+  .mark-glyph {
+    width: 1.45em;
+    height: 1.45em;
+    display: block;
+    flex: none;
+    opacity: 0.9;
+  }
+</style>

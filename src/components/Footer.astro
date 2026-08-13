@@ -1,0 +1,77 @@
+---
+const buildDate = new Date().toISOString().slice(0, 10);
+---
+
+<footer class="site-footer">
+  <div class="wrap inner">
+    <p class="line">This site grows as the work grows.</p>
+    <nav aria-label="Secondary">
+      {/* The home page no longer carries a link row, so the reading pages
+          are where Research, Preface and the Index stay reachable. */}
+      <ul>
+        <li><a href="/research">Research</a></li>
+        <li><a href="/preface">Preface</a></li>
+        <li><a href="/about">Why I am here</a></li>
+        <li><a href="/index">Index</a></li>
+        <li><a href="mailto:taotaoishare@gmail.com">Contact</a></li>
+      </ul>
+    </nav>
+    <p class="mono stamp">
+      TAO · Independent research practice · Last updated {buildDate}
+    </p>
+  </div>
+</footer>
+
+<style>
+  .site-footer {
+    border-top: 1px solid var(--rule);
+    margin-top: var(--section);
+    padding-block: 4rem 5rem;
+  }
+
+  .inner {
+    display: flex;
+    flex-direction: column;
+    gap: 1.75rem;
+  }
+
+  .line {
+    font-family: var(--serif);
+    font-size: 1rem;
+    color: var(--ink-soft);
+    margin: 0;
+  }
+
+  ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2rem;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    max-width: none;
+  }
+
+  li {
+    margin: 0;
+  }
+
+  a {
+    font-family: var(--sans);
+    font-size: 0.8125rem;
+    letter-spacing: 0.04em;
+    text-decoration: none;
+    color: var(--ink-soft);
+    border-bottom: 1px solid var(--rule);
+    padding-bottom: 2px;
+    transition: color var(--dur) var(--ease);
+  }
+
+  a:hover {
+    color: var(--ink);
+  }
+
+  .stamp {
+    margin: 0;
+  }
+</style>

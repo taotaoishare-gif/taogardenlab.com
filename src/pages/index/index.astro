@@ -1,0 +1,53 @@
+---
+import Base from '../../layouts/Base.astro';
+import ArchiveList from '../../components/ArchiveList.astro';
+import { allEntries } from '../../lib/entries';
+
+const entries = await allEntries();
+---
+
+<Base
+  title="Index"
+  description="Every entry on this site, in reverse chronological order. No categories, no filters."
+>
+  <div class="page wrap">
+    <header>
+      <p class="label">Index</p>
+      <h1>Everything, in order.</h1>
+      <p class="intro dim">
+        One page. Every entry. Reverse chronological, no categories, no
+        filters, nothing ranked. In the first year this is short. It is the only
+        proof of continuity there is, and continuity cannot be faked.
+      </p>
+    </header>
+
+    <ArchiveList entries={entries} />
+  </div>
+</Base>
+
+<style>
+  .page {
+    padding-block: clamp(4rem, 10vh, 7rem) 0;
+  }
+
+  header {
+    margin-bottom: clamp(3rem, 7vh, 4.5rem);
+  }
+
+  h1 {
+    font-family: var(--serif);
+    font-weight: 400;
+    font-size: clamp(1.7rem, 3.4vw, 2.4rem);
+    letter-spacing: 0;
+    margin-top: 1.25rem;
+  }
+
+  .intro {
+    margin-top: 1.75rem;
+    max-width: 54ch;
+  }
+
+  .count {
+    margin-top: 1.5rem;
+  }
+</style>

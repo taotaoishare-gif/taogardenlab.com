@@ -1,0 +1,134 @@
+---
+import Base from '../../layouts/Base.astro';
+import EvidenceTag from '../../components/EvidenceTag.astro';
+import { getCollection, render } from 'astro:content';
+import { iso, longDate } from '../../lib/site';
+
+export async function getStaticPaths() {
+  const [observations, readings, labNotes] = await Promise.all([
+    getCollection('observations'),
+    getCollection('readings'),
+    getCollection('lab-notes'),
+  ]);
+
+  return [
+    ...observations.map((entry) => ({
+      params: { slug: entry.id },
+      props: { entry, kind: 'observation' as const },
+    })),
+    ...readings.map((entry) => ({
+      params: { slug: entry.id },
+      props: { entry, kind: 'reading' as const },
+    })),
+    ...labNotes.map((entry) => ({
+      params: { slug: entry.id },
+      props: { entry, kind: 'lab' as const },
+    })),
+  ];
+}
+
+const { entry, kind } = Astro.props;
+const { Content } = await render(entry as any);
+const d = entry.data as any;
+
+const kindLabel =
+  kind === 'observation' ? 'Observation' : kind === 'reading' ? 'Reading' : 'Lab note';
+
+/* An observation makes no claim, so it gets no evidence label (§1). */
+const showEvidence = kind !== 'observation';
+
+const meta =
+  kind === 'reading'
+    ? `${d.author} · ${d.work}${d.year ? `, ${d.year}` : ''}`
+    : d.place || null;
+---
+
+<Base title={d.title} description={`${kindLabel} — ${d.title}`}>
+  <article class:list={['page', 'wrap', { short: kind === 'observation' }]}>
+    <header>
+      <p class="label">{kindLabel}</p>
+      <h1>{d.title}</h1>
+      <p class="mono head-meta">
+        <time datetime={iso(d.date)}>{longDate(d.date)}</time>
+        {meta && <>{' · '}{meta}</>}
+      </p>
+    </header>
+
+    <div class="prose body">
+      <Content />
+    </div>
+
+    <footer class="foot">
+      {showEvidence && <EvidenceTag value={d.evidence} />}
+      <p class="mono back"><a href="/notes">← Notes</a></p>
+    </footer>
+  </article>
+</Base>
+
+<style>
+  .page {
+    padding-block: clamp(4rem, 10vh, 7rem) 0;
+  }
+
+  header {
+    margin-bottom: clamp(3rem, 7vh, 4rem);
+  }
+
+  h1 {
+    font-family: var(--serif);
+    font-weight: 400;
+    font-size: clamp(1.6rem, 3.2vw, 2.2rem);
+    line-height: 1.35;
+    letter-spacing: 0;
+    max-width: 26ch;
+    margin-top: 1.25rem;
+  }
+
+  .head-meta {
+    margin-top: 1.5rem;
+  }
+
+  /* An observation is short. It gets room rather than filler. */
+  .short .body :global(p) {
+    font-size: clamp(1.15rem, 2vw, 1.4rem);
+    line-height: 1.8;
+    max-width: 38ch;
+  }
+
+  .body :global(h2) {
+    font-family: var(--sans);
+    font-size: 0.75rem;
+    font-weight: 500;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin-top: 4rem;
+  }
+
+  .body :global(h2 + p) {
+    margin-top: 1.25rem;
+  }
+
+  .foot {
+    margin-top: var(--section);
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--rule);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem 2rem;
+    justify-content: space-between;
+  }
+
+  .back {
+    margin: 0;
+  }
+
+  .back a {
+    color: var(--ink-soft);
+    text-decoration: none;
+  }
+
+  .back a:hover {
+    color: var(--ink);
+  }
+</style>

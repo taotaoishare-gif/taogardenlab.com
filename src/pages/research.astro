@@ -1,0 +1,334 @@
+---
+import Base from '../layouts/Base.astro';
+import ResearchLoop from '../components/ResearchLoop.astro';
+import DomainMap from '../components/DomainMap.astro';
+import Bi from '../components/Bi.astro';
+import { SITE } from '../lib/site';
+import { UI } from '../lib/ui';
+
+const tiers = [
+  {
+    n: '01',
+    title: { en: 'The human condition', zh: '人的处境' },
+    body: [
+      {
+        en: 'Why do humans suffer? How have people learned to live with suffering, uncertainty and impermanence — and what did they build in order to do it?',
+        zh: '人为什么受苦？人类如何学会与苦难、不确定和无常共处——为此又建造了什么？',
+      },
+      {
+        en: 'This is the horizon, not the promise. It is not a question a prototype can answer, and I am not going to claim otherwise. It is here because it is what the rest is oriented towards, and leaving it out would misrepresent why any of this is being done.',
+        zh: '这是地平线，不是承诺。原型回答不了它，我也不会假装能。它出现在这里，是因为其余一切都朝向它；略去它，就是在误述这件事为什么被做。',
+      },
+    ],
+    dim: 1,
+  },
+  {
+    n: '02',
+    title: {
+      en: 'Cultural technologies of attention',
+      zh: '注意力的文化技术',
+    },
+    body: [
+      {
+        en: 'Gardens, rituals, architecture, objects, walking, sound, light, stillness. Long-standing arrangements that shape how people attend, refined over centuries without any theory of attention to guide them.',
+        zh: '园林、仪式、建筑、器物、行走、声、光、静。它们是长期存在的安排，塑造人如何注意，并且在没有任何注意力理论指导的情况下被打磨了几个世纪。',
+      },
+      {
+        en: 'I treat these as engineering, not as heritage. The question is what problem each one solves and by what mechanism — which is the work the Field Atlas does, one entry at a time.',
+        zh: '我把它们当作工程，而不是遗产。问题是每一个解决了什么问题、通过什么机制——这正是田野图谱一条一条在做的事。',
+      },
+    ],
+    dim: 1,
+  },
+  {
+    n: '03',
+    title: { en: 'Intelligent environments', zh: '智能环境' },
+    body: [
+      {
+        en: 'Computer vision, embodied interaction, ambient and responsive systems, generative media. What becomes possible when a room, a surface or an object can register a person and answer.',
+        zh: '计算机视觉、具身交互、环境与响应式系统、生成式媒介。当一个房间、一个表面或一件器物能够察觉到人并作出回应，什么才成为可能。',
+      },
+      {
+        en: 'My work here is at the scale of a browser tab and a webcam. I have not built at room scale, and nothing on this site should be read as though I had.',
+        zh: '我的工作目前停留在一个浏览器标签页和一个摄像头的尺度。我没有在房间尺度上建造过，本站任何内容都不应被读成我已经做过。',
+      },
+    ],
+    dim: 1,
+  },
+];
+
+const openQuestions = [
+  {
+    en: 'Whether any of this survives leaving the browser tab.',
+    zh: '这一切离开浏览器标签页之后是否还成立。',
+  },
+  {
+    en: 'Whether an environment can act on its own schedule instead of waiting to be opened — without becoming a notification.',
+    zh: '环境能否按自己的时间行动，而不是等待被打开——同时不变成一条通知。',
+  },
+  {
+    en: 'Whether physiological signals add anything that pacing, sound and light do not already do.',
+    zh: '生理信号能否提供节奏、声音与光线尚未提供的东西。',
+  },
+  {
+    en: 'What changes when two people are in the responsive space at once.',
+    zh: '当两个人同时在这个会回应的空间里，什么会改变。',
+  },
+  {
+    en: 'Whether these principles read the same way to someone who did not grow up with them.',
+    zh: '对没有在这些传统里长大的人来说，这些原则是否读起来是同一件事。',
+  },
+  {
+    en: 'Whether a system can accompany one person across years rather than minutes.',
+    zh: '一个系统能否陪伴一个人跨越数年，而不是数分钟。',
+  },
+];
+---
+
+<Base
+  title="Research"
+  description="Three domains, the question hierarchy from horizon down to a working question, the method actually used, and the questions I have not earned the right to answer."
+>
+  <article class="page">
+    <header class="wrap">
+      <p class="numeral">
+        <Bi en={UI.research.en} zh={UI.research.zh} />
+      </p>
+      <h1 class="lead">
+        <Bi
+          en="I do not begin with answers. I begin with questions."
+          zh="我不从答案开始。我从问题开始。"
+        />
+      </h1>
+    </header>
+
+    <!-- Three domains — the lateral map. -->
+    <section class="band wrap" aria-labelledby="domains-title">
+      <h2 id="domains-title" class="label">
+        <Bi en={UI.threeDomains.en} zh={UI.threeDomains.zh} />
+      </h2>
+      <div class="reveal">
+        <DomainMap variant="full" />
+      </div>
+    </section>
+
+    <!-- The vertical descent, elaborated. -->
+    <section class="band band--sunk" aria-labelledby="tiers-title">
+      <div class="wrap">
+        <h2 id="tiers-title" class="label">
+          <Bi
+            en="From the horizon down to something buildable"
+            zh="从地平线降到可以动手的东西"
+          />
+        </h2>
+
+        {
+          tiers.map((tier) => (
+            <div class="tier reveal">
+              <p class="numeral">{tier.n}</p>
+              <div class="tier-body">
+                <h3>
+                  <Bi en={tier.title.en} zh={tier.title.zh} />
+                </h3>
+                {tier.body.map((p, i) => (
+                  <p class={i > 0 ? 'dim' : undefined}><Bi en={p.en} zh={p.zh} /></p>
+                ))}
+              </div>
+            </div>
+          ))
+        }
+
+        <div class="tier working reveal">
+          <p class="numeral">04</p>
+          <div class="tier-body">
+            <h3>
+              <Bi
+                en="Current research question"
+                zh="当前研究问题"
+              />
+            </h3>
+            <p class="question"><Bi en={SITE.currentQuestion.en} zh={SITE.currentQuestion.zh} /></p>
+            <p class="mono working-note">
+              <Bi en={UI.workingQuestion.en} zh={UI.workingQuestion.zh} /> ·
+              <Bi
+                en=" expected to change · last revised August 2026"
+                zh=" 预期会变 · 最近修订 2026 年 8 月"
+              />
+            </p>
+            <p class="dim"><Bi en="This is written as the current question deliberately. In two years the centre of this work may turn out to be agency, or meaning-making, rather than attention. A research question changing is a result, not a failure, and the structure of this site is built to let that happen without anything having to be rebuilt." zh="写成「当前」是刻意的。两年后，这项工作的核心也许会变成能动性或意义建构，而不是注意力。研究问题发生变化本身就是成果，而不是失败；这个网站的结构就是为了让这件事发生时不必重建任何东西。" /></p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Method. -->
+    <section class="band wrap" aria-labelledby="method-title">
+      <h2 id="method-title" class="label">
+        <Bi en={UI.method.en} zh={UI.method.zh} />
+      </h2>
+      <p class="method-line"><Bi en="Fieldwork · Reading · Interpretation · Prototyping · Testing (when appropriate) · Reflection · Iteration" zh="田野 · 阅读 · 阐释 · 造原型 · 测试（在适当时） · 反思 · 迭代" /></p>
+
+      <div class="method-body">
+        <p><Bi en="What that means in practice, stated plainly so it cannot be read as more than it is: I go places and write down what I see. I read, and write down where I disagree. I build small things to think with, and document what failed in them. I have not yet run a study." zh="它在实践中的意思，说得直白一点，免得被读成更多：我去一些地方，写下我看到的。我读书，写下我不同意的地方。我造小东西来思考，并记录它们哪里失败了。我还没有做过任何一项研究。" /></p>
+        <p class="warn">
+          <Bi
+            en="No formal evaluation has been conducted on any experiment on this site. There is no participant data, no physiological measurement, no control condition, and no dataset."
+            zh="本站任何一个实验都没有做过正式评估。没有受试者数据，没有生理测量，没有对照条件，也没有数据集。"
+          />
+        </p>
+      </div>
+
+      <ResearchLoop />
+    </section>
+
+    <!-- What I do not know. -->
+    <section class="band band--sunk" aria-labelledby="open-title">
+      <div class="wrap">
+        <h2 id="open-title" class="open-head">
+          <Bi en={UI.openQuestions.en} zh={UI.openQuestions.zh} />
+        </h2>
+        <p class="open-intro dim"><Bi en="These are directions I am curious about. I have not built, tested, or validated any of them." zh="这些是我感到好奇的方向。我没有建造、测试或验证过其中任何一个。" /></p>
+        <ul class="open">
+          {
+            openQuestions.map((q) => (
+              <li class="reveal">
+                <Bi en={q.en} zh={q.zh} />
+              </li>
+            ))
+          }
+        </ul>
+      </div>
+    </section>
+  </article>
+</Base>
+
+<style>
+  .page {
+    padding-block: clamp(3rem, 8vh, 5rem) 0;
+  }
+
+  header {
+    margin-bottom: clamp(1rem, 3vh, 2rem);
+  }
+
+  .numeral {
+    margin: 0 0 0.9rem;
+  }
+
+  .lead {
+    font-family: var(--serif);
+    font-weight: 400;
+    font-size: clamp(1.6rem, 3.4vw, 2.3rem);
+    line-height: 1.35;
+    letter-spacing: 0;
+    max-width: 22ch;
+  }
+
+  .band > .label,
+  .band .wrap > .label {
+    margin-bottom: clamp(2.5rem, 6vh, 4rem);
+  }
+
+  .tier {
+    display: grid;
+    grid-template-columns: 5rem 1fr;
+    gap: 2rem;
+    padding-block: clamp(2rem, 5vh, 3rem);
+    border-top: 1px solid var(--rule);
+  }
+
+  .tier .numeral {
+    margin: 0.35rem 0 0;
+  }
+
+  .tier-body {
+    max-width: var(--measure);
+  }
+
+  .tier h3 {
+    font-family: var(--sans);
+    font-size: var(--size-h2);
+    font-weight: 500;
+    margin-bottom: 1.25rem;
+  }
+
+  .tier :global(p) {
+    margin-bottom: var(--step);
+  }
+
+  /* The loudest line on this page — but not display size. This question is
+     long by design (it is the formal working question, not the hook), and a
+     long sentence set at 4.5rem stops being emphasis and becomes a wall. */
+  .question {
+    font-family: var(--serif);
+    font-size: clamp(1.7rem, 3.4vw, 2.5rem);
+    line-height: 1.25;
+    letter-spacing: -0.01em;
+    max-width: 20ch;
+    margin: 0.5rem 0 1.25rem;
+    color: var(--forest);
+    text-wrap: balance;
+  }
+
+  .working-note {
+    margin-bottom: 2rem;
+  }
+
+  .method-line {
+    font-family: var(--serif);
+    font-size: clamp(1.05rem, 1.8vw, 1.25rem);
+    line-height: 1.7;
+    max-width: 46ch;
+    margin: 0 0 3rem;
+  }
+
+  .method-body {
+    max-width: var(--measure);
+  }
+
+  .warn {
+    border-left: 2px solid var(--forest);
+    padding-left: 1.25rem;
+    color: var(--ink);
+  }
+
+  .open-head {
+    font-family: var(--serif);
+    font-weight: 400;
+    font-size: clamp(1.5rem, 3vw, 2.1rem);
+    line-height: 1.3;
+    letter-spacing: 0;
+    max-width: 24ch;
+    margin-bottom: 1.5rem;
+  }
+
+  .open-intro {
+    max-width: 52ch;
+    margin-bottom: 3rem;
+  }
+
+  .open {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    max-width: none;
+    border-top: 1px solid var(--rule);
+  }
+
+  .open li {
+    margin: 0;
+    padding-block: 1.35rem;
+    border-bottom: 1px solid var(--rule);
+    font-family: var(--serif);
+    font-size: 1.0625rem;
+    line-height: 1.6;
+    max-width: 60ch;
+  }
+
+  @media (max-width: 40rem) {
+    .tier {
+      grid-template-columns: 1fr;
+      gap: 0.75rem;
+    }
+  }
+</style>

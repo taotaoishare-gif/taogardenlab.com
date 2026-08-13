@@ -1,0 +1,1136 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>凤冠流苏 · Phoenix Crown v1 — TAO Garden</title>
+<!--
+  凤冠流苏 · 环佩玎珰  Phoenix Crown v1
+  「足下蹑丝履，头上玳瑁光。腰若流纨素，耳著明月珰。」— 《孔雀东南飞》
+  抬手轻拂冠下珠玑诗字，流苏如水波荡开，环佩自鸣，筝音随起。
+  All camera processing runs locally. TAO Garden 2026-07.
+-->
+<script src="/vendor/mediapipe/camera_utils/camera_utils.js"></script>
+<script src="/vendor/mediapipe/hands/hands.js"></script>
+<style>
+  :root{
+    --gold:#d9b36c;
+    --gold-hi:#f0d494;
+    --ivory:#e8dfc6;
+    --dim:rgba(232,223,198,.5);
+    --seal:#a63b2a;
+  }
+  *{ margin:0; padding:0; box-sizing:border-box; }
+  html,body{ width:100%; height:100%; overflow:hidden; background:#000;
+    font-family:"Songti SC","STSong","Noto Serif SC","SimSun",serif;
+    -webkit-user-select:none; user-select:none; cursor:none; }
+  canvas#stage{ position:fixed; inset:0; display:block; }
+
+  /* ———— 摄像头预览 ———— */
+  video#cam{ position:fixed; left:22px; bottom:86px; width:128px; height:72px;
+    object-fit:cover; transform:scaleX(-1); opacity:.3; border-radius:3px;
+    border:1px solid rgba(217,179,108,.35); filter:grayscale(.7) sepia(.2);
+    display:none; pointer-events:none; z-index:6; }
+
+  /* ———— HUD ———— */
+  .hud{ position:fixed; z-index:8; color:var(--ivory); pointer-events:none; }
+  #title{ top:44px; right:40px; writing-mode:vertical-rl; text-align:start; }
+  #title h1{ font-size:clamp(26px,3.4vw,40px); font-weight:400; letter-spacing:.34em;
+    color:var(--ivory); text-shadow:0 0 18px rgba(217,179,108,.35); }
+  #title .sub{ font-size:12px; letter-spacing:.42em; margin-right:14px; opacity:.55; }
+  #title .seal{ writing-mode:horizontal-tb; width:30px; height:30px; margin-top:18px;
+    background:var(--seal); color:#f4ece2; font-size:17px; line-height:30px;
+    text-align:center; border-radius:2px; box-shadow:0 1px 8px rgba(166,59,42,.5); }
+
+  #poem{ left:40px; bottom:38px; }
+  #poem .cn{ font-size:15px; letter-spacing:.28em; opacity:.82; line-height:1.9; }
+  #poem .en{ font-size:10.5px; letter-spacing:.14em; opacity:.45; margin-top:8px;
+    font-family:Georgia,serif; font-style:italic; }
+  #poem .src{ font-size:10.5px; letter-spacing:.2em; opacity:.4; margin-top:6px; }
+
+  #ctrl{ right:40px; bottom:34px; text-align:right; pointer-events:auto; }
+  #ctrl .privacy{ font-size:10px; letter-spacing:.12em; opacity:.4; margin-bottom:10px; }
+  #ctrl .btns{ display:flex; gap:10px; justify-content:flex-end; }
+  .cbtn{ pointer-events:auto; cursor:pointer; background:rgba(20,16,10,.45);
+    border:1px solid rgba(217,179,108,.4); color:var(--ivory);
+    font-family:inherit; font-size:12px; letter-spacing:.22em; text-indent:.22em;
+    padding:7px 14px; border-radius:2px; backdrop-filter:blur(3px);
+    transition:all .25s; }
+  .cbtn:hover{ border-color:var(--gold-hi); color:var(--gold-hi); }
+  .cbtn.off{ opacity:.45; }
+
+  #ver{ left:40px; top:40px; font-size:10px; letter-spacing:.3em; opacity:.35; }
+
+  /* ———— 入场帷幕 ———— */
+  #veil{ position:fixed; inset:0; z-index:20; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; cursor:default;
+    background:
+      radial-gradient(90% 62% at 50% -6%, rgba(217,179,108,.20), rgba(217,179,108,0) 60%),
+      radial-gradient(80% 55% at 50% 108%, rgba(38,72,98,.30), rgba(38,72,98,0) 62%),
+      linear-gradient(180deg,#0a0806 0%, #050505 55%, #070609 100%);
+    transition:opacity 1.6s ease; }
+  #veil.gone{ opacity:0; pointer-events:none; }
+  #veil .vseal{ width:52px; height:52px; background:var(--seal); color:#f4ece2;
+    font-size:28px; line-height:52px; text-align:center; border-radius:3px;
+    box-shadow:0 2px 16px rgba(166,59,42,.55); margin-bottom:34px; }
+  #veil h1{ font-size:clamp(34px,5vw,54px); font-weight:400; color:var(--ivory);
+    letter-spacing:.5em; text-indent:.5em;
+    text-shadow:0 0 26px rgba(217,179,108,.4); }
+  #veil .vsub{ font-size:13px; letter-spacing:.46em; text-indent:.46em;
+    color:var(--ivory); opacity:.6; margin-top:20px; }
+  #veil .vpoem{ font-size:14px; letter-spacing:.24em; color:var(--ivory);
+    opacity:.72; margin-top:44px; }
+  #veil .vpoem-en{ font-size:11px; letter-spacing:.1em; color:var(--ivory); opacity:.42;
+    margin-top:10px; font-family:Georgia,serif; font-style:italic; }
+  #veil .vline{ width:1px; height:52px; background:rgba(217,179,108,.4); margin:38px 0; }
+  #veil .vhint{ font-size:12px; letter-spacing:.3em; text-indent:.3em;
+    color:var(--ivory); opacity:.55; margin-bottom:30px; }
+  #veil .vbtns{ display:flex; gap:22px; }
+  .vbtn{ cursor:pointer; background:transparent; border:1px solid rgba(217,179,108,.5);
+    color:var(--ivory); font-family:inherit; font-size:14px;
+    letter-spacing:.32em; text-indent:.32em; padding:15px 34px; border-radius:2px;
+    transition:all .3s; }
+  .vbtn:hover{ border-color:var(--gold-hi); color:var(--gold-hi);
+    box-shadow:0 0 22px rgba(217,179,108,.22); }
+  .vbtn small{ display:block; font-size:9.5px; letter-spacing:.14em; text-indent:.14em;
+    opacity:.55; margin-top:7px; }
+  #veil .vpriv{ font-size:10px; letter-spacing:.12em; color:var(--ivory); opacity:.38;
+    margin-top:34px; }
+
+  #toast{ position:fixed; left:50%; bottom:120px; transform:translateX(-50%);
+    z-index:30; font-size:12px; letter-spacing:.2em; color:var(--ivory);
+    background:rgba(14,11,7,.85); border:1px solid rgba(217,179,108,.35);
+    padding:10px 22px; border-radius:2px; opacity:0; transition:opacity .5s;
+    pointer-events:none; }
+</style>
+</head>
+<body>
+<canvas id="stage"></canvas>
+<video id="cam" playsinline muted></video>
+
+<div class="hud" id="ver">PHOENIX CROWN · 凤冠流苏 v1 · TAO GARDEN</div>
+
+<div class="hud" id="title">
+  <h1>凤冠流苏</h1>
+  <div class="sub">环佩玎珰 · 以手拂珠</div>
+  <div class="seal">珰</div>
+</div>
+
+<div class="hud" id="poem">
+  <div class="cn">足下蹑丝履，头上玳瑁光。<br>腰若流纨素，耳著明月珰。</div>
+  <div class="en">Her waist a stream of flowing silk; at her ears, pendants bright as the moon.</div>
+  <div class="src">— 《孔雀东南飞》</div>
+</div>
+
+<div class="hud" id="ctrl">
+  <div class="privacy">摄像头影像仅于本机运算 · Camera stays on this device</div>
+  <div class="btns">
+    <button class="cbtn" id="btnMirror" style="display:none">镜 · 预览</button>
+    <button class="cbtn" id="btnMode">模式</button>
+    <button class="cbtn" id="btnMute">音 · 开</button>
+  </div>
+</div>
+
+<div id="veil">
+  <div class="vseal">珰</div>
+  <h1>凤冠流苏</h1>
+  <div class="vsub">环佩玎珰 · PHOENIX CROWN</div>
+  <div class="vpoem">足下蹑丝履，头上玳瑁光。腰若流纨素，耳著明月珰。</div>
+  <div class="vpoem-en">Brush the hanging pearls, and hear the jade begin to sing.</div>
+  <div class="vline"></div>
+  <div class="vhint">抬手轻拂 · 珠玑成波 · 环佩玎珰 · 筝音随起</div>
+  <div class="vbtns">
+    <button class="vbtn" id="btnCam">抬手拂珠<small>开启摄像头 · WITH CAMERA</small></button>
+    <button class="vbtn" id="btnDemo">拱手观妆<small>无摄像头演示 · DEMO MODE</small></button>
+  </div>
+  <div class="vpriv">◦ 影像仅在本机运算，不存储、不上传 · All processing is local, nothing is stored or uploaded</div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+'use strict';
+/* ============================================================
+   凤冠流苏 · Phoenix Crown v1 — TAO Garden
+   ============================================================ */
+const cvs = document.getElementById('stage');
+const ctx = cvs.getContext('2d');
+const DPR = Math.min(window.devicePixelRatio || 1, 2);
+let W = 0, H = 0;
+
+/* ———————— 诗文源：《孔雀东南飞》严妆一段 ———————— */
+const POEM =
+  '鸡鸣外欲曙新妇起严妆著我绣夹裙事事四五通' +
+  '足下蹑丝履头上玳瑁光腰若流纨素耳著明月珰' +
+  '指如削葱根口如含朱丹纤纤作细步精妙世无双';
+
+/* ———————— 全局状态 ———————— */
+let crownCvs = null, anchors = [];
+let crownR = 0, crownBaseY = 0;
+let strands = [];
+let sparks = [], rings = [];
+let vortex = [], motes = [];
+let started = false, cameraMode = false, muted = false;
+let lastInteract = 0, lastBreeze = 0, breezeGap = 0, breeze = null;
+let hitTimes = [], lastArp = 0;
+let timePrev = performance.now();
+let dtG = 0;
+
+const GRAV = 1500, AIR = .986, PR = 34;
+
+/* 指针（手 / 鼠标），最多两只手 */
+const pointers = [[],[]].map(() => ({
+  x:0, y:0, px:0, py:0, tx:0, ty:0, active:false, seen:0, trail:[]
+}));
+
+/* ============================================================
+   预渲染精灵：字迹 · 珠玉 · 辉光
+   ============================================================ */
+const glyphCache = new Map();
+const GLYPH_CELL = 24;
+function glyphFor(ch){
+  if(glyphCache.has(ch)) return glyphCache.get(ch);
+  const g = document.createElement('canvas');
+  g.width = g.height = GLYPH_CELL*2;
+  const c = g.getContext('2d');
+  c.scale(2,2);
+  c.font = '15px "Kaiti SC","STKaiti","KaiTi","Songti SC",serif';
+  c.textAlign = 'center'; c.textBaseline = 'middle';
+  c.shadowColor = 'rgba(240,212,148,.85)'; c.shadowBlur = 4;
+  c.fillStyle = '#ecdfbe';
+  c.fillText(ch, GLYPH_CELL/2, GLYPH_CELL/2 + 1);
+  c.fillText(ch, GLYPH_CELL/2, GLYPH_CELL/2 + 1);
+  glyphCache.set(ch, g);
+  return g;
+}
+
+function makeBead(inner, mid, outer, hl){
+  const n = document.createElement('canvas'); n.width = n.height = 32;
+  const c = n.getContext('2d');
+  const g = c.createRadialGradient(13,12,1,16,16,15);
+  g.addColorStop(0,inner); g.addColorStop(.55,mid); g.addColorStop(1,outer);
+  c.fillStyle = g; c.beginPath(); c.arc(16,16,15,0,Math.PI*2); c.fill();
+  if(hl){ c.fillStyle='rgba(255,252,242,.85)';
+    c.beginPath(); c.arc(11.5,10.5,2.6,0,Math.PI*2); c.fill(); }
+  return n;
+}
+function makeGlow(rgb){
+  const n = document.createElement('canvas'); n.width = n.height = 128;
+  const c = n.getContext('2d');
+  const g = c.createRadialGradient(64,64,2,64,64,62);
+  g.addColorStop(0,`rgba(${rgb},.5)`);
+  g.addColorStop(.5,`rgba(${rgb},.14)`);
+  g.addColorStop(1,`rgba(${rgb},0)`);
+  c.fillStyle = g; c.fillRect(0,0,128,128);
+  return n;
+}
+const SPRITE = {
+  jade:  makeBead('rgba(230,246,236,.95)','rgba(150,208,178,.6)','rgba(80,140,110,0)',true),
+  pearl: makeBead('#fdf9ef','rgba(226,214,184,.9)','rgba(150,138,110,0)',true),
+  gold:  makeBead('#f6e2a8','rgba(200,160,90,.9)','rgba(120,90,40,0)',false),
+};
+SPRITE.drop = SPRITE.pearl;
+const GLOW_GOLD = makeGlow('222,190,120');
+const GLOW_BLUE = makeGlow('120,170,210');
+
+/* ============================================================
+   凤冠：抽象金线 · 点翠珠花 · 博鬓步摇
+   ============================================================ */
+function buildCrown(){
+  crownCvs = document.createElement('canvas');
+  crownCvs.width = W*DPR; crownCvs.height = H*DPR;
+  const c = crownCvs.getContext('2d');
+  c.scale(DPR,DPR);
+  anchors = [];
+
+  const cx = W/2;
+  const R = crownR = Math.min(W*0.21, H*0.30);
+  const baseY = crownBaseY = H*0.335;
+  const domeTop = baseY - R*0.82;
+
+  const GOLD='#d9b36c', GOLD_HI='#f4dc9c', GOLD_DIM='rgba(217,179,108,.45)';
+  function goldStroke(w, glow, col){
+    c.strokeStyle = col || GOLD; c.lineWidth = w;
+    c.shadowColor = 'rgba(240,212,148,.55)'; c.shadowBlur = glow;
+  }
+  function pearl(x,y,r,a){
+    c.save(); c.globalAlpha = a==null ? .9 : a;
+    c.shadowColor='rgba(245,240,225,.8)'; c.shadowBlur=6;
+    const g=c.createRadialGradient(x-r*.3,y-r*.35,r*.1,x,y,r);
+    g.addColorStop(0,'#fbf7ec'); g.addColorStop(.7,'#e8dfc8'); g.addColorStop(1,'#b9ad8f');
+    c.fillStyle=g; c.beginPath(); c.arc(x,y,r,0,Math.PI*2); c.fill();
+    c.restore();
+  }
+  function gem(x,y,r){
+    c.save();
+    c.shadowColor='rgba(192,57,43,.9)'; c.shadowBlur=8;
+    const g=c.createRadialGradient(x-r*.3,y-r*.3,r*.1,x,y,r);
+    g.addColorStop(0,'#e8867a'); g.addColorStop(.55,'#b93a2b'); g.addColorStop(1,'#7c2418');
+    c.fillStyle=g; c.beginPath(); c.arc(x,y,r,0,Math.PI*2); c.fill();
+    c.shadowBlur=0;
+    goldStroke(1,0); c.beginPath(); c.arc(x,y,r+1.6,0,Math.PI*2); c.stroke();
+    c.restore();
+  }
+  function curlAt(x,y,r0,rot,dir,turns,w,col){
+    c.save(); goldStroke(w||1, 4, col||GOLD_DIM);
+    c.beginPath();
+    const N=30, T=turns||1.15;
+    for(let i=0;i<=N;i++){
+      const t=i/N, r=r0*(1-.85*t), a=rot+dir*t*T*Math.PI*2;
+      const px=x+Math.cos(a)*r, py=y+Math.sin(a)*r;
+      i ? c.lineTo(px,py) : c.moveTo(px,py);
+    }
+    c.stroke(); c.restore();
+  }
+  function flower(x,y,s,withGem){
+    c.save();
+    for(let i=0;i<6;i++){
+      c.save(); c.translate(x,y); c.rotate(i/6*Math.PI*2);
+      const g=c.createLinearGradient(0,0,s*1.35,0);
+      g.addColorStop(0,'rgba(47,125,156,.92)'); g.addColorStop(1,'rgba(96,190,220,.88)');
+      c.fillStyle=g;
+      c.beginPath(); c.ellipse(s*.8,0,s*.58,s*.34,0,0,Math.PI*2); c.fill();
+      c.strokeStyle='rgba(240,212,148,.5)'; c.lineWidth=.9; c.stroke();
+      c.restore();
+    }
+    if(withGem) gem(x,y,s*.4); else pearl(x,y,s*.36);
+    c.restore();
+  }
+
+  /* ——— 冠体轮廓 ——— */
+  c.save();
+  goldStroke(2.2, 14, GOLD_HI);
+  c.beginPath(); c.ellipse(cx, baseY, R, R*0.82, 0, Math.PI, Math.PI*2); c.stroke();
+  goldStroke(1, 6, GOLD_DIM);
+  c.beginPath(); c.ellipse(cx, baseY, R*0.9, R*0.70, 0, Math.PI, Math.PI*2); c.stroke();
+  c.restore();
+  for(let i=0;i<=14;i++){
+    const a = Math.PI + i/14*Math.PI;
+    pearl(cx+Math.cos(a)*R, baseY+Math.sin(a)*R*0.82, 2.2, .85);
+  }
+
+  /* ——— 累丝卷草 ——— */
+  const curls = [[.30,.42,.085],[.52,.28,.07],[.14,.60,.065],[.68,.50,.055],[.44,.62,.05]];
+  for(const [px,py,pr] of curls){
+    curlAt(cx+R*px, baseY-R*py, R*pr, Math.PI*.3,  1, 1.2, 1);
+    curlAt(cx-R*px, baseY-R*py, R*pr, Math.PI*.7, -1, 1.2, 1);
+  }
+
+  /* ——— 点翠珠花 · 宝石 ——— */
+  flower(cx, baseY-R*0.40, R*0.125, true);
+  flower(cx+R*0.47, baseY-R*0.30, R*0.09);
+  flower(cx-R*0.47, baseY-R*0.30, R*0.09);
+  flower(cx+R*0.24, baseY-R*0.13, R*0.068);
+  flower(cx-R*0.24, baseY-R*0.13, R*0.068);
+  flower(cx+R*0.70, baseY-R*0.12, R*0.055);
+  flower(cx-R*0.70, baseY-R*0.12, R*0.055);
+  gem(cx+R*0.30, baseY-R*0.60, R*0.032);
+  gem(cx-R*0.30, baseY-R*0.60, R*0.032);
+  for(let i=0;i<22;i++){
+    const a = Math.PI + ((i%11)+0.5)/11*Math.PI;
+    const rr = (i<11 ? 0.55 : 0.32) + 0.05*Math.sin(i*7);
+    pearl(cx+Math.cos(a)*R*rr, baseY+Math.sin(a)*R*0.82*rr, 1.8, .7);
+  }
+
+  /* ——— 冠底金带 ——— */
+  c.save();
+  c.fillStyle = 'rgba(20,15,6,.85)';
+  c.fillRect(cx-R*1.04, baseY-2, R*2.08, 15);
+  goldStroke(1.6, 8);
+  c.beginPath(); c.moveTo(cx-R*1.04, baseY-2); c.lineTo(cx+R*1.04, baseY-2); c.stroke();
+  goldStroke(1.2, 5, GOLD_DIM);
+  c.beginPath(); c.moveTo(cx-R*1.04, baseY+13); c.lineTo(cx+R*1.04, baseY+13); c.stroke();
+  c.restore();
+  for(let x=cx-R*0.98; x<=cx+R*0.98; x+=13) pearl(x, baseY+6, 2.4, .95);
+
+  /* ——— 顶上火珠与双凤 ——— */
+  pearl(cx, domeTop-R*0.04, R*0.045, 1);
+  curlAt(cx-R*0.07, domeTop-R*0.02, R*0.05, Math.PI*1.1, -1, .8, 1.1, GOLD_HI);
+  curlAt(cx+R*0.07, domeTop-R*0.02, R*0.05, -Math.PI*.1, 1, .8, 1.1, GOLD_HI);
+
+  function phoenix(sign){
+    const px = cx + sign*R*0.46, py = domeTop + R*0.16, s = R*0.36;
+    c.save(); c.translate(px,py); c.scale(sign,1);
+    goldStroke(1.6, 10, GOLD_HI);
+    c.beginPath();
+    c.moveTo(-s*0.55, s*0.30);
+    c.bezierCurveTo(-s*0.15,s*0.18, 0,-s*0.05, s*0.12,-s*0.32);
+    c.bezierCurveTo(s*0.2,-s*0.5, s*0.34,-s*0.58, s*0.46,-s*0.60);
+    c.stroke();
+    c.beginPath(); c.arc(s*0.5,-s*0.62,s*0.05,0,Math.PI*2); c.stroke();
+    c.beginPath(); c.moveTo(s*0.55,-s*0.61); c.lineTo(s*0.66,-s*0.57); c.stroke();
+    goldStroke(1.2, 6, GOLD);
+    c.beginPath(); c.moveTo(s*0.02,-s*0.18);
+    c.quadraticCurveTo(-s*0.3,-s*0.55,-s*0.62,-s*0.52); c.stroke();
+    c.beginPath(); c.moveTo(s*0.05,-s*0.10);
+    c.quadraticCurveTo(-s*0.22,-s*0.38,-s*0.5,-s*0.36); c.stroke();
+    goldStroke(1.1, 5, GOLD_DIM);
+    for(const [ex,ey,qx,qy] of [[-1.05,.55,-.5,.05],[-.95,.72,-.42,.3],[-.8,.85,-.3,.5]]){
+      c.beginPath(); c.moveTo(-s*0.5,s*0.28);
+      c.quadraticCurveTo(s*qx,s*qy, s*ex, s*ey); c.stroke();
+    }
+    c.restore();
+  }
+  phoenix(1); phoenix(-1);
+
+  /* ——— 步摇金簪 ——— */
+  function pin(sign){
+    const x0 = cx+sign*R*0.66, y0 = domeTop+R*0.30;
+    const x1 = cx+sign*R*1.12, y1 = domeTop-R*0.10;
+    c.save(); goldStroke(1.4, 8);
+    c.beginPath(); c.moveTo(x0,y0);
+    c.quadraticCurveTo((x0+x1)/2, y0-R*0.16, x1,y1); c.stroke();
+    c.restore();
+    curlAt(x1, y1, R*0.045, sign>0 ? -Math.PI*0.5 : Math.PI*1.5, sign, 1, 1.1, GOLD_HI);
+    pearl(x1, y1+5, 2.2, .9);
+    anchors.push({x:x1, y:y1+7, len:H*0.055, kind:'pin'});
+  }
+  pin(1); pin(-1);
+
+  /* ——— 博鬓（两侧翼翅）——— */
+  function wing(sign){
+    const P0o={x:cx+sign*R*0.92, y:baseY+2};
+    const Co ={x:cx+sign*R*1.66, y:baseY+R*0.10};
+    const P2o={x:cx+sign*R*1.50, y:baseY+R*0.66};
+    const P0i={x:cx+sign*R*0.90, y:baseY+R*0.16};
+    const Ci ={x:cx+sign*R*1.44, y:baseY+R*0.20};
+    const P2i={x:cx+sign*R*1.38, y:baseY+R*0.60};
+    c.save();
+    c.beginPath();
+    c.moveTo(P0o.x,P0o.y); c.quadraticCurveTo(Co.x,Co.y,P2o.x,P2o.y);
+    c.lineTo(P2i.x,P2i.y); c.quadraticCurveTo(Ci.x,Ci.y,P0i.x,P0i.y);
+    c.closePath();
+    c.fillStyle='rgba(12,16,22,.78)'; c.fill();
+    goldStroke(1.6, 9);
+    c.beginPath(); c.moveTo(P0o.x,P0o.y); c.quadraticCurveTo(Co.x,Co.y,P2o.x,P2o.y); c.stroke();
+    goldStroke(1, 5, GOLD_DIM);
+    c.beginPath(); c.moveTo(P0i.x,P0i.y); c.quadraticCurveTo(Ci.x,Ci.y,P2i.x,P2i.y); c.stroke();
+    c.restore();
+    const Q=(A,C2,B,t)=>({
+      x:(1-t)*(1-t)*A.x+2*(1-t)*t*C2.x+t*t*B.x,
+      y:(1-t)*(1-t)*A.y+2*(1-t)*t*C2.y+t*t*B.y
+    });
+    for(let t=0.08;t<=0.98;t+=0.09){ const p=Q(P0o,Co,P2o,t); pearl(p.x,p.y,2,.85); }
+    const f1=Q(P0i,Ci,P2i,0.38), f2=Q(P0i,Ci,P2i,0.72);
+    flower(f1.x,f1.y-4,R*0.05); flower(f2.x,f2.y-4,R*0.045);
+    gem(P2o.x, P2o.y+2, R*0.026);
+    for(let k=0;k<5;k++){
+      const t=0.24+k*0.15;
+      const p=Q(P0i,Ci,P2i,t);
+      anchors.push({x:p.x, y:p.y+4,
+        len:R*(0.42+0.5*t)*(0.9+Math.random()*0.2), kind:'wing'});
+    }
+    anchors.push({x:P2o.x, y:P2o.y+8,
+      len:Math.max(R*0.8, H*0.845-P2o.y), kind:'long'});
+  }
+  wing(1); wing(-1);
+
+  /* ——— 冠底流苏锚点 ——— */
+  const nF = 15;
+  for(let i=0;i<nF;i++){
+    const nx = (i/(nF-1))*2 - 1;
+    anchors.push({
+      x: cx + nx*R*0.97, y: baseY+16,
+      len: H*(0.255-0.045*nx*nx)*(0.95+Math.random()*0.1),
+      kind:'dome'
+    });
+  }
+}
+
+/* ============================================================
+   流苏：verlet 珠链 · 小楷诗字与玉珠
+   ============================================================ */
+const PENTA = [0,2,4,7,9];
+const noteIdxFor = x => Math.max(0, Math.min(14,
+  Math.round(((x-(W/2-crownR*1.6))/(crownR*3.2))*14)));
+
+function buildStrands(){
+  strands = [];
+  let charCursor = 0;
+  const nextChar = () => {
+    const ch = POEM[charCursor % POEM.length]; charCursor++;
+    return {type:'char', g:glyphFor(ch)};
+  };
+  for(const A of anchors){
+    const seg = A.kind==='pin' ? 7 : 16;
+    const len = Math.min(A.len, H*0.88 - A.y);
+    const count = Math.max(3, Math.round(len/seg));
+    const points = [];
+    for(let i=0;i<=count;i++)
+      points.push({x:A.x, y:A.y+i*seg, ox:A.x, oy:A.y+i*seg});
+    const elements = [];
+    for(let j=0;j<count;j++){
+      let e;
+      if(j===count-1) e = {type:'drop', r: A.kind==='pin'?3.4 : (A.kind==='long'?7:6)};
+      else if(A.kind==='pin') e = {type:'gold', r:2.6};
+      else if(A.kind==='long'){
+        if(j%7===3) e = nextChar();
+        else e = (j%2 ? {type:'jade', r:4.4} : {type:'pearl', r:3.4});
+      } else if(A.kind==='wing'){
+        // 博鬓垂珠：纯珠串，不缀诗字，免与主帘相扰
+        e = (j%2 ? {type:'jade', r:4} : {type:'pearl', r:3.2});
+      } else {
+        if(j%3===1) e = {type:'jade', r:4.4};
+        else if(j%5===4) e = {type:'pearl', r:3.2};
+        else e = nextChar();
+      }
+      e.a = .72 + Math.random()*.28;
+      elements.push(e);
+    }
+    strands.push({
+      ax:A.x, ay:A.y, kind:A.kind, seg, points, elements,
+      ph:Math.random()*9, lastHit:0, glowT:0,
+      noteIdx: noteIdxFor(A.x)
+    });
+  }
+}
+
+/* ——— 物理 ——— */
+function integrateStrands(dt, now){
+  for(const s of strands){
+    const pts = s.points;
+    for(let i=1;i<pts.length;i++){
+      const p = pts[i];
+      const vx = (p.x-p.ox)*AIR, vy = (p.y-p.oy)*AIR;
+      p.ox = p.x; p.oy = p.y;
+      const fx = 24*Math.sin(now*0.00042 + p.y*0.0035 + s.ph)
+               + breezeForce(p.x, p.y, now);
+      p.x += vx + fx*dt*dt;
+      p.y += vy + GRAV*dt*dt;
+    }
+  }
+}
+function constrainStrands(){
+  for(const s of strands){
+    const pts = s.points;
+    for(let k=0;k<3;k++){
+      pts[0].x = s.ax; pts[0].y = s.ay;
+      for(let i=1;i<pts.length;i++){
+        const a = pts[i-1], b = pts[i];
+        const dx = b.x-a.x, dy = b.y-a.y;
+        const d = Math.hypot(dx,dy) || 1e-4;
+        const diff = (d - s.seg)/d;
+        if(i===1){ b.x -= dx*diff; b.y -= dy*diff; }
+        else {
+          a.x += dx*diff*.5; a.y += dy*diff*.5;
+          b.x -= dx*diff*.5; b.y -= dy*diff*.5;
+        }
+      }
+    }
+  }
+}
+
+/* ——— 微风（闲置时自动拂动，展览活性）——— */
+function breezeForce(x, y, now){
+  if(!breeze) return 0;
+  const u = (now - breeze.t0)/breeze.dur;
+  if(u <= 0 || u >= 1) return 0;
+  const g = Math.exp(-Math.pow(x-breeze.x0,2)/(2*breeze.sig*breeze.sig));
+  return breeze.amp * Math.sin(Math.PI*u) * g;
+}
+function autoBreeze(now){
+  if(breeze){
+    const u = (now - breeze.t0)/breeze.dur;
+    if(u >= 1) breeze = null;
+    else if(!breeze.chimed && u > 0.3){
+      breeze.chimed = true;
+      let best = null, bd = 1e9;
+      for(const s of strands){
+        const d = Math.abs(s.ax - breeze.x0);
+        if(d < bd){ bd = d; best = s; }
+      }
+      if(best){
+        best.glowT = now;
+        playChime(best.noteIdx, .16+Math.random()*.12, (best.ax/W)*1.6-.8);
+        const tip = best.points[Math.floor(best.points.length*0.7)];
+        rings.push({x:tip.x, y:tip.y, r:3, a:.32, vr:70});
+      }
+    }
+  }
+  if(now - lastInteract > 8000 && now - lastBreeze > 2800 + breezeGap){
+    lastBreeze = now; breezeGap = Math.random()*2400;
+    breeze = {
+      x0: W/2 + (Math.random()-.5)*crownR*2.6,
+      t0: now, dur: 900+Math.random()*700, sig: W*0.09,
+      amp: (Math.random()<.5?-1:1)*(420+Math.random()*380), chimed:false
+    };
+  }
+}
+
+/* ——— 手拂流苏：推珠 · 鸣佩 · 琶音 ——— */
+function pointerInteract(now){
+  for(const P of pointers){
+    if(!P.active) continue;
+    const pvx = P.x-P.px, pvy = P.y-P.py;
+    const speed = Math.hypot(pvx,pvy);
+    for(const s of strands){
+      const pts = s.points;
+      let hitPt = -1;
+      for(let i=1;i<pts.length;i++){
+        const p = pts[i];
+        const dx = p.x-P.x, dy = p.y-P.y;
+        const d = Math.hypot(dx,dy);
+        if(d < PR){
+          if(hitPt < 0) hitPt = i;
+          const push = (PR-d)/(d || 1e-4);
+          p.x += dx*push; p.y += dy*push;
+          p.ox -= pvx*0.42; p.oy -= pvy*0.18;
+        } else if(d < PR*2.6 && speed > 1){
+          const f = (1 - d/(PR*2.6))*0.14;
+          p.x += pvx*f; p.y += pvy*f*0.4;
+        }
+      }
+      if(hitPt > 0 && speed > 3.2 && now - s.lastHit > 170){
+        s.lastHit = now; s.glowT = now;
+        const vel = Math.min(1, speed/24);
+        const hp = pts[hitPt];
+        playChime(s.noteIdx, .25+.75*vel, (hp.x/W)*1.6-.8);
+        spawnSparks(hp.x, hp.y, vel);
+        rings.push({x:hp.x, y:hp.y, r:4, a:.5, vr:110});
+        registerHit(now, Math.sign(pvx)||1, s, vel);
+        lastInteract = now;
+      }
+    }
+  }
+}
+function registerHit(now, dir, s, vel){
+  hitTimes.push(now);
+  while(hitTimes.length && hitTimes[0] < now-320) hitTimes.shift();
+  if(hitTimes.length >= 3 && now - lastArp > 1600){
+    lastArp = now; hitTimes.length = 0;
+    playArpeggio(s.noteIdx, dir, .5+.5*vel);
+  }
+}
+
+/* ——— 火花 · 波纹 ——— */
+function spawnSparks(x, y, vel){
+  const n = 4 + Math.round(vel*5);
+  for(let i=0;i<n;i++) sparks.push({
+    x, y,
+    vx:(Math.random()-.5)*160*(.5+vel), vy:(Math.random()-.7)*120*(.5+vel),
+    t:0, life:.4+Math.random()*.4,
+    c: Math.random()<.7 ? '240,212,148' : '200,235,215'
+  });
+}
+function updateFx(dt){
+  for(let i=sparks.length-1;i>=0;i--){
+    const p = sparks[i];
+    p.t += dt; p.vy += 420*dt; p.x += p.vx*dt; p.y += p.vy*dt;
+    if(p.t > p.life) sparks.splice(i,1);
+  }
+  for(let i=rings.length-1;i>=0;i--){
+    const r = rings[i];
+    r.r += r.vr*dt; r.vr *= .985; r.a -= dt*.55;
+    if(r.a <= 0) rings.splice(i,1);
+  }
+}
+
+/* ============================================================
+   星云粒子漩涡（幽光流转，忌局部过亮）
+   ============================================================ */
+function newVP(){
+  const rMax = Math.max(W,H)*0.72, rMin = 60;
+  return {
+    r: rMin + Math.pow(Math.random(), .6)*(rMax-rMin),
+    a: Math.random()*Math.PI*2,
+    sz: .6+Math.random()*1.8,
+    tw: Math.random()*9,
+    hue: Math.random()<.58 ? 0 : (Math.random()<.68 ? 1 : 2),
+    al: .05+Math.random()*.14
+  };
+}
+function buildVortex(){
+  vortex = [];
+  for(let i=0;i<430;i++) vortex.push(newVP());
+}
+function buildMotes(){
+  motes = [];
+  for(let i=0;i<26;i++) motes.push({
+    x:Math.random()*W, y:Math.random()*H, r:.7+Math.random()*1.6,
+    vy:-4-Math.random()*8, vx:(Math.random()-.5)*3,
+    ph:Math.random()*9, a:.08+Math.random()*.18
+  });
+}
+const VCOL = ['222,190,120','130,180,215','235,230,215'];
+function renderVortex(now){
+  const cx = W/2, cy = H*0.5;
+  for(const p of vortex){
+    p.a += (3.0/Math.pow(p.r,0.72))*dtG*8;
+    p.r -= 1.6*dtG;
+    if(p.r < 60){ p.r = Math.max(W,H)*0.72; p.a = Math.random()*Math.PI*2; }
+    const x = cx + Math.cos(p.a)*p.r;
+    const y = cy + Math.sin(p.a)*p.r*0.62;
+    if(x<-20||x>W+20||y<-20||y>H+20) continue;
+    const tw = .6+.4*Math.sin(now*.001+p.tw);
+    ctx.globalAlpha = p.al*tw;
+    if(p.sz > 2.1){
+      ctx.drawImage(p.hue===1?GLOW_BLUE:GLOW_GOLD, x-13, y-13, 26, 26);
+    } else {
+      ctx.fillStyle = `rgb(${VCOL[p.hue]})`;
+      ctx.beginPath(); ctx.arc(x,y,p.sz,0,Math.PI*2); ctx.fill();
+    }
+  }
+  ctx.globalAlpha = 1;
+}
+function renderNebula(now){
+  const cx = W/2, cy = H*0.5;
+  const blobs = [
+    [GLOW_GOLD, 2.0e-5, 0.0, W*0.62, .05],
+    [GLOW_BLUE, -1.4e-5, 2.2, W*0.55, .04],
+    [GLOW_GOLD, 1.0e-5, 4.4, W*0.7, .03],
+  ];
+  for(const [spr, spd, off, sz, al] of blobs){
+    const a = now*spd + off;
+    const x = cx + Math.cos(a)*W*0.16, y = cy + Math.sin(a)*H*0.1;
+    ctx.globalAlpha = al;
+    ctx.drawImage(spr, x-sz/2, y-sz/2, sz, sz);
+  }
+  ctx.globalAlpha = 1;
+}
+function renderMotes(now){
+  for(const p of motes){
+    p.x += p.vx*dtG; p.y += p.vy*dtG;
+    if(p.y < -6){ p.y = H+6; p.x = Math.random()*W; }
+    if(p.x < -6) p.x = W+6; if(p.x > W+6) p.x = -6;
+    ctx.globalAlpha = p.a*(.6+.4*Math.sin(now*.0012+p.ph));
+    ctx.fillStyle = '#e8dcb8';
+    ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2); ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+}
+function renderHalo(now){
+  const sz = crownR*3.4;
+  const x = W/2, y = crownBaseY - crownR*0.3;
+  ctx.globalAlpha = .07 + .02*Math.sin(now*.0009);
+  ctx.drawImage(GLOW_GOLD, x-sz/2, y-sz/2, sz, sz);
+  ctx.globalAlpha = 1;
+}
+
+/* ============================================================
+   渲染：流苏 · 波纹 · 火花 · 手迹
+   ============================================================ */
+function renderStrands(now){
+  for(const s of strands){
+    const pts = s.points;
+    // 丝线
+    ctx.beginPath();
+    ctx.moveTo(pts[0].x, pts[0].y);
+    for(let i=1;i<pts.length;i++) ctx.lineTo(pts[i].x, pts[i].y);
+    ctx.strokeStyle = 'rgba(217,179,108,.15)'; ctx.lineWidth = .8;
+    ctx.stroke();
+    const glowAge = s.glowT ? (now - s.glowT)/900 : 2;
+    if(glowAge < 1){
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.globalAlpha = .3*(1-glowAge);
+      ctx.strokeStyle = 'rgba(240,212,148,.8)'; ctx.lineWidth = 1.6;
+      ctx.stroke();
+      ctx.restore();
+    }
+    // 珠玑与诗字
+    for(let j=0;j<s.elements.length;j++){
+      const e = s.elements[j], p = pts[j+1];
+      ctx.globalAlpha = e.a;
+      if(e.type === 'char')
+        ctx.drawImage(e.g, p.x-GLYPH_CELL/2, p.y-GLYPH_CELL/2, GLYPH_CELL, GLYPH_CELL);
+      else
+        ctx.drawImage(SPRITE[e.type], p.x-e.r, p.y-e.r, e.r*2, e.r*2);
+    }
+    if(glowAge < 1){
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      const ga = .4*(1-glowAge);
+      for(let j=0;j<s.elements.length;j++){
+        const e = s.elements[j], p = pts[j+1];
+        ctx.globalAlpha = ga*e.a;
+        if(e.type === 'char')
+          ctx.drawImage(e.g, p.x-GLYPH_CELL/2-2, p.y-GLYPH_CELL/2-2, GLYPH_CELL+4, GLYPH_CELL+4);
+        else
+          ctx.drawImage(SPRITE[e.type], p.x-e.r-2, p.y-e.r-2, (e.r+2)*2, (e.r+2)*2);
+      }
+      ctx.restore();
+    }
+  }
+  ctx.globalAlpha = 1;
+}
+function renderRings(){
+  for(const r of rings){
+    ctx.globalAlpha = Math.max(0, r.a);
+    ctx.strokeStyle = 'rgba(240,212,148,.9)'; ctx.lineWidth = 1.2;
+    ctx.beginPath(); ctx.arc(r.x, r.y, r.r, 0, Math.PI*2); ctx.stroke();
+    ctx.globalAlpha = Math.max(0, r.a*.5);
+    ctx.beginPath(); ctx.arc(r.x, r.y, r.r*.62, 0, Math.PI*2); ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+}
+function renderSparks(){
+  for(const p of sparks){
+    ctx.globalAlpha = Math.max(0, 1-p.t/p.life)*.8;
+    ctx.fillStyle = `rgb(${p.c})`;
+    ctx.beginPath(); ctx.arc(p.x, p.y, 1.4, 0, Math.PI*2); ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+}
+function renderPointers(now){
+  for(const p of pointers){
+    if(!p.active) continue;
+    p.trail.push({x:p.x, y:p.y, t:now});
+    while(p.trail.length && now-p.trail[0].t > 380) p.trail.shift();
+    if(p.trail.length > 1){
+      ctx.lineCap = 'round';
+      for(let i=1;i<p.trail.length;i++){
+        ctx.globalAlpha = (i/p.trail.length)*.3;
+        ctx.strokeStyle = '#d9b36c'; ctx.lineWidth = 2+3*(i/p.trail.length);
+        ctx.beginPath();
+        ctx.moveTo(p.trail[i-1].x, p.trail[i-1].y);
+        ctx.lineTo(p.trail[i].x, p.trail[i].y);
+        ctx.stroke();
+      }
+    }
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.globalAlpha = .45;
+    ctx.drawImage(GLOW_GOLD, p.x-17, p.y-17, 34, 34);
+    ctx.restore();
+    ctx.globalAlpha = .9;
+    ctx.fillStyle = '#f4dc9c';
+    ctx.beginPath(); ctx.arc(p.x, p.y, 3, 0, Math.PI*2); ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+}
+
+/* ============================================================
+   声音：环佩玉音 · 古筝琶音 · 夜气微光（全 Web Audio 合成）
+   ============================================================ */
+let actx = null, master = null, dryG = null, wetG = null;
+
+function initAudio(){
+  actx = new (window.AudioContext||window.webkitAudioContext)();
+  master = actx.createGain(); master.gain.value = .9;
+  const comp = actx.createDynamicsCompressor();
+  comp.threshold.value = -18; comp.ratio.value = 4;
+  master.connect(comp); comp.connect(actx.destination);
+  const conv = actx.createConvolver();
+  conv.buffer = makeIR(3.4, 2.2);
+  wetG = actx.createGain(); wetG.gain.value = .5;
+  dryG = actx.createGain(); dryG.gain.value = .78;
+  wetG.connect(conv); conv.connect(master); dryG.connect(master);
+  startAmbience(); scheduleGlimmer();
+}
+function makeIR(dur, decay){
+  const rate = actx.sampleRate, len = Math.floor(rate*dur);
+  const buf = actx.createBuffer(2, len, rate);
+  for(let ch=0; ch<2; ch++){
+    const d = buf.getChannelData(ch);
+    for(let i=0;i<len;i++)
+      d[i] = (Math.random()*2-1)*Math.pow(1-i/len, decay);
+  }
+  return buf;
+}
+function noiseBuf(dur){
+  const rate = actx.sampleRate, len = Math.floor(rate*dur);
+  const buf = actx.createBuffer(1, len, rate);
+  const d = buf.getChannelData(0);
+  for(let i=0;i<len;i++) d[i] = Math.random()*2-1;
+  return buf;
+}
+
+/* 夜气：极低暖音 + 高处微光 */
+function startAmbience(){
+  const lp = actx.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value = 260;
+  const lg = actx.createGain(); lg.gain.value = 1;
+  lp.connect(lg); lg.connect(master);
+  const o1 = actx.createOscillator(); o1.type='sine'; o1.frequency.value = 73.42;
+  const g1 = actx.createGain(); g1.gain.value = .009;
+  o1.connect(g1); g1.connect(lp); o1.start();
+  const o2 = actx.createOscillator(); o2.type='sine'; o2.frequency.value = 110.0;
+  const g2 = actx.createGain(); g2.gain.value = .005;
+  o2.connect(g2); g2.connect(lp); o2.start();
+  const lfo = actx.createOscillator(); lfo.frequency.value = .07;
+  const lfoG = actx.createGain(); lfoG.gain.value = .4;
+  lfo.connect(lfoG); lfoG.connect(o2.detune); lfo.start();
+
+  const nb = noiseBuf(3);
+  const sh = actx.createBufferSource(); sh.buffer = nb; sh.loop = true;
+  const bp = actx.createBiquadFilter(); bp.type='bandpass';
+  bp.frequency.value = 4400; bp.Q.value = 1.4;
+  const sg = actx.createGain(); sg.gain.value = .005;
+  sh.connect(bp); bp.connect(sg); sg.connect(wetG); sg.connect(dryG);
+  sh.start();
+  const lfo2 = actx.createOscillator(); lfo2.frequency.value = .05;
+  const lfo2G = actx.createGain(); lfo2G.gain.value = .0035;
+  lfo2.connect(lfo2G); lfo2G.connect(sg.gain); lfo2.start();
+
+  const air = actx.createBufferSource(); air.buffer = nb; air.loop = true;
+  const bp2 = actx.createBiquadFilter(); bp2.type='bandpass';
+  bp2.frequency.value = 900; bp2.Q.value = .5;
+  const ag = actx.createGain(); ag.gain.value = .0032;
+  air.connect(bp2); bp2.connect(ag); ag.connect(master);
+  air.start();
+}
+
+/* 远处偶闻环佩微动 */
+function scheduleGlimmer(){
+  if(!actx) return;
+  if(!muted && started)
+    playChime(8+Math.floor(Math.random()*7), .08+Math.random()*.08, Math.random()*1.4-.7);
+  setTimeout(scheduleGlimmer, 16000+Math.random()*18000);
+}
+
+/* 环佩玉音：D 宫五声，高音区 D5–B7，清脆无颤音 */
+function chimeFreq(idx){
+  return 587.33 * Math.pow(2, Math.floor(idx/5) + PENTA[idx%5]/12);
+}
+function playChime(idx, vel, pan){
+  if(!actx || muted) return;
+  const f = chimeFreq(idx)*(1+(Math.random()-.5)*0.006);
+  const t = actx.currentTime;
+  const p = actx.createStereoPanner(); p.pan.value = Math.max(-1,Math.min(1,pan));
+  p.connect(dryG); p.connect(wetG);
+  // 玉体：非谐泛音簇（磬音），指数衰减
+  const partials = [[1,1],[2.756,.32],[5.404,.13],[8.933,.045]];
+  for(const [m,a] of partials){
+    if(f*m > 15500) continue;
+    const o = actx.createOscillator(); o.type='sine';
+    o.frequency.value = f*m;
+    const g = actx.createGain();
+    g.gain.setValueAtTime(0,t);
+    g.gain.linearRampToValueAtTime(.11*vel*a, t+.003);
+    g.gain.exponentialRampToValueAtTime(.0001, t + 1.5/Math.pow(m,.45));
+    o.connect(g); g.connect(p);
+    o.start(t); o.stop(t+1.8);
+  }
+  // 相击之「玎」
+  const src = actx.createBufferSource(); src.buffer = noiseBuf(.05);
+  const hp = actx.createBiquadFilter(); hp.type='highpass'; hp.frequency.value = 6000;
+  const g = actx.createGain();
+  g.gain.setValueAtTime(.012*vel, t);
+  g.gain.exponentialRampToValueAtTime(.0001, t+.04);
+  src.connect(hp); hp.connect(g); g.connect(p);
+  src.start(t); src.stop(t+.06);
+}
+
+/* 古筝：D 宫五声，中低音区 D3–B5 */
+function zhengFreq(idx){
+  return 146.83 * Math.pow(2, Math.floor(idx/5) + PENTA[idx%5]/12);
+}
+function playZheng(idx, vel, pan, when){
+  if(!actx || muted) return;
+  const f = zhengFreq(idx)*(1+(Math.random()-.5)*0.004);
+  const t = when || actx.currentTime;
+  const p = actx.createStereoPanner(); p.pan.value = Math.max(-1,Math.min(1,pan));
+  p.connect(dryG); p.connect(wetG);
+  const gains = [1,.52,.3,.19,.11,.06];
+  for(let m=1;m<=6;m++){
+    if(f*m > 15500) continue;
+    const o = actx.createOscillator(); o.type='sine';
+    o.frequency.value = f*m*(1+m*.0004);
+    const g = actx.createGain();
+    g.gain.setValueAtTime(0,t);
+    g.gain.linearRampToValueAtTime(.1*vel*gains[m-1], t+.004);
+    g.gain.exponentialRampToValueAtTime(.0001, t + 1.8/Math.sqrt(m));
+    o.connect(g); g.connect(p);
+    o.start(t); o.stop(t+2.1);
+  }
+  const src = actx.createBufferSource(); src.buffer = noiseBuf(.03);
+  const hp = actx.createBiquadFilter(); hp.type='highpass'; hp.frequency.value = 2400;
+  const g = actx.createGain();
+  g.gain.setValueAtTime(.02*vel, t);
+  g.gain.exponentialRampToValueAtTime(.0001, t+.025);
+  src.connect(hp); hp.connect(g); g.connect(p);
+  src.start(t); src.stop(t+.04);
+}
+/* 琶音：顺手势方向拂过五声 */
+function playArpeggio(centerIdx, dir, vel){
+  if(!actx || muted) return;
+  const t0 = actx.currentTime;
+  const root = Math.max(2, Math.min(12, centerIdx));
+  for(let k=0;k<5;k++){
+    const idx = Math.max(0, Math.min(14, root + dir*k));
+    playZheng(idx, vel*(1-k*.09), -.3*dir + k*.15*dir, t0 + k*.055);
+  }
+}
+
+/* ============================================================
+   摄像头 · MediaPipe Hands
+   ============================================================ */
+let mpHands = null, mpCamera = null;
+async function initCamera(){
+  const video = document.getElementById('cam');
+  mpHands = new Hands({ locateFile: f =>
+    `/vendor/mediapipe/hands/${f}` });
+  mpHands.setOptions({
+    maxNumHands: 2, modelComplexity: 0,
+    minDetectionConfidence: .55, minTrackingConfidence: .5
+  });
+  mpHands.onResults(onHands);
+  mpCamera = new Camera(video, {
+    onFrame: async () => { await mpHands.send({ image: video }); },
+    width: 640, height: 360
+  });
+  await mpCamera.start();
+  video.style.display = 'block';
+  document.getElementById('btnMirror').style.display = '';
+}
+function onHands(res){
+  const now = performance.now();
+  const lms = res.multiHandLandmarks || [];
+  for(let i=0; i<2; i++){
+    const p = pointers[i];
+    if(lms[i]){
+      const lm = lms[i][9]; // 掌心（中指根）
+      p.tx = (1-lm.x)*W; p.ty = lm.y*H;
+      if(!p.active){ p.x = p.px = p.tx; p.y = p.py = p.ty; p.active = true; }
+      p.seen = now;
+    }
+  }
+}
+
+/* ============================================================
+   主循环
+   ============================================================ */
+function frame(now){
+  requestAnimationFrame(frame);
+  dtG = Math.min(0.033, (now - timePrev)/1000);
+  timePrev = now;
+  if(!W) return;
+
+  for(const p of pointers){
+    if(p.active && now - p.seen > 400 && cameraMode){ p.active = false; p.trail.length = 0; }
+    if(p.active){
+      p.px = p.x; p.py = p.y;
+      p.x += (p.tx - p.x)*0.5;
+      p.y += (p.ty - p.y)*0.5;
+    }
+  }
+
+  autoBreeze(now);
+  integrateStrands(dtG, now);
+  if(started) pointerInteract(now);
+  constrainStrands();
+  updateFx(dtG);
+
+  /* ——— 绘制 ——— */
+  ctx.fillStyle = '#020202'; ctx.fillRect(0,0,W,H);
+  const bg = ctx.createRadialGradient(W/2,H*0.42,0,W/2,H*0.42,Math.max(W,H)*0.7);
+  bg.addColorStop(0,'rgba(26,22,15,.5)');
+  bg.addColorStop(.5,'rgba(10,10,13,.22)');
+  bg.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.fillStyle = bg; ctx.fillRect(0,0,W,H);
+
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  renderNebula(now);
+  renderVortex(now);
+  renderMotes(now);
+  renderHalo(now);
+  ctx.restore();
+
+  ctx.drawImage(crownCvs, 0, 0, W, H);
+  renderStrands(now);
+
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  renderRings();
+  renderSparks();
+  ctx.restore();
+
+  if(started) renderPointers(now);
+}
+
+function resize(){
+  W = window.innerWidth; H = window.innerHeight;
+  cvs.width = W*DPR; cvs.height = H*DPR;
+  cvs.style.width = W+'px'; cvs.style.height = H+'px';
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+  buildCrown(); buildStrands(); buildVortex(); buildMotes();
+}
+
+/* ============================================================
+   入场 · 控件
+   ============================================================ */
+function toast(msg){
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.style.opacity = 1;
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.style.opacity = 0, 3200);
+}
+function begin(withCam){
+  if(started) return;
+  started = true;
+  initAudio();
+  document.getElementById('veil').classList.add('gone');
+  lastInteract = performance.now();
+  if(withCam){
+    cameraMode = true;
+    document.getElementById('btnMode').textContent = '摄像 · 手';
+    initCamera().catch(err => {
+      console.warn('camera failed', err);
+      cameraMode = false;
+      document.getElementById('btnMode').textContent = '演示 · 鼠';
+      toast('摄像头不可用，已切换演示模式 · Camera unavailable, demo mode on');
+    });
+  } else {
+    cameraMode = false;
+    document.getElementById('btnMode').textContent = '演示 · 鼠';
+    toast('移动鼠标轻拂流苏 · Sweep the cursor through the tassels');
+  }
+}
+document.getElementById('btnCam').addEventListener('click', () => begin(true));
+document.getElementById('btnDemo').addEventListener('click', () => begin(false));
+
+document.getElementById('btnMute').addEventListener('click', e => {
+  muted = !muted;
+  if(master) master.gain.value = muted ? 0 : .9;
+  e.currentTarget.textContent = muted ? '音 · 静' : '音 · 开';
+  e.currentTarget.classList.toggle('off', muted);
+});
+document.getElementById('btnMirror').addEventListener('click', e => {
+  const v = document.getElementById('cam');
+  const off = v.style.visibility === 'hidden';
+  v.style.visibility = off ? 'visible' : 'hidden';
+  e.currentTarget.classList.toggle('off', !off);
+});
+document.getElementById('btnMode').addEventListener('click', async e => {
+  if(!started) return;
+  if(cameraMode){
+    cameraMode = false;
+    e.currentTarget.textContent = '演示 · 鼠';
+    toast('演示模式 · Demo mode');
+  } else {
+    e.currentTarget.textContent = '摄像 · 手';
+    cameraMode = true;
+    if(!mpCamera){
+      try { await initCamera(); }
+      catch(err){
+        cameraMode = false;
+        e.currentTarget.textContent = '演示 · 鼠';
+        toast('摄像头不可用 · Camera unavailable');
+      }
+    }
+    if(cameraMode) toast('抬手拂珠 · Sweep your hand through the tassels');
+  }
+});
+
+/* 鼠标 / 触摸（演示模式，摄像模式下也可救场） */
+window.addEventListener('mousemove', e => {
+  const p = pointers[0];
+  p.tx = e.clientX; p.ty = e.clientY;
+  if(!p.active){ p.x = p.px = p.tx; p.y = p.py = p.ty; p.active = true; }
+  p.seen = performance.now() + (cameraMode ? -500 : 0);
+  if(!cameraMode) p.seen = performance.now();
+});
+window.addEventListener('touchmove', e => {
+  const t = e.touches[0]; if(!t) return;
+  const p = pointers[0];
+  p.tx = t.clientX; p.ty = t.clientY;
+  if(!p.active){ p.x = p.px = p.tx; p.y = p.py = p.ty; p.active = true; }
+  p.seen = performance.now();
+}, { passive:true });
+
+window.addEventListener('resize', resize);
+resize();
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

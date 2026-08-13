@@ -1,0 +1,29 @@
+# ── 依赖：几百 MB，任何人 npm install 都能重建，永远不进仓库 ──
+node_modules/
+
+# ── 构建产物：Cloudflare 会自己 build，本地 dist 进仓库只会制造冲突 ──
+dist/
+.astro/
+
+# ── macOS 垃圾文件 ──
+.DS_Store
+._*
+.Spotlight-V100
+.Trashes
+
+# ── 密钥：一旦推上公开仓库就等于公开，永不提交 ──
+.env
+.env.*
+!.env.example
+.dev.vars
+.wrangler/
+
+# ── 日志 / 编辑器 ──
+*.log
+npm-debug.log*
+.vscode/
+.idea/
+
+# ── 内部工作笔记：仓库是公开的，这份文件写着哪些内容是待替换的草稿，
+#    不该被策展人 / 招生官读到。想同步到别的电脑再单独处理。 ──
+DRAFTS.md

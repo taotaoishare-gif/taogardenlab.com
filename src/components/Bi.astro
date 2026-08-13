@@ -1,0 +1,16 @@
+---
+/* Renders both languages; CSS shows one. Use `as` for a block element. */
+interface Props {
+  en: string;
+  zh: string;
+  as?: string;
+  class?: string;
+}
+const { en, zh, as = 'span', class: className } = Astro.props;
+const Tag = as as any;
+---
+
+<Tag class:list={['en-only', className]} lang="en">{en}</Tag><Tag
+  class:list={['zh-only', className]}
+  lang="zh">{zh}</Tag
+>

@@ -1,0 +1,218 @@
+---
+import Base from '../layouts/Base.astro';
+import { SITE } from '../lib/site';
+
+/* DRAFT — the timeline below is assembled from Tao's own documents. Check every
+   year and organisation before publishing, and remove anything you would not
+   want to be asked about in detail. */
+const timeline = [
+  {
+    span: '2015 — 2017',
+    title: 'Painting, and then calendars',
+    body: 'Image-making before it had a purpose attached. The calendar work was the first time a thing I made had to organise somebody else\'s year.',
+  },
+  {
+    span: '2017 — 2019',
+    title: 'Fieldwork trips (采风)',
+    body: 'Travelling to look at craft where it is made rather than where it is sold. The habit that eventually became the Field Atlas.',
+  },
+  {
+    span: '2019 — 2021',
+    title: 'Ceramics',
+    body: 'Dehua, and time around workshops. Learning what a material does when it is a job rather than a metaphor.',
+  },
+  {
+    span: '2021 — 2023',
+    title: 'Gardens',
+    body: 'Jiangnan gardens, repeatedly and out of season. The point at which the interest stopped being visual.',
+  },
+  {
+    span: '2022 — 2024',
+    title: 'Cultural products',
+    body: 'Design work with museum and garden institutions. Making culture into objects people take home — which taught me most of what I know about how easily a tradition becomes a motif.',
+  },
+  {
+    span: '2024 — 2025',
+    title: 'Space',
+    body: 'Moving from objects to the arrangements around them: exhibitions, sequences, thresholds.',
+  },
+  {
+    span: '2025 — now',
+    title: 'Embodied interaction, self-taught',
+    body: 'Learning to program in order to build the pieces in Experiments. Camera-based interaction, generative audio, and a lot of failed versions.',
+  },
+];
+
+const interests = [
+  'How spatial sequencing and framing affect pace and attention',
+  'Ritual as an attention technology, and what survives when it is moved onto a screen',
+  'Material resistance as an alternative to instruction in interaction design',
+  'Design that presents a state rather than evaluating it',
+];
+---
+
+<Base
+  title="Why I am here"
+  description="How an advertising graduate with a background in ceramics, gardens and cultural design arrived at a research question about attention."
+>
+  <article class="page wrap">
+    <header>
+      <p class="label">About</p>
+      <h1>Why I am here</h1>
+      <p class="intro">
+        The short answer is that I kept noticing the same thing in unrelated
+        places, over about ten years, before I had any framework for it. The
+        route is not a straight line and I have stopped presenting it as one —
+        the detours are where the material came from.
+      </p>
+    </header>
+
+    <section class="section">
+      <h2 class="label">Ten years, roughly</h2>
+      <ol class="timeline">
+        {
+          timeline.map((item) => (
+            <li class="reveal">
+              <p class="mono span">{item.span}</p>
+              <div>
+                <h3>{item.title}</h3>
+                <p class="dim">{item.body}</p>
+              </div>
+            </li>
+          ))
+        }
+      </ol>
+    </section>
+
+    <section class="section">
+      <h2 class="label">Research interests</h2>
+      <ul class="interests">
+        {interests.map((item) => <li>{item}</li>)}
+      </ul>
+      <p class="dim narrow">
+        Deliberately narrow. There are adjacent areas I find interesting and do
+        not work in — physiological sensing among them. If that changes it will
+        be because an experiment required it, not because it sounds rigorous.
+      </p>
+    </section>
+
+    <section class="section">
+      <h2 class="label">Where I am</h2>
+      <p class="narrow">
+        Currently between Southeast Asia and southern China, working alone.
+        There is no lab, no institution and no funding behind this site. That is
+        a limitation rather than a stance — it is the reason there is no
+        participant data on any of these pages.
+      </p>
+    </section>
+
+    <section class="section">
+      <h2 class="label">Contact</h2>
+      <p class="narrow">
+        <a href={`mailto:${SITE.email}`}>{SITE.email}</a>
+      </p>
+      <p class="dim narrow small">
+        A CV is available on request. It is not the point of this page — the
+        work in <a href="/experiments">Experiments</a> and the
+        <a href="/atlas">Field Atlas</a> is a more accurate account of what I do
+        than a list of positions would be.
+      </p>
+    </section>
+  </article>
+</Base>
+
+<style>
+  .page {
+    padding-block: clamp(4rem, 10vh, 7rem) 0;
+  }
+
+  header {
+    margin-bottom: clamp(4rem, 9vh, 6rem);
+  }
+
+  h1 {
+    font-family: var(--serif);
+    font-weight: 400;
+    font-size: clamp(1.9rem, 4vw, 2.7rem);
+    letter-spacing: 0;
+    margin-top: 1.25rem;
+  }
+
+  .intro {
+    margin-top: 2rem;
+    max-width: 54ch;
+    font-size: clamp(1.0625rem, 1.5vw, 1.2rem);
+    line-height: 1.8;
+  }
+
+  .section {
+    padding-top: clamp(3rem, 7vh, 4.5rem);
+    margin-bottom: clamp(1rem, 3vh, 2rem);
+    border-top: 1px solid var(--rule);
+  }
+
+  .section > .label {
+    margin-bottom: 2.5rem;
+  }
+
+  .timeline {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    max-width: none;
+  }
+
+  .timeline li {
+    display: grid;
+    grid-template-columns: 10rem 1fr;
+    gap: 2rem;
+    margin-bottom: 3rem;
+    align-items: start;
+  }
+
+  .span {
+    margin: 0.3rem 0 0;
+  }
+
+  .timeline h3 {
+    font-family: var(--serif);
+    font-weight: 400;
+    font-size: 1.15rem;
+    letter-spacing: 0;
+    margin-bottom: 0.6rem;
+  }
+
+  .timeline p {
+    max-width: 52ch;
+    font-size: 1rem;
+    line-height: 1.7;
+    margin: 0;
+  }
+
+  .interests {
+    max-width: 56ch;
+    padding-left: 1.1rem;
+  }
+
+  .interests li {
+    margin-bottom: 0.9rem;
+    line-height: 1.7;
+  }
+
+  .narrow {
+    max-width: 54ch;
+  }
+
+  .small {
+    font-size: 0.95rem;
+    line-height: 1.7;
+    margin-top: 1.25rem;
+  }
+
+  @media (max-width: 44rem) {
+    .timeline li {
+      grid-template-columns: 1fr;
+      gap: 0.5rem;
+    }
+  }
+</style>

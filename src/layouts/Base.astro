@@ -1,0 +1,157 @@
+---
+import '../styles/global.css';
+import Nav from '../components/Nav.astro';
+import Footer from '../components/Footer.astro';
+
+interface Props {
+  title: string;
+  description?: string;
+  /** 'void' is the immersive dark front; 'paper' is every reading page. */
+  theme?: 'paper' | 'void';
+}
+
+const {
+  title,
+  description = 'TAO Garden — an evolving research practice exploring how environments, cultural knowledge, and intelligent technologies shape human attention, presence, and ways of living.',
+  theme = 'paper',
+} = Astro.props;
+
+const fullTitle = title === 'TAO Garden' ? title : `${title} · TAO Garden`;
+const canonical = new URL(Astro.url.pathname, Astro.site);
+---
+
+<!doctype html>
+<html lang="en" data-lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{fullTitle}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="/favicon.png" sizes="any" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content={new URL('/image/threshold.jpg', Astro.site)} />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <!-- The two fonts that carry the first paint. -->
+    <link
+      rel="preload"
+      href="/fonts/newsreader-latin-400-normal.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+    <link
+      rel="preload"
+      href="/fonts/inter-latin-500-normal.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+
+    <!-- Opt in to the reveal animation only when scripting is available, so
+         nothing is ever hidden behind an animation that cannot run. Language
+         is applied here, before first paint, so the page never flashes the
+         wrong one. -->
+    <script is:inline>
+      document.documentElement.classList.add('js');
+      try {
+        var saved = localStorage.getItem('tao-lang');
+        if (saved === 'zh' || saved === 'en') {
+          document.documentElement.setAttribute('data-lang', saved);
+          document.documentElement.setAttribute('lang', saved);
+        }
+      } catch (e) {}
+    </script>
+
+    <!-- No analytics. No third-party scripts. Nothing is counted here. -->
+  </head>
+
+  <body data-theme={theme}>
+    <a class="skip-link" href="#main">Skip to content</a>
+    <Nav />
+    <main id="main">
+      <slot />
+    </main>
+    {/* The dark front closes with its own way-finding, so no paper footer. */}
+    {theme === 'paper' && <Footer />}
+
+    <script>
+      // Gentle reveal on entry. Opacity and a few pixels, once, never repeating.
+      const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const targets = document.querySelectorAll<HTMLElement>('.reveal');
+
+      if (reduce || !('IntersectionObserver' in window)) {
+        targets.forEach((el) => el.classList.add('is-in'));
+      } else {
+        const io = new IntersectionObserver(
+          (entries) => {
+            entries.forEach((entry) => {
+              if (entry.isIntersecting) {
+                entry.target.classList.add('is-in');
+                io.unobserve(entry.target);
+              }
+            });
+          },
+          { rootMargin: '0px 0px -8% 0px', threshold: 0.06 }
+        );
+        targets.forEach((el) => io.observe(el));
+
+        // Safety net: if anything prevents the observer from firing (a
+        // background tab, a throttled renderer), show everything anyway.
+        window.setTimeout(() => {
+          targets.forEach((el) => el.classList.add('is-in'));
+        }, 2000);
+      }
+
+      // Language toggle. Switches the whole document at once; entries written
+      // in one language stay in it and are simply marked.
+      const langButton = document.querySelector('[data-lang-toggle]');
+      langButton?.addEventListener('click', () => {
+        const root = document.documentElement;
+        const next = root.getAttribute('data-lang') === 'zh' ? 'en' : 'zh';
+        root.setAttribute('data-lang', next);
+        root.setAttribute('lang', next);
+        try {
+          localStorage.setItem('tao-lang', next);
+        } catch (e) {}
+      });
+
+      // On the home page the nav sits over the dark threshold until it is scrolled
+      // past. The hero counts as "under the nav" while it still intersects the
+      // viewport inset by the nav's own height.
+      const nav = document.querySelector('[data-nav]');
+      const hero = document.querySelector('[data-hero]');
+
+      // The nav is sticky, so it occupies flow space. Publish its real height so
+      // the threshold can be pulled up underneath it.
+      const publishNavHeight = () => {
+        if (!nav) return 0;
+        const h = nav.getBoundingClientRect().height;
+        document.documentElement.style.setProperty('--nav-h', `${h}px`);
+        return h;
+      };
+      publishNavHeight();
+      window.addEventListener('resize', publishNavHeight);
+
+      if (nav && hero) {
+        nav.setAttribute('data-over', '');
+        const navHeight = publishNavHeight() || 64;
+        const navIo = new IntersectionObserver(
+          ([entry]) => {
+            if (entry.isIntersecting) nav.setAttribute('data-over', '');
+            else nav.removeAttribute('data-over');
+          },
+          { rootMargin: `-${Math.round(navHeight)}px 0px 0px 0px`, threshold: 0 }
+        );
+        navIo.observe(hero);
+      }
+    </script>
+  </body>
+</html>

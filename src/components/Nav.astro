@@ -1,0 +1,235 @@
+---
+import Bi from './Bi.astro';
+import Mark from './Mark.astro';
+import { UI } from '../lib/ui';
+
+/* No section bar. The front of the site is a scroll, so on the home page the
+   top right is an index of the screens you are moving through; on a reading
+   page it is a single way back. Preface, Atlas and Notes are reachable from
+   within the screens and from the footer — removed from the chrome, not
+   removed from the site. */
+const { pathname } = Astro.url;
+const isHome = pathname === '/' || pathname === '';
+
+const screens = [
+  { id: 'manifesto', n: '01', t: { en: 'Manifesto', zh: '宣言' } },
+  { id: 'logic', n: '02', t: { en: 'Questions', zh: '问题' } },
+  { id: 'lenses', n: '03', t: { en: 'Worldview', zh: '世界观' } },
+  { id: 'prototypes', n: '04', t: { en: 'Prototypes', zh: '原型' } },
+  { id: 'about', n: '05', t: { en: 'About', zh: '关于' } },
+];
+
+const backTo = pathname.startsWith('/experiments')
+  ? { href: '/experiments', t: UI.experiments }
+  : pathname.startsWith('/atlas')
+    ? { href: '/atlas', t: UI.atlas }
+    : pathname.startsWith('/notes')
+      ? { href: '/notes', t: UI.notes }
+      : { href: '/index', t: UI.index };
+---
+
+<header class:list={['site-nav', { home: isHome }]} data-nav>
+  <div class="nav-inner">
+    <a class="wordmark tracked" href="/" aria-label="TAO Garden — home">
+      <Mark />
+      <span>TAO Garden</span>
+    </a>
+
+    <div class="right">
+      {
+        isHome ? (
+          <nav class="screens" aria-label="Screens">
+            <ul>
+              {screens.map((s) => (
+                <li>
+                  <a href={`#${s.id}`} data-screen-link={s.id}>
+                    <Bi en={s.t.en} zh={s.t.zh} />
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </nav>
+        ) : (
+          <nav aria-label="Back">
+            <a class="back" href={backTo.href}>
+              ← <Bi en={backTo.t.en} zh={backTo.t.zh} />
+            </a>
+          </nav>
+        )
+      }
+
+      <button
+        type="button"
+        class="lang-toggle"
+        data-lang-toggle
+        aria-label="Switch language / 切换语言"
+      >
+        <span class="en-only"><b>EN</b> / 中</span>
+        <span class="zh-only">EN / <b>中</b></span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<style>
+  .site-nav {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: color-mix(in srgb, var(--paper) 88%, transparent);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--rule);
+    transition:
+      background var(--dur) var(--ease),
+      border-color var(--dur) var(--ease),
+      color var(--dur) var(--ease);
+  }
+
+  /* The home page is dark all the way down, so its nav never turns to paper. */
+  .site-nav.home {
+    position: fixed;
+    left: 0;
+    right: 0;
+    background: transparent;
+    backdrop-filter: none;
+    border-bottom-color: transparent;
+    color: var(--text-clean);
+  }
+
+  .nav-inner {
+    width: 100%;
+    max-width: 78rem;
+    margin-inline: auto;
+    padding: 1.05rem var(--gutter);
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1.25rem;
+    flex-wrap: wrap;
+  }
+
+  .right {
+    display: flex;
+    align-items: baseline;
+    gap: clamp(1.25rem, 3vw, 2.5rem);
+    flex-wrap: wrap;
+  }
+
+  .wordmark {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.7em;
+    font-size: var(--size-meta);
+    letter-spacing: 0.28em;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+  /* The glyph is optically centred on the cap height, not the baseline. */
+  .wordmark :global(.mark-glyph) {
+    margin-top: -0.08em;
+  }
+  .wordmark:hover {
+    color: inherit;
+  }
+  .home .wordmark {
+    color: var(--text-clean);
+  }
+
+  .screens ul {
+    display: flex;
+    gap: clamp(0.9rem, 2.2vw, 1.9rem);
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    max-width: none;
+  }
+
+  .screens li {
+    margin: 0;
+  }
+
+  .screens a {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.45em;
+    font-family: var(--mono);
+    font-size: var(--size-label);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    text-decoration: none;
+    color: color-mix(in srgb, var(--text-clean) 42%, transparent);
+    padding-bottom: 3px;
+    border-bottom: 1px solid transparent;
+    transition:
+      color var(--dur) var(--ease),
+      border-color var(--dur) var(--ease);
+  }
+
+  .screens a:hover {
+    color: var(--text-clean);
+  }
+
+  .screens a[aria-current='true'] {
+    color: var(--forest-glow);
+    border-bottom-color: var(--forest-glow);
+  }
+
+  .back {
+    font-family: var(--sans);
+    font-size: var(--size-meta);
+    letter-spacing: 0.06em;
+    text-decoration: none;
+    color: var(--ink-soft);
+  }
+  .back:hover {
+    color: var(--forest);
+  }
+
+  /* Without the numerals there is nothing to fall back to at narrow widths,
+     so the screen index steps aside rather than crowding the wordmark. */
+  @media (max-width: 52rem) {
+    .screens {
+      display: none;
+    }
+  }
+
+  @media (max-width: 40rem) {
+    .nav-inner {
+      gap: 0.6rem;
+      padding-block: 0.85rem;
+    }
+    .right {
+      gap: 1rem;
+    }
+    .wordmark {
+      font-size: 0.72rem;
+      letter-spacing: 0.2em;
+    }
+  }
+</style>
+
+<script>
+  // Mark which screen you are in. Position only — nothing is counted.
+  const links = document.querySelectorAll<HTMLAnchorElement>('[data-screen-link]');
+  if (links.length) {
+    const io = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return;
+          const id = entry.target.id;
+          links.forEach((a) =>
+            a.setAttribute(
+              'aria-current',
+              a.dataset.screenLink === id ? 'true' : 'false'
+            )
+          );
+        });
+      },
+      { rootMargin: '-45% 0px -45% 0px' }
+    );
+    links.forEach((a) => {
+      const el = document.getElementById(a.dataset.screenLink || '');
+      if (el) io.observe(el);
+    });
+  }
+</script>

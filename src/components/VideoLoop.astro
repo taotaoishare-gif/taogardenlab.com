@@ -1,0 +1,205 @@
+---
+interface Props {
+  src: string;
+  poster: string;
+  caption?: string;
+  /** Full-bleed background use (the threshold). No caption, no control chrome. */
+  ambient?: boolean;
+  /** The clip carries its own audio. It still starts muted — browsers refuse
+      to autoplay sound — and a corner control turns it on. */
+  sound?: boolean;
+  label: string;
+}
+const { src, poster, caption, ambient = false, sound = false, label } =
+  Astro.props;
+---
+
+<figure class:list={['loop', { ambient }]} data-loop data-sound={sound || undefined}>
+  <video
+    src={src}
+    poster={poster}
+    muted
+    loop
+    playsinline
+    autoplay
+    preload="metadata"
+    aria-label={label}
+    disablepictureinpicture
+  >
+  </video>
+
+  <div class="controls">
+    {
+      sound && (
+        <button type="button" class="ctl" data-mute aria-pressed="true">
+          <span data-mute-text>Sound off</span>
+        </button>
+      )
+    }
+    <button type="button" class="ctl" data-toggle aria-pressed="false">
+      <span data-toggle-text>Pause</span>
+    </button>
+  </div>
+
+  {caption && <figcaption class="mono">{caption}</figcaption>}
+</figure>
+
+<style>
+  .loop {
+    position: relative;
+    margin: 0;
+  }
+
+  video {
+    width: 100%;
+    background: var(--void, #0a0e10);
+    display: block;
+  }
+
+  .loop:not(.ambient) video {
+    border: 1px solid var(--line, rgba(232, 230, 224, 0.08));
+  }
+
+  .ambient {
+    position: absolute;
+    inset: 0;
+  }
+  .ambient video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border: 0;
+  }
+
+  figcaption {
+    margin-top: 0.9rem;
+    max-width: var(--measure);
+  }
+
+  .controls {
+    position: absolute;
+    right: 0.65rem;
+    bottom: 0.65rem;
+    display: flex;
+    gap: 0.4rem;
+    opacity: 0;
+    transition: opacity var(--dur) var(--ease);
+  }
+
+  .ambient .controls {
+    right: 1.1rem;
+    bottom: 1.1rem;
+  }
+
+  .ctl {
+    font-family: var(--mono);
+    font-size: 0.6rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--mist, #e8e6e0);
+    background: color-mix(in srgb, #000 55%, transparent);
+    border: 1px solid color-mix(in srgb, var(--mist, #e8e6e0) 26%, transparent);
+    padding: 0.35rem 0.7rem;
+    cursor: pointer;
+    backdrop-filter: blur(4px);
+    transition:
+      border-color var(--dur) var(--ease),
+      color var(--dur) var(--ease);
+  }
+
+  .ctl:hover {
+    color: var(--bronze, #b8956a);
+    border-color: var(--bronze, #b8956a);
+  }
+
+  .loop:hover .controls,
+  .ctl:focus-visible {
+    opacity: 1;
+  }
+
+  /* Sound is worth advertising, so on a clip that has it the controls stay
+     faintly visible rather than waiting for a hover that may never come. */
+  .loop[data-sound] .controls {
+    opacity: 0.55;
+  }
+  .loop[data-sound]:hover .controls {
+    opacity: 1;
+  }
+
+  @media (hover: none) {
+    .controls {
+      opacity: 0.6;
+    }
+  }
+</style>
+
+<script>
+  document.querySelectorAll<HTMLElement>('[data-loop]').forEach((fig) => {
+    const video = fig.querySelector('video') as HTMLVideoElement | null;
+    if (!video) return;
+
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+    // Play / pause — an auto-playing thing the reader cannot stop would
+    // contradict what this site is about.
+    const button = fig.querySelector('[data-toggle]') as HTMLButtonElement | null;
+    const text = fig.querySelector('[data-toggle-text]');
+    const setState = (playing: boolean) => {
+      if (text) text.textContent = playing ? 'Pause' : 'Play';
+      button?.setAttribute('aria-pressed', playing ? 'false' : 'true');
+    };
+
+    if (reduce.matches) {
+      video.removeAttribute('autoplay');
+      video.pause();
+      setState(false);
+    }
+
+    button?.addEventListener('click', () => {
+      if (video.paused) {
+        video.play().then(
+          () => setState(true),
+          () => setState(false)
+        );
+      } else {
+        video.pause();
+        setState(false);
+      }
+    });
+
+    video.addEventListener('play', () => setState(true));
+    video.addEventListener('pause', () => setState(false));
+
+    // Sound. The clip autoplays muted because that is the only way it plays
+    // at all; this turns the audio on, and turns every other clip's off so
+    // two pieces never sound at once.
+    const muteBtn = fig.querySelector('[data-mute]') as HTMLButtonElement | null;
+    const muteText = fig.querySelector('[data-mute-text]');
+    const paint = () => {
+      if (muteText) muteText.textContent = video.muted ? 'Sound off' : 'Sound on';
+      muteBtn?.setAttribute('aria-pressed', String(video.muted));
+    };
+
+    muteBtn?.addEventListener('click', () => {
+      const turningOn = video.muted;
+      if (turningOn) {
+        document.querySelectorAll('video').forEach((other) => {
+          if (other !== video) {
+            other.muted = true;
+            other.dispatchEvent(new Event('volumechange'));
+          }
+        });
+      }
+      video.muted = !video.muted;
+      if (!video.muted && video.paused) video.play().catch(() => {});
+      paint();
+    });
+
+    video.addEventListener('volumechange', paint);
+    paint();
+
+    // If autoplay is refused (iOS low-power mode), the poster stays up and the
+    // control reads Play. It never goes blank.
+    video.play().catch(() => setState(false));
+  });
+</script>
