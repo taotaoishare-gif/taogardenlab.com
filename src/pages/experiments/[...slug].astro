@@ -97,8 +97,21 @@ const hasLineage =
         poster={d.poster}
         sound
         label={`Screen recording of ${entry.id.replace(/-/g, ' ')} running`}
-        caption="Screen recording of the piece running. Starts muted — sound is in the corner."
       />
+      {
+        d.demo && (
+          <div class="try">
+            <a class="action" href={d.demo}>
+              <Bi en={UI.openDemo.en} zh={UI.openDemo.zh} /> →
+            </a>
+            {d.demoNote && (
+              <p class="mono note">
+                <Bi {...bi(d, 'demoNote')} />
+              </p>
+            )}
+          </div>
+        )
+      }
     </div>
 
     {
@@ -160,65 +173,72 @@ const hasLineage =
       )
     }
 
-    <div class="wrap columns">
-      <aside class="side">
-        <dl>
-          <dt class="label"><Bi en={UI.builtWith.en} zh={UI.builtWith.zh} /></dt>
-          <dd class="mono">{d.stack.join(', ')}</dd>
+    <div class="wrap columns" data-solo={d.study ? '' : undefined}>
+      {
+        /* A study page argues in its own eleven sections; the sidebar of
+           credits and the build-log narrative would only compete with them. */
+        !d.study && (
+          <aside class="side">
+            <dl>
+              <dt class="label">
+                <Bi en={UI.builtWith.en} zh={UI.builtWith.zh} />
+              </dt>
+              <dd class="mono">{d.stack.join(', ')}</dd>
 
-          <dt class="label"><Bi en={UI.lenses.en} zh={UI.lenses.zh} /></dt>
-          <dd class="mono">{d.lenses.join(', ')}</dd>
+              <dt class="label">
+                <Bi en={UI.lenses.en} zh={UI.lenses.zh} />
+              </dt>
+              <dd class="mono">{d.lenses.join(', ')}</dd>
 
-          <dt class="label"><Bi en={UI.role.en} zh={UI.role.zh} /></dt>
-          <dd class="mono">
-            <Bi
-              en="Concept, design and code — all of it mine."
-              zh="概念、设计与代码，全部由我完成。"
-            />
-          </dd>
-        </dl>
-
-        {
-          d.demo && (
-            <div class="try">
-              <a class="action" href={d.demo}>
-                <Bi en={UI.openDemo.en} zh={UI.openDemo.zh} /> →
-              </a>
-              {d.demoNote && <p class="mono note"><Bi {...bi(d, 'demoNote')} /></p>}
-            </div>
-          )
-        }
-      </aside>
+              <dt class="label">
+                <Bi en={UI.role.en} zh={UI.role.zh} />
+              </dt>
+              <dd class="mono">
+                <Bi
+                  en="Concept, design and code — all of it mine."
+                  zh="概念、设计与代码，全部由我完成。"
+                />
+              </dd>
+            </dl>
+          </aside>
+        )
+      }
 
       <div class="prose body">
-        {d.study && <StudySections study={d.study} closedLoop={CLOSED_LOOP} />}
-        {d.study && (
-          <h2 class="build-log-h">
-            <Bi en="Build log" zh="建造记录" />
-          </h2>
-        )}
-        {ZhContent ? (
-          <>
-            <div class="en-only"><Content /></div>
-            <div class="zh-only"><ZhContent /></div>
-          </>
-        ) : (
-          <Content />
-        )}
-
         {
-          d.process.length > 0 && (
-            <section class="process">
-              <h2><Bi en={UI.process.en} zh={UI.process.zh} /></h2>
-              <ol class="versions">
-                {d.process.map((step) => (
-                  <li>
-                    <p class="numeral v">{step.version}</p>
-                    <p class="vnote">{step.note}</p>
-                  </li>
-                ))}
-              </ol>
-            </section>
+          d.study ? (
+            <StudySections study={d.study} closedLoop={CLOSED_LOOP} />
+          ) : (
+            <>
+              {ZhContent ? (
+                <>
+                  <div class="en-only">
+                    <Content />
+                  </div>
+                  <div class="zh-only">
+                    <ZhContent />
+                  </div>
+                </>
+              ) : (
+                <Content />
+              )}
+
+              {d.process.length > 0 && (
+                <section class="process">
+                  <h2>
+                    <Bi en={UI.process.en} zh={UI.process.zh} />
+                  </h2>
+                  <ol class="versions">
+                    {d.process.map((step) => (
+                      <li>
+                        <p class="numeral v">{step.version}</p>
+                        <p class="vnote">{step.note}</p>
+                      </li>
+                    ))}
+                  </ol>
+                </section>
+              )}
+            </>
           )
         }
 
@@ -281,22 +301,13 @@ const hasLineage =
     color: var(--text-dim);
   }
 
-  /* The narrative that used to be the whole page now sits after the study
-     frame, as the record of how it was actually built. */
-  .build-log-h {
-    font-family: var(--mono);
-    font-size: 0.625rem;
-    font-weight: 400;
-    letter-spacing: 0.3em;
-    text-transform: uppercase;
-    color: var(--text-dim);
-    margin: var(--section) 0 2rem;
-    padding-top: clamp(3rem, 7vh, 5rem);
-    border-top: 1px solid var(--line-2);
-  }
-
   .film {
     margin-block: clamp(2.5rem, 6vh, 3.5rem) 0;
+  }
+
+  /* The way in sits directly under the recording it belongs to. */
+  .try {
+    margin-top: 1.5rem;
   }
 
   /* Lineage — where this came from, before any prose. */
@@ -349,6 +360,10 @@ const hasLineage =
     gap: clamp(2rem, 5vw, 4.5rem);
     align-items: start;
     margin-top: clamp(2rem, 5vh, 3.5rem);
+  }
+
+  .columns[data-solo] {
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .side {
