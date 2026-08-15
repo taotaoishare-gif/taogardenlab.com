@@ -1,12 +1,15 @@
 ---
 title: 'Rain on banana leaves'
+titleZh: '雨打芭蕉'
 place: 'Southern China'
+placeZh: '华南'
 date: 2023-07-04
 revisited: 2026-07-14
 dimensions: [materials, cultural-references]
 evidence: observed
 lang: en
 summary: 'A motif in poetry and music for a situation in which nothing is happening and someone is waiting. The leaf is a loudspeaker for weather.'
+summaryZh: '诗与乐里的一个母题，说的是什么都没发生、而有人在等。叶子是天气的扩音器。'
 ---
 
 <!-- DRAFT — assembled from Tao's existing documents, not from her original field
@@ -51,7 +54,7 @@ problem, and that the solution is: sound that is eventful but not meaningful.
 
 ## 04 Translate
 
-I built [Rain Curtain](/experiments/rain-curtain/) from this. The specific
+I built a rain-curtain piece from this. The specific
 thing I took was the discreteness — individual drops rather than an ambient
 wash — because the wash is what most rain-sound applications produce, and the
 wash is the wrong thing. It is texture, and texture is not events.

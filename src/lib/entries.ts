@@ -5,7 +5,9 @@ export type Kind = 'experiment' | 'atlas' | 'observation' | 'reading' | 'lab';
 export interface Entry {
   kind: Kind;
   kindLabel: string;
+  kindLabelZh: string;
   title: string;
+  titleZh: string;
   href: string;
   date: Date;
   lang: string;
@@ -28,7 +30,9 @@ export async function allEntries(): Promise<Entry[]> {
     ...experiments.map((e) => ({
       kind: 'experiment' as const,
       kindLabel: 'experiment',
+      kindLabelZh: '实验',
       title: e.data.title,
+      titleZh: (e.data as any).titleZh ?? e.data.title,
       href: `/experiments/${e.id}/`,
       date: e.data.date,
       lang: (e.data as any).lang ?? 'en',
@@ -36,7 +40,9 @@ export async function allEntries(): Promise<Entry[]> {
     ...atlas.map((e) => ({
       kind: 'atlas' as const,
       kindLabel: 'atlas',
+      kindLabelZh: '田野',
       title: e.data.title,
+      titleZh: (e.data as any).titleZh ?? e.data.title,
       href: `/atlas/${e.id}/`,
       date: e.data.date,
       lang: (e.data as any).lang ?? 'en',
@@ -44,7 +50,9 @@ export async function allEntries(): Promise<Entry[]> {
     ...observations.map((e) => ({
       kind: 'observation' as const,
       kindLabel: 'observation',
+      kindLabelZh: '观察',
       title: e.data.title,
+      titleZh: (e.data as any).titleZh ?? e.data.title,
       href: `/notes/${e.id}/`,
       date: e.data.date,
       lang: (e.data as any).lang ?? 'en',
@@ -52,7 +60,9 @@ export async function allEntries(): Promise<Entry[]> {
     ...readings.map((e) => ({
       kind: 'reading' as const,
       kindLabel: 'reading',
+      kindLabelZh: '阅读',
       title: e.data.title,
+      titleZh: (e.data as any).titleZh ?? e.data.title,
       href: `/notes/${e.id}/`,
       date: e.data.date,
       lang: (e.data as any).lang ?? 'en',
@@ -60,7 +70,9 @@ export async function allEntries(): Promise<Entry[]> {
     ...labNotes.map((e) => ({
       kind: 'lab' as const,
       kindLabel: 'lab note',
+      kindLabelZh: '实验室笔记',
       title: e.data.title,
+      titleZh: (e.data as any).titleZh ?? e.data.title,
       href: `/notes/${e.id}/`,
       date: e.data.date,
       lang: (e.data as any).lang ?? 'en',

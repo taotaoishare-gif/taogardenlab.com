@@ -1,22 +1,26 @@
 ---
-number: 5
+number: 3
 name: 'Cosmic Pottery'
 nameZh: '星河拉坯'
 title: 'What happens if the material resists a hurried hand?'
+titleZh: '如果材料会抗拒一只着急的手，会发生什么？'
 date: 2026-07-19
 lenses: [embodied-interaction, computational-media, contemplative-traditions]
 evidence: built
 status: 'Built. Not evaluated.'
+statusZh: '已造。未做评估。'
 video: /video/exp-05-pottery.mp4
 poster: /image/exp-05-pottery.jpg
 demo: /demos/cosmic-pottery/
 demoNote: 'Uses your camera locally. Nothing is uploaded, nothing is stored.'
+demoNoteZh: '在本机使用你的摄像头。不上传，不存储。'
 stack: [MediaPipe Hands, Canvas 2D, Web Audio API]
 summary: 'Take a planet from the river of stars, light an incense stick to set the time, then throw a pot with your hands in the air. Clay that wobbles when you rush.'
+summaryZh: '从星河里掬一颗星球，点一炷香定下时长，然后隔空拉坯。你一急，坯就晃。'
 lang: en
 fromAtlas: [dehua-white-porcelain]
 fromReadings: [yuanye-ji-cheng]
-followsFrom: [rain-curtain]
+followsFrom: [phoenix-crown]
 process:
   - version: V01 · 19 July
     note: 'Imperial gold with a red seal. Initial form a cylinder, so the star-to-clay transition read as a scene change. One hand owned the whole vessel. Shaping fast and satisfying for ninety seconds, then empty.'
@@ -40,9 +44,9 @@ I spent time around ceramics in Dehua, where white porcelain is the local
 material and the making is a trade rather than a therapy. See
 [the atlas entry on Dehua](/atlas/dehua-white-porcelain/).
 
-This is also a direct answer to what I got wrong in
-[Rain Curtain](/experiments/rain-curtain/), where speed changed the *sound*.
-Here speed changes the *object you are left with*, which is harder to ignore.
+It is also a direct answer to something I got wrong earlier. In a previous
+piece, moving faster changed only the *sound*. Here it changes the *object you
+are left with*, which is much harder to ignore.
 
 ## 03 What I built
 

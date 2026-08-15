@@ -1,7 +1,9 @@
 ---
 title: 'How long is left'
+titleZh: '还剩多久'
 date: 2026-07-11
 place: 'Luang Prabang'
+placeZh: '琅勃拉邦'
 lenses: [ritual, contemplative-traditions]
 evidence: observed
 lang: en

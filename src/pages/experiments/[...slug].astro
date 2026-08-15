@@ -6,13 +6,24 @@ import Bi from '../../components/Bi.astro';
 import { getCollection, render } from 'astro:content';
 import { iso, longDate } from '../../lib/site';
 import { UI } from '../../lib/ui';
+import { bi } from '../../lib/bi';
 
 export async function getStaticPaths() {
-  const [experiments, atlas, readings] = await Promise.all([
+  const [experiments, atlas, readings, zhBodies] = await Promise.all([
     getCollection('experiments'),
     getCollection('atlas'),
     getCollection('readings'),
+    getCollection('experiments-zh'),
   ]);
+  /* Pair on the file path, not the id: the slugifier eats the dot in
+     `guqin-forest.zh.md` and yields `guqin-forestzh`, which no tidy regex on
+     the id can reliably undo. The path is unambiguous. */
+  const zhById = new Map(
+    zhBodies.map((z) => [
+      (z.filePath ?? '').split('/').pop()?.replace(/\.zh\.md$/, '') ?? '',
+      z,
+    ])
+  );
 
   const atlasById = new Map(atlas.map((a) => [a.id, a.data.title]));
   const readingById = new Map(readings.map((r) => [r.id, r.data.author]));
@@ -22,6 +33,7 @@ export async function getStaticPaths() {
     params: { slug: entry.id },
     props: {
       entry,
+      zhEntry: zhById.get(entry.id) ?? null,
       lineage: {
         field: entry.data.fromAtlas.map((id) => ({
           id,
@@ -41,8 +53,11 @@ export async function getStaticPaths() {
   }));
 }
 
-const { entry, lineage } = Astro.props;
+const { entry, zhEntry, lineage } = Astro.props;
 const { Content } = await render(entry);
+/* When a Chinese body exists the two are swapped by the language toggle;
+   when it does not, the original shows in both modes rather than vanishing. */
+const ZhContent = zhEntry ? (await render(zhEntry as any)).Content : null;
 const d = entry.data;
 const hasLineage =
   lineage.field.length || lineage.reading.length || lineage.follows.length;
@@ -55,10 +70,10 @@ const hasLineage =
         <Bi en={UI.experiment.en} zh={UI.experiment.zh} />
         {' '}{String(d.number).padStart(2, '0')}
       </p>
-      <h1 class="title">{d.title}</h1>
+      <h1 class="title"><Bi {...bi(d, 'title')} /></h1>
       <p class="mono head-meta">
         <time datetime={iso(d.date)}>{longDate(d.date)}</time>
-        {' · '}{d.status}
+        {' · '}<Bi {...bi(d, 'status')} />
       </p>
     </header>
 
@@ -156,14 +171,21 @@ const hasLineage =
               <a class="action" href={d.demo}>
                 <Bi en={UI.openDemo.en} zh={UI.openDemo.zh} /> →
               </a>
-              {d.demoNote && <p class="mono note">{d.demoNote}</p>}
+              {d.demoNote && <p class="mono note"><Bi {...bi(d, 'demoNote')} /></p>}
             </div>
           )
         }
       </aside>
 
       <div class="prose body">
-        <Content />
+        {ZhContent ? (
+          <>
+            <div class="en-only"><Content /></div>
+            <div class="zh-only"><ZhContent /></div>
+          </>
+        ) : (
+          <Content />
+        )}
 
         {
           d.process.length > 0 && (

@@ -1,7 +1,9 @@
 ---
 title: 'Wet stone'
+titleZh: '湿石'
 date: 2026-04-09
 place: 'Suzhou'
+placeZh: '苏州'
 lenses: [gardens]
 evidence: observed
 lang: en

@@ -1,12 +1,15 @@
 ---
 title: 'Spatial sequencing in Jiangnan gardens'
+titleZh: '江南园林的空间序列'
 place: 'Suzhou / Hangzhou'
+placeZh: '苏州 / 杭州'
 date: 2022-03-15
 revisited: 2026-08-01
 dimensions: [places, spatial-principles]
 evidence: observed
 lang: en
 summary: 'A Jiangnan garden is small and takes a long time to cross. The delay is built, and it is built out of walls.'
+summaryZh: '园子比走完它所需的时间要小。这段延迟是造出来的，而且是用墙造的。'
 ---
 
 <!-- DRAFT — assembled from Tao's existing documents, not from her original field
@@ -65,9 +68,9 @@ everything at once and lets you skip. The nearest honest analogue is not a
 visual style but a structural refusal — no map, no progress bar, no scrubber,
 no way to see how much is left.
 
-I tried the shape rather than the principle in
-[Computational Framing](/experiments/computational-framing/) and it did not
-work, which is the most useful result I have had from this entry.
+I once tried the shape rather than the principle — a lattice window, rebuilt
+on a screen — and it did not work, which is the most useful result I have had
+from this entry.
 
 ## 05 Question
 

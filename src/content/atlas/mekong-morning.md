@@ -1,12 +1,15 @@
 ---
 title: 'A river town at six in the morning'
+titleZh: '清晨六点的河边小城'
 place: 'Luang Prabang, Laos'
+placeZh: '老挝琅勃拉邦'
 date: 2026-06-02
 revisited: 2026-07-30
 dimensions: [places, practices]
 evidence: observed
 lang: en
 summary: 'The whole town is awake and quiet at the same time. Nothing is scheduling this except light.'
+summaryZh: '整座城在同一时刻醒来，并且是安静的。除了光，没有什么在给它排时间表。'
 ---
 
 <!-- DRAFT — assembled from Tao's existing documents, not from her original field

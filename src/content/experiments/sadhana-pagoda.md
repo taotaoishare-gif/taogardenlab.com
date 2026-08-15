@@ -1,19 +1,23 @@
 ---
-number: 6
+number: 4
 name: 'Sadhana'
 nameZh: '聚沙成塔'
 title: 'What is a biofeedback loop when there is no body attached to it?'
+titleZh: '当没有身体接在上面时，生物反馈还剩下什么？'
 date: 2026-08-11
 lenses: [embodied-interaction, contemplative-traditions, computational-media]
 evidence: built
 status: 'Built. Simulated physiology. Not evaluated.'
+statusZh: '已造。生理为模拟。未做评估。'
 video: /video/exp-06-sadhana.mp4
 poster: /image/exp-06-sadhana.jpg
 thumb: /image/exp-06-sadhana-thumb.jpg
 demo: /demos/sadhana/
 demoNote: 'Runs in the browser with a simulated body. The chest-strap path needs Web Bluetooth — Chromium only, not Safari or Firefox. Nothing is uploaded or stored either way.'
+demoNoteZh: '可在浏览器里用模拟的身体运行。胸带那条链路需要 Web Bluetooth——仅 Chromium，Safari 与 Firefox 不支持。两种方式都不上传、不存储任何数据。'
 stack: [Three.js, Tone.js, Web Bluetooth, GLSL]
 summary: 'Fifty thousand grains of sand gather into a Thai chedi and gild from the spire down as the sitter settles. The sitter, for now, is a model.'
+summaryZh: '五万粒沙聚成一座泰式金塔，随打坐者安定下来，自塔尖向下鎏金。而目前，那位打坐者是一个模型。'
 lang: en
 fromAtlas: [lanna-temple-thresholds, tea-as-timing]
 followsFrom: [cosmic-pottery]

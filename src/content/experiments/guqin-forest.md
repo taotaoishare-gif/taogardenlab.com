@@ -3,16 +3,20 @@ number: 1
 name: 'Guqin Forest'
 nameZh: '古琴竹林'
 title: 'Can an instrument answer a hand without asking it to perform?'
+titleZh: '乐器能否回应一只手，而不要求它表演？'
 date: 2026-06-30
 lenses: [embodied-interaction, computational-media, contemplative-traditions]
 evidence: built
 status: 'Eight versions built. Not evaluated.'
+statusZh: '造了八版。未做评估。'
 video: /video/exp-01-guqin.mp4
 poster: /image/exp-01-guqin.jpg
 demo: /demos/guqin-forest/
 demoNote: 'Uses your camera locally. Nothing is uploaded, nothing is stored.'
+demoNoteZh: '在本机使用你的摄像头。不上传，不存储。'
 stack: [MediaPipe Hands, Canvas 2D, Web Audio API]
 summary: 'A bamboo landscape that sounds when a hand moves through it. Built to find out whether a responsive instrument can avoid turning its player into a performer.'
+summaryZh: '一片会出声的竹林，手穿过它便有琴音。想弄清楚的是：一件会回应的乐器，能不能不把弹它的人变成表演者。'
 lang: en
 fromAtlas: [jiangnan-sequencing]
 process:

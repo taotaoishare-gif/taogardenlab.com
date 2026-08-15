@@ -1,12 +1,15 @@
 ---
 title: 'Carrying the gods through the village'
+titleZh: '游神'
 place: 'Fuzhou, Fujian'
+placeZh: '福建福州'
 date: 2024-02-24
 revisited: 2026-07-20
 dimensions: [practices, cultural-references]
 evidence: observed
 lang: en
 summary: 'A village parade where the whole street is required to look at the same thing at the same time. Attention organised by obligation rather than by interest.'
+summaryZh: '一场村中游神，整条街被要求在同一刻看向同一处。注意力由义务组织，而不是由兴趣。'
 ---
 
 <!-- DRAFT — assembled from Tao's existing documents, not from her original field

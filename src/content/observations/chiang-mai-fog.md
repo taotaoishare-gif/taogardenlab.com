@@ -1,7 +1,9 @@
 ---
 title: 'Five in the morning'
+titleZh: '清晨五点'
 date: 2026-01-14
 place: 'Chiang Mai'
+placeZh: '清迈'
 lenses: [computational-media]
 evidence: observed
 lang: en

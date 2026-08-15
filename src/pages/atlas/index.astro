@@ -2,6 +2,8 @@
 import Base from '../../layouts/Base.astro';
 import { getCollection } from 'astro:content';
 import { iso } from '../../lib/site';
+import Bi from '../../components/Bi.astro';
+import { bi } from '../../lib/bi';
 
 const entries = (await getCollection('atlas')).sort(
   (a, b) => b.data.date.getTime() - a.data.date.getTime()
@@ -23,13 +25,12 @@ const dimensions = [
   <div class="page wrap">
     <header>
       <p class="label">Field Atlas</p>
-      <h1>What I have looked at, and what I think it was doing.</h1>
+      <h1><Bi en="What I have looked at, and what I think it was doing." zh="我看过什么，以及我认为它在做什么。" /></h1>
       <p class="intro dim">
-        Not an inspiration board. Each entry moves through the same five steps —
-        observe, contextualise, interpret, translate, and then question whether
-        the translation is a misreading. The fifth step is the one that makes
-        this cultural research rather than a library of Eastern motifs, and it
-        is never skipped.
+        <Bi
+          en="Not an inspiration board. Each entry moves through the same five steps — observe, contextualise, interpret, translate, and then question whether the translation is a misreading. The fifth step is the one that makes this cultural research rather than a library of Eastern motifs, and it is never skipped."
+          zh="这不是灵感墙。每一条都走同样的五步——观察、还原语境、阐释、转译，最后追问这次转译会不会是一场误读。正是第五步让它成为文化研究，而不是一座东方符号的素材库；这一步从不跳过。"
+        />
       </p>
     </header>
 
@@ -59,11 +60,11 @@ const dimensions = [
                   {iso(entry.data.date)}
                 </time>
                 {entry.data.place && (
-                  <span class="mono place">{entry.data.place}</span>
+                  <span class="mono place"><Bi {...bi(entry.data, 'place')} /></span>
                 )}
               </div>
-              <h2>{entry.data.title}</h2>
-              <p class="summary dim">{entry.data.summary}</p>
+              <h2><Bi {...bi(entry.data, 'title')} /></h2>
+              <p class="summary dim"><Bi {...bi(entry.data, 'summary')} /></p>
               <p class="mono dims">{entry.data.dimensions.join(' · ')}</p>
             </a>
           </li>

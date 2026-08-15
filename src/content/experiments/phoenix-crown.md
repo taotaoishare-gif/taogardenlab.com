@@ -1,21 +1,25 @@
 ---
-number: 4
+number: 2
 name: 'Phoenix Crown'
 nameZh: '凤冠流苏'
 title: 'Can a museum object be handled without being touched?'
+titleZh: '一件博物馆藏品，能否在不被触碰的情况下被上手？'
 date: 2026-07-15
 lenses: [ritual, embodied-interaction, computational-media]
 evidence: built
 status: 'Built. Not evaluated.'
+statusZh: '已造。未做评估。'
 video: /video/exp-04-phoenix.mp4
 poster: /image/exp-04-phoenix.jpg
 demo: /demos/phoenix-crown/
 demoNote: 'Uses your camera locally. Nothing is uploaded, nothing is stored.'
+demoNoteZh: '在本机使用你的摄像头。不上传，不存储。'
 stack: [MediaPipe Hands, Canvas 2D, Web Audio API]
 summary: 'A phoenix crown drawn in gold line, with tassels of jade beads and poem characters hanging from it. A hand passing through sets the strands swinging and sounding.'
+summaryZh: '金线勾出的凤冠，冠下垂着玉珠与诗字流苏。手拂过，珠串便摇曳作响。'
 lang: en
 fromAtlas: [phoenix-crown-object]
-followsFrom: [rain-curtain]
+followsFrom: [guqin-forest]
 ---
 
 ## 01 Question
@@ -35,10 +39,10 @@ Chinese has a phrase for the sound of hanging ornaments: 环佩玎珰. It is a
 sound that means someone is moving. Wedding poetry uses it as a way of saying
 a body is present without describing the body.
 
-This continues a thread from [Rain Curtain](/experiments/rain-curtain/) — both
-are hanging strands that a hand passes through. I built them a day apart. The
-difference is that rain is a material and a crown is an artefact, which turns
-out to matter a great deal.
+I had just built another piece made of hanging strands — rain, falling past
+the eaves — and this one began as the same gesture. The difference is that rain
+is a material and a crown is an artefact, which turns out to matter a great
+deal.
 
 ## 03 What I built
 

@@ -1,5 +1,6 @@
 ---
 title: 'I made the clay respond faster and the piece got worse'
+titleZh: '我让陶土反应更快，作品却更差了'
 date: 2026-07-21
 lenses: [embodied-interaction]
 evidence: built

@@ -1,6 +1,7 @@
 ---
 import type { Entry } from '../lib/entries';
 import { iso } from '../lib/site';
+import Bi from './Bi.astro';
 
 interface Props {
   entries: Entry[];
@@ -16,9 +17,9 @@ const { entries } = Astro.props;
           <time class="mono" datetime={iso(entry.date)}>
             {iso(entry.date)}
           </time>
-          <span class="kind mono">{entry.kindLabel}</span>
+          <span class="kind mono"><Bi en={entry.kindLabel} zh={entry.kindLabelZh} /></span>
           <span class="title">
-            {entry.title}
+            <Bi en={entry.title} zh={entry.titleZh} />
             {entry.lang !== 'en' && <span class="mono langmark">中文</span>}
           </span>
         </a>

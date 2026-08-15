@@ -1,12 +1,15 @@
 ---
 title: 'The phoenix crown behind glass'
+titleZh: '玻璃柜里的凤冠'
 place: 'Museum collection'
+placeZh: '博物馆藏'
 date: 2024-05-19
 revisited: 2026-07-15
 dimensions: [cultural-references, materials]
 evidence: observed
 lang: en
 summary: 'An object whose defining properties are weight and sound, displayed in a case that removes both.'
+summaryZh: '一件以重量与声音为要害的器物，被陈列在一个恰好取消了这两者的柜子里。'
 ---
 
 <!-- DRAFT — assembled from Tao's existing documents, not from her original field

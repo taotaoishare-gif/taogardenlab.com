@@ -1,7 +1,9 @@
 ---
 title: 'The radio is not for listening'
+titleZh: '收音机不是用来听的'
 date: 2026-02-08
 place: 'Fujian'
+placeZh: '福建'
 lenses: [ritual]
 evidence: observed
 lang: en

@@ -1,12 +1,15 @@
 ---
 title: 'Framing and borrowed scenery'
+titleZh: '框景与借景'
 place: 'Suzhou'
+placeZh: '苏州'
 date: 2022-03-17
 revisited: 2026-07-01
 dimensions: [spatial-principles]
 evidence: observed
 lang: en
 summary: 'The lattice window frames something ordinary and elaborately. The elaboration is the instruction.'
+summaryZh: '漏窗极尽工巧地框住一处平常景致。那份工巧本身就是指示。'
 ---
 
 <!-- DRAFT — assembled from Tao's existing documents, not from her original field

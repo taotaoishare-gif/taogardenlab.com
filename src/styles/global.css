@@ -83,22 +83,23 @@
   /* One surface for the whole site: dark everywhere, reading pages included.
      The names stay `paper` / `ink` so every existing rule keeps working —
      only what they point at changed. */
-  --paper: #0a0e10;
-  --paper-sunk: #10151a;
+  --paper: #171e21;
+  --paper-sunk: #1e2629;
   --ink: #e8e6e0;
   --ink-soft: #c8c5bd;
-  /* 5.1:1 on the dark ground — passes AA for the 11–13px mono it carries. */
-  --ink-faint: #85837c;
+  /* 6.0:1 on the lifted ground — AA for the 11–13px mono it carries. */
+  --ink-faint: #9a988f;
   --rule: rgba(232, 230, 224, 0.16);
 
   /* ---- The immersive front -------------------------------------------
      Taken from 0515-brandingwebsite: near-black with a cool cast, warm
      off-white mist, bronze as the primary accent and jade as the second.
-     Contrast on --void: mist 15.5, mist-2 11.2, bronze 7.0, jade 6.4,
-     mist-dim 5.1 (nudged from the reference's #7a7872, which was 4.4). */
-  --void: #0a0e10;
-  --void-soft: #10151a;
-  --void-raised: #1a2026;
+     The ground was lifted off near-black (#0A0E10 -> #171E21) so the site
+     reads as dusk rather than as a void. Contrast on --void: mist 13.4,
+     mist-2 9.7, bronze 6.0, jade 5.5, text-dim 5.8 — all still AA. */
+  --void: #171e21;
+  --void-soft: #1e2629;
+  --void-raised: #283135;
   --mist: #e8e6e0;
   --mist-2: #c8c5bd;
   --bronze: #b8956a;
@@ -108,7 +109,7 @@
   --line-2: rgba(232, 230, 224, 0.16);
 
   --text-clean: var(--mist);
-  --text-dim: #85837c;
+  --text-dim: #9a988f;
   --dark: var(--void);
   --dark-glow: var(--mist);
 

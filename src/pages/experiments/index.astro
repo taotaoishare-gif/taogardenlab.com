@@ -2,6 +2,8 @@
 import Base from '../../layouts/Base.astro';
 import { getCollection } from 'astro:content';
 import { iso } from '../../lib/site';
+import Bi from '../../components/Bi.astro';
+import { bi } from '../../lib/bi';
 
 const experiments = (await getCollection('experiments')).sort(
   (a, b) => b.data.number - a.data.number
@@ -15,11 +17,12 @@ const experiments = (await getCollection('experiments')).sort(
   <div class="page wrap">
     <header>
       <p class="label">Experiments</p>
-      <h1>Things I built to think with.</h1>
+      <h1><Bi en="Things I built to think with." zh="我造来思考的东西。" /></h1>
       <p class="intro dim">
-        Each one exists because I could not reason my way to the answer. Every
-        page includes a section on what did not work, because that is usually
-        where the result is.
+        <Bi
+          en="Each one exists because I could not reason my way to the answer. Every page includes a section on what did not work, because that is usually where the result is."
+          zh="每一件之所以存在，都是因为我没能靠想清楚得出答案。每一页都有一节写「什么没成」——结果通常就在那里。"
+        />
       </p>
     </header>
 
@@ -45,10 +48,10 @@ const experiments = (await getCollection('experiments')).sort(
                   {iso(exp.data.date)}
                 </time>
               </div>
-              <h2>{exp.data.title}</h2>
-              <p class="summary dim">{exp.data.summary}</p>
+              <h2><Bi {...bi(exp.data, 'title')} /></h2>
+              <p class="summary dim"><Bi {...bi(exp.data, 'summary')} /></p>
               <p class="mono lenses">
-                {exp.data.status} · {exp.data.lenses.join(' · ')}
+                <Bi {...bi(exp.data, 'status')} /> · {exp.data.lenses.join(' · ')}
               </p>
             </a>
           </li>

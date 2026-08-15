@@ -1,7 +1,9 @@
 ---
 title: 'Two rectangles'
+titleZh: '两个长方形'
 date: 2026-06-27
 place: 'Luang Prabang'
+placeZh: '琅勃拉邦'
 lenses: [computational-media, gardens]
 evidence: observed
 lang: en

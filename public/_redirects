@@ -1,0 +1,13 @@
+# Cloudflare Pages redirects.
+#
+# Computational Framing and Rain Curtain were published, then withdrawn when
+# the set was cut to four pieces. The prototypes still exist; they are simply
+# no longer documented here. These URLs were live, so they are sent to the
+# current set rather than left to 404.
+
+/experiments/computational-framing  /experiments/  301
+/experiments/computational-framing/ /experiments/  301
+/experiments/rain-curtain           /experiments/  301
+/experiments/rain-curtain/          /experiments/  301
+/demos/computational-framing/*      /experiments/  301
+/demos/rain-curtain/*               /experiments/  301

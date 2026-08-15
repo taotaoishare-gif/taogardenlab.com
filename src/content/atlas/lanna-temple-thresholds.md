@@ -1,12 +1,15 @@
 ---
 title: 'Thresholds in a Chiang Mai temple compound'
+titleZh: '清迈寺院的层层门槛'
 place: 'Chiang Mai, Thailand'
+placeZh: '泰国清迈'
 date: 2025-12-11
 revisited: 2026-07-16
 dimensions: [places, spatial-principles]
 evidence: observed
 lang: en
 summary: 'Several small barriers between the street and the hall — none of them locked, all of them slowing you down. Shoes are the last one.'
+summaryZh: '从街道到殿内隔着好几道小小的阻碍，没有一道是锁着的，每一道都让你慢下来。脱鞋是最后一道。'
 ---
 
 <!-- DRAFT — assembled from Tao's existing documents, not from her original field

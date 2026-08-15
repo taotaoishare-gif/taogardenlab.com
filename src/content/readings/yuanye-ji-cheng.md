@@ -1,8 +1,11 @@
 ---
 title: 'A garden manual that refuses to give rules'
+titleZh: '一部拒绝给出法则的造园书'
 date: 2026-07-08
 author: 'Ji Cheng (計成)'
+authorZh: '计成'
 work: '園冶 (Yuanye / The Craft of Gardens)'
+workZh: '《园冶》'
 year: 1631
 lenses: [gardens, spatial-principles]
 evidence: literature

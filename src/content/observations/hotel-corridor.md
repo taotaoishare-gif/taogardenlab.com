@@ -1,7 +1,9 @@
 ---
 title: 'Corridor'
+titleZh: '走廊'
 date: 2026-03-02
 place: 'Vientiane'
+placeZh: '万象'
 lenses: []
 evidence: observed
 lang: en

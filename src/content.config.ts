@@ -31,8 +31,14 @@ const lenses = z.array(z.string()).default([]);
    Chinese and dated. Listings mark the language; that is all. */
 const lang = z.enum(['en', 'zh']).default('en');
 
+/* Chinese alongside English, field by field. Bodies live in a `.zh.md` sibling;
+   these are the short strings that every card, listing row and page header is
+   built from, so that switching language switches the whole surface rather
+   than just the chrome. All optional: an entry without them simply stays in
+   the language it was written in. */
+
 const experiments = defineCollection({
-  loader: glob({ pattern: '**/*.md', base: './src/content/experiments' }),
+  loader: glob({ pattern: ['**/*.md', '!**/*.zh.md'], base: './src/content/experiments' }),
   schema: z.object({
     number: z.number(),
     /* The piece's name. `title` stays the research question — a card shows the
@@ -40,10 +46,12 @@ const experiments = defineCollection({
     name: z.string(),
     nameZh: z.string().optional(),
     title: z.string(), // always a question
+    titleZh: z.string().optional(),
     date: z.date(),
     lenses,
     evidence,
     status: z.string().default('built'),
+    statusZh: z.string().optional(),
     /* Not optional. For a practice-led researcher the demo is the argument,
        not an illustration (§10). */
     video: z.string(),
@@ -54,8 +62,10 @@ const experiments = defineCollection({
     thumb: z.string().optional(),
     demo: z.string().optional(),
     demoNote: z.string().optional(),
+    demoNoteZh: z.string().optional(),
     stack: z.array(z.string()).default([]),
     summary: z.string(),
+    summaryZh: z.string().optional(),
     lang,
 
     /* Where this came from, as data rather than as a sentence buried in the
@@ -75,10 +85,12 @@ const experiments = defineCollection({
 });
 
 const atlas = defineCollection({
-  loader: glob({ pattern: '**/*.md', base: './src/content/atlas' }),
+  loader: glob({ pattern: ['**/*.md', '!**/*.zh.md'], base: './src/content/atlas' }),
   schema: z.object({
     title: z.string(),
+    titleZh: z.string().optional(),
     place: z.string().optional(),
+    placeZh: z.string().optional(),
     date: z.date(), // the real original date, not the date it was written up
     revisited: z.date().optional(),
     dimensions: z.array(
@@ -92,27 +104,33 @@ const atlas = defineCollection({
     ),
     evidence,
     summary: z.string(),
+    summaryZh: z.string().optional(),
   }),
 });
 
 const observations = defineCollection({
-  loader: glob({ pattern: '**/*.md', base: './src/content/observations' }),
+  loader: glob({ pattern: ['**/*.md', '!**/*.zh.md'], base: './src/content/observations' }),
   schema: z.object({
     title: z.string(),
+    titleZh: z.string().optional(),
     date: z.date(),
     place: z.string().optional(),
+    placeZh: z.string().optional(),
     lenses,
     evidence,
   }),
 });
 
 const readings = defineCollection({
-  loader: glob({ pattern: '**/*.md', base: './src/content/readings' }),
+  loader: glob({ pattern: ['**/*.md', '!**/*.zh.md'], base: './src/content/readings' }),
   schema: z.object({
     title: z.string(),
+    titleZh: z.string().optional(),
     date: z.date(),
     author: z.string(),
+    authorZh: z.string().optional(),
     work: z.string(),
+    workZh: z.string().optional(),
     year: z.number().optional(),
     lenses,
     evidence,
@@ -120,9 +138,10 @@ const readings = defineCollection({
 });
 
 const labNotes = defineCollection({
-  loader: glob({ pattern: '**/*.md', base: './src/content/lab-notes' }),
+  loader: glob({ pattern: ['**/*.md', '!**/*.zh.md'], base: './src/content/lab-notes' }),
   schema: z.object({
     title: z.string(),
+    titleZh: z.string().optional(),
     date: z.date(),
     lenses,
     evidence,
@@ -130,10 +149,27 @@ const labNotes = defineCollection({
   }),
 });
 
+/* Chinese bodies live beside their English original as `<slug>.zh.md`.
+   Only the prose lives here — every structured field stays on the English
+   file, so there is exactly one place where dates, evidence and lineage are
+   declared and no way for the two languages to disagree about them.
+   An entry with no `.zh.md` simply shows its original in both modes. */
+const zhBody = (dir: string) =>
+  defineCollection({
+    loader: glob({ pattern: '**/*.zh.md', base: `./src/content/${dir}` }),
+    schema: z.object({}).passthrough(),
+  });
+
 export const collections = {
   experiments,
   atlas,
   observations,
   readings,
   'lab-notes': labNotes,
+
+  'experiments-zh': zhBody('experiments'),
+  'atlas-zh': zhBody('atlas'),
+  'observations-zh': zhBody('observations'),
+  'readings-zh': zhBody('readings'),
+  'lab-notes-zh': zhBody('lab-notes'),
 };

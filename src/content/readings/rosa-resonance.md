@@ -1,8 +1,11 @@
 ---
 title: 'Rosa, and the problem with wanting resonance'
+titleZh: '罗萨，以及「想要共鸣」这件事本身的问题'
 date: 2026-07-26
 author: 'Hartmut Rosa'
+authorZh: '哈特穆特·罗萨'
 work: 'Resonance: A Sociology of Our Relationship to the World'
+workZh: '《共鸣：一种世界关系的社会学》'
 year: 2019
 lenses: [contemplative-traditions]
 evidence: literature

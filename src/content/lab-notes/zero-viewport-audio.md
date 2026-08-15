@@ -1,13 +1,13 @@
 ---
 title: 'NaN reaches an AudioParam and everything stops'
+titleZh: 'NaN 传进 AudioParam，然后一切停摆'
 date: 2026-07-15
 lenses: [computational-media]
 evidence: built
 lang: en
-experiment: rain-curtain
 ---
 
-I tested [Rain Curtain](/experiments/rain-curtain/) in a background tab. It
+I tested the rain-curtain piece in a background tab. It
 failed to start, silently, with nothing in the console.
 
 It failed because a hidden tab reports `innerWidth` as 0 and freezes

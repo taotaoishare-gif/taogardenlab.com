@@ -1,12 +1,15 @@
 ---
 title: 'Tea as a timing device'
+titleZh: '茶作为计时器'
 place: 'Fujian'
+placeZh: '福建'
 date: 2023-11-10
 revisited: 2026-07-28
 dimensions: [practices, materials]
 evidence: observed
 lang: en
 summary: 'Gongfu tea is short infusions repeated many times. The repetition sets a rhythm for a conversation that nobody has to manage.'
+summaryZh: '工夫茶是短冲多次。这重复替一场谈话定了节奏，而没有人需要去管它。'
 ---
 
 <!-- DRAFT — assembled from Tao's existing documents, not from her original field

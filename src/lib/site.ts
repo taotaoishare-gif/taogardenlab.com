@@ -30,7 +30,12 @@ export const SITE = {
      is no ordering by popularity here because nothing is counted. The full
      set stays purely chronological at /experiments and /index. */
   /* The first one leads and runs full width; the rest share the second row. */
-  homeExperiments: ['guqin-forest', 'cosmic-pottery', 'sadhana-pagoda'],
+  homeExperiments: [
+    'guqin-forest',
+    'cosmic-pottery',
+    'sadhana-pagoda',
+    'phoenix-crown',
+  ],
 };
 
 export function iso(date: Date): string {

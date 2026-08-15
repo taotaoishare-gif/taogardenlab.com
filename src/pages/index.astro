@@ -7,6 +7,7 @@ import Bi from '../components/Bi.astro';
 import { getCollection } from 'astro:content';
 import { SITE, iso } from '../lib/site';
 import { UI } from '../lib/ui';
+import { bi } from '../lib/bi';
 
 const experiments = await getCollection('experiments');
 const byId = new Map(experiments.map((e) => [e.id, e]));
@@ -99,7 +100,7 @@ const featured = SITE.homeExperiments
                 </a>
               </h3>
 
-              <p class="pq">{exp.data.title}</p>
+              <p class="pq"><Bi {...bi(exp.data, 'title')} /></p>
 
               <p class="pmeta">
                 <time datetime={iso(exp.data.date)}>{iso(exp.data.date)}</time>
@@ -164,31 +165,41 @@ const featured = SITE.homeExperiments
     min-height: 100svh;
   }
 
+  /* The grove is the work, so it is not put behind a sheet of black. What is
+     left is only what the type actually needs: a little weight at the very top
+     and bottom for the nav and the scroll hint, and a soft breath behind the
+     centre. The middle of the frame stays open. */
   .s1-scrim {
     position: absolute;
     inset: 0;
     z-index: 1;
     background:
       radial-gradient(
-        ellipse at 50% 44%,
-        rgba(10, 9, 8, 0.72) 0%,
-        rgba(10, 9, 8, 0.5) 46%,
-        rgba(10, 9, 8, 0.24) 100%
+        ellipse 52% 42% at 50% 46%,
+        rgba(23, 30, 33, 0.66) 0%,
+        rgba(23, 30, 33, 0.34) 52%,
+        rgba(23, 30, 33, 0) 100%
       ),
       linear-gradient(
         to bottom,
-        rgba(10, 9, 8, 0.72) 0%,
-        rgba(10, 9, 8, 0.3) 42%,
-        rgba(10, 9, 8, 0.88) 100%
+        rgba(23, 30, 33, 0.58) 0%,
+        rgba(23, 30, 33, 0) 24%,
+        rgba(23, 30, 33, 0) 72%,
+        rgba(23, 30, 33, 0.72) 100%
       );
     pointer-events: none;
   }
 
 
+  /* With the scrim mostly gone, the type carries its own contrast rather than
+     borrowing it from a darkened frame. */
   .s1-inner {
     position: relative;
     z-index: 2;
     text-align: center;
+    text-shadow:
+      0 1px 2px rgba(12, 16, 18, 0.5),
+      0 2px 18px rgba(12, 16, 18, 0.45);
   }
 
   /* Largest thing on the site. */
@@ -214,8 +225,10 @@ const featured = SITE.homeExperiments
     color: var(--mist-2);
   }
 
-  /* Then the question — smaller than the definition, and the only line in
-     the accent colour, so it reads as the point rather than as fine print. */
+  /* Then the question. It was bronze while the frame sat under a black sheet;
+     over an open grove bronze drops to ~1.9:1 against lit bamboo, so the line
+     carries its weight through italics and measure instead of through hue.
+     Bronze stays where the ground is predictable. */
   .question {
     font-family: var(--serif);
     font-style: italic;
@@ -223,7 +236,7 @@ const featured = SITE.homeExperiments
     line-height: 1.65;
     max-width: 52ch;
     margin: 0 auto clamp(2rem, 5.5vh, 3.25rem);
-    color: var(--forest-glow);
+    color: var(--mist);
   }
 
   .actions {
@@ -330,10 +343,10 @@ const featured = SITE.homeExperiments
     text-align: left;
   }
 
-  /* The lead piece runs the full width; the other two share the row below. */
+  /* The lead piece runs the full width; the other three share the row below. */
   .protos {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: clamp(2.5rem, 4vw, 3.5rem);
   }
 

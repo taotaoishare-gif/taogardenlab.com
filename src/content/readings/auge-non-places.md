@@ -1,8 +1,11 @@
 ---
 title: 'Non-places, and whether an interface is one'
+titleZh: '非地方，以及界面算不算一个'
 date: 2026-07-31
 author: 'Marc Augé'
+authorZh: '马克·奥热'
 work: 'Non-Places: Introduction to an Anthropology of Supermodernity'
+workZh: '《非地方：超现代性人类学导论》'
 year: 1992
 lenses: [computational-media]
 evidence: literature

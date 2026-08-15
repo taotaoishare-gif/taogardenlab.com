@@ -3,6 +3,8 @@ import Base from '../../layouts/Base.astro';
 import EvidenceTag from '../../components/EvidenceTag.astro';
 import { getCollection, render } from 'astro:content';
 import { iso, longDate } from '../../lib/site';
+import Bi from '../../components/Bi.astro';
+import { bi } from '../../lib/bi';
 
 export async function getStaticPaths() {
   const [observations, readings, labNotes] = await Promise.all([
@@ -47,7 +49,7 @@ const meta =
   <article class:list={['page', 'wrap', { short: kind === 'observation' }]}>
     <header>
       <p class="label">{kindLabel}</p>
-      <h1>{d.title}</h1>
+      <h1><Bi {...bi(d, 'title')} /></h1>
       <p class="mono head-meta">
         <time datetime={iso(d.date)}>{longDate(d.date)}</time>
         {meta && <>{' · '}{meta}</>}

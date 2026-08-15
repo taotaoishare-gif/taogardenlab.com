@@ -1,7 +1,9 @@
 ---
 title: 'Everyone is holding a phone at the same angle'
+titleZh: '所有人举着手机的角度都一样'
 date: 2026-05-21
 place: 'Boten border crossing'
+placeZh: '磨憨口岸'
 lenses: []
 evidence: observed
 lang: en

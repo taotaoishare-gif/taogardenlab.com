@@ -1,12 +1,15 @@
 ---
 title: 'White porcelain in Dehua'
+titleZh: '德化白瓷'
 place: 'Dehua, Fujian'
+placeZh: '福建德化'
 date: 2023-11-08
 revisited: 2026-07-19
 dimensions: [materials, practices]
 evidence: observed
 lang: en
 summary: 'A material with almost no colour information, and a workshop where making it is a job. The stillness I associate with the object is not present in the room it comes from.'
+summaryZh: '一种几乎不含色彩信息的材料，和一间把做它当活计的作坊。我以为属于这器物的静，并不在它出生的那个房间里。'
 ---
 
 <!-- DRAFT — assembled from Tao's existing documents, not from her original field

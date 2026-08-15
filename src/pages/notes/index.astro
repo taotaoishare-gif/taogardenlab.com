@@ -1,6 +1,7 @@
 ---
 import Base from '../../layouts/Base.astro';
 import { getCollection } from 'astro:content';
+import Bi from '../../components/Bi.astro';
 import { iso } from '../../lib/site';
 
 const [observations, readings, labNotes] = await Promise.all([
@@ -12,6 +13,9 @@ const [observations, readings, labNotes] = await Promise.all([
 type Row = {
   kind: 'observation' | 'reading' | 'lab';
   kindLabel: string;
+  kindLabelZh: string;
+  titleZh: string;
+  metaZh?: string;
   title: string;
   href: string;
   date: Date;
@@ -25,10 +29,13 @@ const rows: Row[] = [
   ...observations.map((e) => ({
     kind: 'observation' as const,
     kindLabel: 'observation',
+    kindLabelZh: '观察',
     title: e.data.title,
+    titleZh: e.data.titleZh ?? e.data.title,
     href: `/notes/${e.id}/`,
     date: e.data.date,
     meta: e.data.place,
+    metaZh: e.data.placeZh ?? e.data.place,
     body: e.body
       ?.trim()
       .split(/\n{2,}/)
@@ -38,15 +45,20 @@ const rows: Row[] = [
   ...readings.map((e) => ({
     kind: 'reading' as const,
     kindLabel: 'reading',
+    kindLabelZh: '阅读',
     title: e.data.title,
+    titleZh: e.data.titleZh ?? e.data.title,
     href: `/notes/${e.id}/`,
     date: e.data.date,
     meta: `${e.data.author} · ${e.data.work}${e.data.year ? `, ${e.data.year}` : ''}`,
+    metaZh: `${e.data.authorZh ?? e.data.author} · ${e.data.workZh ?? e.data.work}${e.data.year ? `，${e.data.year}` : ''}`,
   })),
   ...labNotes.map((e) => ({
     kind: 'lab' as const,
     kindLabel: 'lab note',
+    kindLabelZh: '实验室笔记',
     title: e.data.title,
+    titleZh: e.data.titleZh ?? e.data.title,
     href: `/notes/${e.id}/`,
     date: e.data.date,
   })),
@@ -67,7 +79,7 @@ const filters = [
   <div class="page wrap">
     <header>
       <p class="label">Notes</p>
-      <h1>Three kinds of small writing.</h1>
+      <h1><Bi en="Three kinds of small writing." zh="三种小文章。" /></h1>
       <div class="key">
         <p>
           <strong>Observations</strong> are things I saw. They make no claim and
@@ -79,7 +91,7 @@ const filters = [
           disagree with, or what it changed. <strong>Lab notes</strong> record a
           test that failed and what I changed as a result.
         </p>
-        <p class="dim">There is no journal here, on purpose.</p>
+        <p class="dim"><Bi en="There is no journal here, on purpose." zh="这里没有日记，是刻意的。" /></p>
       </div>
     </header>
 
@@ -106,11 +118,11 @@ const filters = [
               <time class="mono" datetime={iso(row.date)}>
                 {iso(row.date)}
               </time>
-              <span class="mono kind">{row.kindLabel}</span>
-              {row.meta && <span class="mono place">{row.meta}</span>}
+              <span class="mono kind"><Bi en={row.kindLabel} zh={row.kindLabelZh} /></span>
+              {row.meta && <span class="mono place"><Bi en={row.meta} zh={row.metaZh ?? row.meta} /></span>}
             </div>
             <h2>
-              <a href={row.href}>{row.title}</a>
+              <a href={row.href}><Bi en={row.title} zh={row.titleZh} /></a>
             </h2>
             {row.body && (
               <div class="obs">

@@ -1,5 +1,6 @@
 ---
 import Base from '../../layouts/Base.astro';
+import Bi from '../../components/Bi.astro';
 import ArchiveList from '../../components/ArchiveList.astro';
 import { allEntries } from '../../lib/entries';
 
@@ -13,11 +14,12 @@ const entries = await allEntries();
   <div class="page wrap">
     <header>
       <p class="label">Index</p>
-      <h1>Everything, in order.</h1>
+      <h1><Bi en="Everything, in order." zh="全部，按时间。" /></h1>
       <p class="intro dim">
-        One page. Every entry. Reverse chronological, no categories, no
-        filters, nothing ranked. In the first year this is short. It is the only
-        proof of continuity there is, and continuity cannot be faked.
+        <Bi
+          en="One page. Every entry. Reverse chronological, no categories, no filters, nothing ranked. In the first year this is short. It is the only proof of continuity there is, and continuity cannot be faked."
+          zh="一页。全部条目。时间倒序，无分类，无筛选，不作排名。第一年它很短。它是「持续」唯一的证据，而持续无法伪造。"
+        />
       </p>
     </header>
 
