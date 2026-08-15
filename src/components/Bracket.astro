@@ -1,0 +1,321 @@
+---
+import Bi from './Bi.astro';
+import type { Bi as BiType } from '../lib/research';
+
+/* A top node, a row of columns tied together by a bracket, and an optional
+   node underneath. Used for the research framework (02) and the trajectory (07).
+
+   The horizontal tie is inset by 100/(2N)% on each side, which lands it exactly
+   on the centre of the first and last column for any number of columns — so
+   the geometry stays correct without hard-coding a viewBox. */
+
+interface Item {
+  mark?: string;
+  n?: string;
+  name: BiType;
+  meta?: BiType;
+  body?: BiType;
+  items?: BiType[];
+}
+
+interface Props {
+  top?: BiType;
+  topNote?: BiType;
+  items: Item[];
+  bottom?: BiType;
+  bottomNote?: BiType;
+  /** Which way the arrows point: 'down' from top node, 'up' toward it. */
+  flow?: 'down' | 'up';
+}
+const {
+  top,
+  topNote,
+  items,
+  bottom,
+  bottomNote,
+  flow = 'down',
+} = Astro.props;
+
+const inset = 100 / (2 * items.length);
+---
+
+<figure
+  class="bracket"
+  style={`--inset:${inset}%`}
+  data-flow={flow}
+  data-has-top={top ? '' : undefined}
+  data-has-bottom={bottom ? '' : undefined}
+>
+  {
+    top && (
+      <figcaption class="node node--top">
+        <span class="node-name">
+          <Bi en={top.en} zh={top.zh} />
+        </span>
+        {topNote && (
+          <span class="node-note">
+            <Bi en={topNote.en} zh={topNote.zh} />
+          </span>
+        )}
+      </figcaption>
+    )
+  }
+
+  {top && <div class="tie tie--top" aria-hidden="true" />}
+
+  <ol class="cols" style={`--n:${items.length}`}>
+    {
+      items.map((item) => (
+        <li class="col">
+          <p class="col-head">
+            {item.mark && <span class="mark">{item.mark}</span>}
+            {item.n && <span class="n">{item.n}</span>}
+          </p>
+          <h3 class="col-name">
+            <Bi en={item.name.en} zh={item.name.zh} />
+          </h3>
+          {item.meta && (
+            <p class="col-meta">
+              <Bi en={item.meta.en} zh={item.meta.zh} />
+            </p>
+          )}
+          {item.body && (
+            <p class="col-body">
+              <Bi en={item.body.en} zh={item.body.zh} />
+            </p>
+          )}
+          {item.items && (
+            <ul class="col-items">
+              {item.items.map((x) => (
+                <li>
+                  <Bi en={x.en} zh={x.zh} />
+                </li>
+              ))}
+            </ul>
+          )}
+        </li>
+      ))
+    }
+  </ol>
+
+  {bottom && <div class="tie tie--bottom" aria-hidden="true" />}
+
+  {
+    bottom && (
+      <figcaption class="node node--bottom">
+        <span class="node-name">
+          <Bi en={bottom.en} zh={bottom.zh} />
+        </span>
+        {bottomNote && (
+          <span class="node-note">
+            <Bi en={bottomNote.en} zh={bottomNote.zh} />
+          </span>
+        )}
+      </figcaption>
+    )
+  }
+</figure>
+
+<style>
+  .bracket {
+    margin: 0;
+    text-align: center;
+  }
+
+  .node {
+    display: block;
+  }
+
+  .node-name {
+    display: block;
+    font-family: var(--mono);
+    font-size: 0.6875rem;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    color: var(--bronze);
+  }
+
+  .node-note {
+    display: block;
+    margin-top: 0.6rem;
+    max-width: 46ch;
+    margin-inline: auto;
+    font-size: 0.9375rem;
+    line-height: 1.65;
+    color: var(--text-dim);
+  }
+
+  /* The bracket. A horizontal rule between the outer column centres, with a
+     stem into the node and a drop into each column. */
+  .tie {
+    position: relative;
+    height: 2.4rem;
+  }
+
+  .tie--bottom {
+    height: 3.6rem;
+  }
+
+  .tie::before {
+    content: '';
+    position: absolute;
+    left: var(--inset);
+    right: var(--inset);
+    height: 1px;
+    background: var(--line-2);
+  }
+
+  .tie::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    width: 1px;
+    background: var(--line-2);
+  }
+
+  .tie--top::before {
+    bottom: 0;
+  }
+  .tie--top::after {
+    top: 0;
+    bottom: 0;
+  }
+
+  .tie--bottom::before {
+    top: 1.2rem;
+  }
+  .tie--bottom::after {
+    top: 1.2rem;
+    bottom: 0;
+  }
+
+  .cols {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    max-width: none;
+    display: grid;
+    grid-template-columns: repeat(var(--n), minmax(0, 1fr));
+    gap: clamp(1.25rem, 3vw, 2.5rem);
+  }
+
+  /* Each column hangs from / rises to the tie by a short stub. */
+  .col {
+    position: relative;
+    margin: 0;
+    padding-top: 1.6rem;
+  }
+
+  [data-has-top] .col::before {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 0;
+    height: 1.1rem;
+    width: 1px;
+    background: var(--line-2);
+  }
+
+  /* Columns in a row stretch to equal height, so a stub anchored to the
+     bottom edge lands on one straight line across all of them. */
+  [data-has-bottom] .col::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    bottom: -1.2rem;
+    height: 1.2rem;
+    width: 1px;
+    background: var(--line-2);
+  }
+
+  .col-head {
+    display: flex;
+    justify-content: center;
+    align-items: baseline;
+    gap: 0.6rem;
+    margin: 0 0 0.5rem;
+    min-height: 1.2em;
+  }
+
+  .mark {
+    font-family: var(--display);
+    font-size: 1.15rem;
+    color: var(--bronze);
+  }
+
+  .n {
+    font-family: var(--mono);
+    font-size: 0.625rem;
+    letter-spacing: 0.2em;
+    color: var(--bronze);
+  }
+
+  .col-name {
+    font-family: var(--display);
+    font-weight: 400;
+    font-size: clamp(1.1rem, 1.9vw, 1.4rem);
+    line-height: 1.25;
+    letter-spacing: 0.01em;
+    color: var(--mist);
+    margin: 0;
+  }
+
+  .col-meta {
+    margin: 0.45rem 0 0;
+    font-family: var(--mono);
+    font-size: 0.625rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+  }
+
+  .col-body {
+    margin: 0.7rem auto 0;
+    max-width: 28ch;
+    font-size: 0.9375rem;
+    line-height: 1.65;
+    color: var(--mist-2);
+  }
+
+  .col-items {
+    list-style: none;
+    margin: 0.8rem 0 0;
+    padding: 0;
+    max-width: none;
+  }
+
+  .col-items li {
+    margin: 0 0 0.3rem;
+    font-family: var(--mono);
+    font-size: 0.625rem;
+    letter-spacing: 0.1em;
+    color: var(--text-dim);
+  }
+
+  /* Narrow: the bracket cannot survive one column, so it becomes a stack and
+     the ties collapse to a single spine. */
+  @media (max-width: 44rem) {
+    .cols {
+      grid-template-columns: 1fr;
+      gap: 2.25rem;
+    }
+    .tie::before {
+      left: 50%;
+      right: auto;
+      width: 1px;
+      height: 100%;
+      top: 0;
+      bottom: 0;
+    }
+    .col::before,
+    .col::after {
+      display: none;
+    }
+    .col {
+      padding-top: 0;
+    }
+    .tie {
+      height: 1.6rem;
+    }
+  }
+</style>

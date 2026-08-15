@@ -18,6 +18,20 @@ stack: [MediaPipe Hands, Canvas 2D, Web Audio API]
 summary: 'A bamboo landscape that sounds when a hand moves through it. Built to find out whether a responsive instrument can avoid turning its player into a performer.'
 summaryZh: '一片会出声的竹林，手穿过它便有琴音。想弄清楚的是：一件会回应的乐器，能不能不把弹它的人变成表演者。'
 lang: en
+mechanism: "Implicit responsiveness"
+mechanismZh: "隐性回应"
+coreQuestion: "Can an environment perceive me without explicit command?"
+coreQuestionZh: "环境能否在没有明确指令的情况下感知到我？"
+humanQuestion: "Can we experience connection without explicit communication?"
+humanQuestionZh: "人与环境之间，能否在没有明确沟通的情况下建立连接？"
+researchQuestion: "Can subtle, implicit human gestures create a sense of being perceived and responded to by an environment?"
+researchQuestionZh: "细微、非明确的身体动作，能否让人产生「自己正在被环境感知并回应」的体验？"
+hypothesis: "When environmental responses are continuously coupled to subtle bodily gestures, participants will report greater perceived connection and agency than when interaction requires explicit commands."
+hypothesisZh: "当环境持续响应人的细微身体动作时，相比依赖明确指令的交互，参与者将报告更强的连接感与能动感。"
+builtPipeline: "gesture sensing → spatial sound → responsive visual environment"
+builtPipelineZh: "手势感知 → 空间声音 → 响应式视觉环境"
+researchTags: ['agency', 'responsiveness', 'connection']
+researchTagsZh: ['能动性', '回应性', '连接']
 fromAtlas: [jiangnan-sequencing]
 process:
   - version: V01–V04

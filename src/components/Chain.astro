@@ -1,0 +1,171 @@
+---
+import Bi from './Bi.astro';
+import type { Bi as BiType } from '../lib/research';
+
+/* A vertical chain of labelled steps, joined by hairlines.
+   Used for the research logic (01) and the method (05).
+
+   Drawn in HTML rather than SVG: SVG text does not wrap, and a Chinese
+   sentence in a fixed viewBox either overflows or has to be pre-broken by
+   hand. This keeps the diagram responsive, selectable and translatable. */
+
+interface Step {
+  level?: BiType;
+  n?: string;
+  statement: BiType;
+  note?: BiType;
+}
+
+interface Props {
+  steps: Step[];
+  /** 'grow' enlarges each step as it descends — the logic chain narrows from
+      an unanswerable horizon down to something buildable. */
+  emphasis?: 'grow' | 'even';
+}
+const { steps, emphasis = 'even' } = Astro.props;
+---
+
+<ol class:list={['chain', `chain--${emphasis}`]}>
+  {
+    steps.map((step, i) => (
+      <li class="step" data-step={i + 1}>
+        <p class="rail" aria-hidden="true"></p>
+        <div class="head">
+          {step.n && <span class="n">{step.n}</span>}
+          {step.level && (
+            <span class="level">
+              <Bi en={step.level.en} zh={step.level.zh} />
+            </span>
+          )}
+        </div>
+        <p class="statement">
+          <Bi en={step.statement.en} zh={step.statement.zh} />
+        </p>
+        {step.note && (
+          <p class="note">
+            <Bi en={step.note.en} zh={step.note.zh} />
+          </p>
+        )}
+      </li>
+    ))
+  }
+</ol>
+
+<style>
+  .chain {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    max-width: none;
+    counter-reset: none;
+  }
+
+  .step {
+    position: relative;
+    margin: 0;
+    padding: 0 0 clamp(1.6rem, 3.4vh, 2.4rem) 2.25rem;
+  }
+
+  .step:last-child {
+    padding-bottom: 0;
+  }
+
+  /* One continuous hairline down the left, with a node at each step. */
+  .rail {
+    position: absolute;
+    left: 0;
+    top: 0.45em;
+    bottom: 0;
+    width: 1px;
+    margin: 0;
+    background: var(--line-2);
+  }
+
+  .step:last-child .rail {
+    bottom: auto;
+    height: 0;
+  }
+
+  .rail::before {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 0;
+    width: 5px;
+    height: 5px;
+    margin-left: -2.5px;
+    margin-top: -2px;
+    border-radius: 50%;
+    background: var(--bronze);
+  }
+
+  .head {
+    display: flex;
+    align-items: baseline;
+    gap: 0.9rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .n,
+  .level {
+    font-family: var(--mono);
+    font-size: 0.625rem;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+  }
+
+  .n {
+    color: var(--bronze);
+  }
+
+  .level {
+    color: var(--text-dim);
+  }
+
+  .statement {
+    margin: 0;
+    max-width: 34ch;
+    font-family: var(--display);
+    font-size: 1.35rem;
+    line-height: 1.3;
+    color: var(--mist);
+    text-wrap: pretty;
+  }
+
+  .note {
+    margin: 0.7rem 0 0;
+    max-width: 46ch;
+    font-size: 0.9375rem;
+    line-height: 1.7;
+    color: var(--text-dim);
+  }
+
+  /* The descent: each rung a little louder than the one above it. */
+  .chain--grow .step[data-step='1'] .statement {
+    font-size: clamp(1.05rem, 1.6vw, 1.2rem);
+    color: color-mix(in srgb, var(--mist) 62%, transparent);
+  }
+  .chain--grow .step[data-step='2'] .statement {
+    font-size: clamp(1.2rem, 2vw, 1.45rem);
+    color: color-mix(in srgb, var(--mist) 74%, transparent);
+  }
+  .chain--grow .step[data-step='3'] .statement,
+  .chain--grow .step[data-step='4'] .statement {
+    font-size: clamp(1.35rem, 2.4vw, 1.7rem);
+    color: color-mix(in srgb, var(--mist) 88%, transparent);
+  }
+  .chain--grow .step[data-step='5'] .statement,
+  .chain--grow .step[data-step='6'] .statement {
+    font-size: clamp(1.5rem, 2.8vw, 1.95rem);
+    color: var(--mist);
+  }
+
+  @media (max-width: 40rem) {
+    .step {
+      padding-left: 1.6rem;
+    }
+    .statement {
+      max-width: none;
+    }
+  }
+</style>

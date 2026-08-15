@@ -1,13 +1,27 @@
 ---
 import Base from '../layouts/Base.astro';
-import ThoughtMap from '../components/ThoughtMap.astro';
-import LensVenn from '../components/LensVenn.astro';
 import VideoLoop from '../components/VideoLoop.astro';
 import Bi from '../components/Bi.astro';
+import Chain from '../components/Chain.astro';
+import Bracket from '../components/Bracket.astro';
+import Loop from '../components/Loop.astro';
 import { getCollection } from 'astro:content';
 import { SITE, iso } from '../lib/site';
 import { UI } from '../lib/ui';
 import { bi } from '../lib/bi';
+import {
+  RESEARCH_LOGIC,
+  PROPOSITION,
+  CONSTRUCTS,
+  REGULATION,
+  FLOURISHING,
+  METHOD,
+  MATERIALS,
+  WHY_IT_MATTERS,
+  TRAJECTORY,
+  CROSS_CULTURAL,
+  CLOSED_LOOP,
+} from '../lib/research';
 
 const experiments = await getCollection('experiments');
 const byId = new Map(experiments.map((e) => [e.id, e]));
@@ -15,23 +29,88 @@ const featured = SITE.homeExperiments
   .map((id) => byId.get(id))
   .filter(Boolean) as typeof experiments;
 
+/* The current study is the one piece that has a research protocol attached,
+   so it is pulled out of the grid and given its own screen. */
+const study = byId.get('sadhana-pagoda')!;
+
+const studyRQs = [
+  {
+    tag: { en: 'Primary', zh: '主问题' },
+    id: 'RQ1',
+    q: {
+      en: 'How does a responsive environment that translates real-time physiological signals into visual and auditory feedback affect moment-to-moment self-regulation during breathing practice?',
+      zh: '将实时生理信号转为视觉与听觉反馈的响应式环境，如何影响呼吸练习过程中的即时自我调节？',
+    },
+  },
+  {
+    tag: { en: 'Secondary', zh: '次问题' },
+    id: 'RQ2',
+    q: {
+      en: "Does contingent physiological feedback improve users' awareness of their own bodily state compared with non-contingent visual feedback?",
+      zh: '与非实时关联的视觉反馈相比，与生理状态实时关联的环境反馈是否能增强个体对自身身体状态的觉察？',
+    },
+  },
+  {
+    tag: { en: 'Design', zh: '设计问题' },
+    id: 'RQ3',
+    q: {
+      en: 'What forms of physiological-to-environmental mapping make internal bodily states perceptible without requiring explicit instruction?',
+      zh: '什么样的「生理状态 → 环境变化」映射，能让原本不可见的身体状态变得可感知，而无需用语言指令告诉用户如何调节自己？',
+    },
+  },
+];
+
+const studyHypotheses = [
+  {
+    id: 'H1',
+    name: { en: 'Regulation', zh: '调节' },
+    body: {
+      en: 'Compared with a non-responsive environment, real-time physiological feedback will produce a more marked change in autonomic regulation during practice.',
+      zh: '相比非响应环境，实时生理反馈环境将在练习期间产生更明显的自主神经调节变化。',
+    },
+    measures: 'RMSSD · HR · respiration rate · RSA',
+  },
+  {
+    id: 'H2',
+    name: { en: 'Awareness', zh: '觉察' },
+    body: {
+      en: 'Contingent physiological feedback will produce higher perceived bodily and interoceptive awareness than non-contingent feedback.',
+      zh: '相比非关联反馈，实时生理关联反馈会产生更高的身体觉察与内感受觉察。',
+    },
+    measures: 'self-report · interoceptive awareness',
+  },
+  {
+    id: 'H3',
+    name: { en: 'Contingency', zh: '关联感知' },
+    body: {
+      en: 'Participants will more accurately understand that the environment is changing because of their own bodily state.',
+      zh: '参与者能更准确地理解「环境的变化与我的身体状态有关」。',
+    },
+    measures: 'perceived contingency',
+  },
+];
 ---
 
 <Base title="TAO Garden" theme="void">
-  <!-- ══ 01 · MANIFESTO ═══════════════════════════════════════════ -->
-  <section id="manifesto" class="screen s1" aria-labelledby="mark">
+  <!-- ══ 00 · THE THRESHOLD ═══════════════════════════════════════
+       Five seconds: a human question, and a practice that is working on it. -->
+  <section id="home" class="screen s1" aria-labelledby="mark">
     <VideoLoop
-      src="/video/threshold.mp4"
-      poster="/image/threshold.jpg"
+      src="/video/hero-sand.mp4"
+      poster="/image/hero-sand.jpg"
       ambient
-      label="A bamboo grove in mist, generated and sounded by hand movement in Guqin Forest, one of the experiments on this site"
+      label="Sand gathering into a chedi in Sand to Stupa, the current study on this site"
     />
     <div class="s1-scrim"></div>
+
     <div class="wrap s1-inner">
       <h1 id="mark" class="mark tracked">TAO Garden</h1>
+      <p class="tagline mono">
+        <Bi en={SITE.tagline.en} zh={SITE.tagline.zh} />
+      </p>
 
-      <p class="definition">
-        <Bi en={SITE.definition.en} zh={SITE.definition.zh} />
+      <p class="lead">
+        <Bi en={SITE.thresholdLead.en} zh={SITE.thresholdLead.zh} />
       </p>
 
       <p class="question">
@@ -39,46 +118,117 @@ const featured = SITE.homeExperiments
       </p>
 
       <div class="actions">
-        <a class="action" href="/demos/guqin-forest/">
-          <Bi en={UI.tryExperiment.en} zh={UI.tryExperiment.zh} /> →
+        <a class="action" href="#question">
+          <Bi en="Explore the research" zh="进入研究" /> →
         </a>
       </div>
     </div>
 
-    <a class="hint mono" href="#logic">
-      <Bi en={UI.enterResearch.en} zh={UI.enterResearch.zh} />
+    <a class="hint mono" href="#question" aria-label="Scroll to the research">
       <span class="arrow" aria-hidden="true">↓</span>
     </a>
   </section>
 
-  <!-- ══ 02 · LOGIC MAP ═══════════════════════════════════════════ -->
-  <section id="logic" class="screen" aria-labelledby="logic-title">
+  <!-- ══ 01 · THE QUESTION ════════════════════════════════════════
+       Thirty seconds: where the question comes from, and how far down it
+       narrows before it becomes something anyone can build. -->
+  <section id="question" class="screen" aria-labelledby="q-title">
     <div class="wrap">
-      <h2 id="logic-title" class="stitle tracked">
-        <span class="snum">02</span><Bi en="Questions" zh="问题" />
+      <h2 id="q-title" class="stitle tracked">
+        <span class="snum">01</span><Bi en="The question" zh="问题" />
       </h2>
-      <div class="ladder-holder">
-        <ThoughtMap tone="dark" />
+
+      <div class="two">
+        <div class="two-main">
+          <Chain steps={RESEARCH_LOGIC} emphasis="grow" />
+        </div>
+        <aside class="two-side">
+          <p class="label"><Bi en="Core proposition" zh="核心命题" /></p>
+          <p class="prop">
+            <Bi en={PROPOSITION.en} zh={PROPOSITION.zh} />
+          </p>
+          <p class="prop-note mono">
+            <Bi
+              en="A proposition, not a finding. Nothing on this site has demonstrated it."
+              zh="这是一个命题，不是结论。本站没有任何内容证明过它。"
+            />
+          </p>
+        </aside>
       </div>
     </div>
   </section>
 
-  <!-- ══ 03 · THREE LENSES ════════════════════════════════════════ -->
-  <section id="lenses" class="screen" aria-labelledby="lenses-title">
+  <!-- ══ 02 · RESEARCH ════════════════════════════════════════════ -->
+  <section id="research" class="screen" aria-labelledby="r-title">
     <div class="wrap">
-      <h2 id="lenses-title" class="stitle tracked">
-        <span class="snum">03</span><Bi en="Worldview" zh="世界观" />
+      <h2 id="r-title" class="stitle tracked">
+        <span class="snum">02</span><Bi en="What I am researching" zh="我在研究什么" />
       </h2>
-      <LensVenn />
+
+      <Bracket
+        top={{ en: 'Human flourishing', zh: '人的丰盛' }}
+        items={CONSTRUCTS.map((c) => ({
+          n: c.n,
+          name: c.name,
+          body: c.definition,
+        }))}
+        bottom={REGULATION.name}
+        bottomNote={REGULATION.question}
+      />
+
+      <p class="framework-close">
+        <Bi en={FLOURISHING.question.en} zh={FLOURISHING.question.zh} />
+      </p>
     </div>
   </section>
 
-  <!-- ══ 04 · PROTOTYPES ══════════════════════════════════════════ -->
-  <section id="prototypes" class="screen screen--tight" aria-labelledby="proto-title">
+  <!-- ══ 03 · PROTOTYPES ══════════════════════════════════════════
+       Three minutes: four probes, and what each one is a probe for. -->
+  <section id="prototypes" class="screen screen--tight" aria-labelledby="p-title">
     <div class="wrap">
-      <h2 id="proto-title" class="stitle tracked">
-        <span class="snum">04</span><Bi en="Prototypes" zh="原型" />
+      <h2 id="p-title" class="stitle tracked">
+        <span class="snum">03</span><Bi en="Research prototypes" zh="研究原型" />
       </h2>
+
+      <p class="section-lead">
+        <Bi
+          en="I build small experimental environments to investigate how embodied states, cultural practices and computational systems interact."
+          zh="我造一些小的实验性环境，用来研究具身状态、文化实践与计算系统之间如何相互作用。"
+        />
+      </p>
+
+      <!-- The matrix: what each prototype is a probe for. -->
+      <div class="matrix-wrap">
+        <table class="matrix">
+          <thead>
+            <tr>
+              <th scope="col"><Bi en="Prototype" zh="原型" /></th>
+              <th scope="col"><Bi en="Research mechanism" zh="研究机制" /></th>
+              <th scope="col"><Bi en="Core question" zh="核心问题" /></th>
+            </tr>
+          </thead>
+          <tbody>
+            {
+              featured.map((exp) => (
+                <tr>
+                  <th scope="row">
+                    <a href={`/experiments/${exp.id}/`}>
+                      <span class="en-only">{exp.data.name}</span>
+                      <span class="zh-only">{exp.data.nameZh ?? exp.data.name}</span>
+                    </a>
+                  </th>
+                  <td class="m-mech">
+                    <Bi {...bi(exp.data, 'mechanism')} />
+                  </td>
+                  <td class="m-q">
+                    <Bi {...bi(exp.data, 'coreQuestion')} />
+                  </td>
+                </tr>
+              ))
+            }
+          </tbody>
+        </table>
+      </div>
 
       <ol class="protos">
         {
@@ -100,13 +250,24 @@ const featured = SITE.homeExperiments
                 </a>
               </h3>
 
-              <p class="pq"><Bi {...bi(exp.data, 'title')} /></p>
+              <p class="pq"><Bi {...bi(exp.data, 'coreQuestion')} /></p>
 
-              <p class="pmeta">
-                <time datetime={iso(exp.data.date)}>{iso(exp.data.date)}</time>
-                <span class="dot">·</span>
-                {exp.data.lenses.slice(0, 3).join(' · ')}
-              </p>
+              <dl class="pspec">
+                <dt><Bi en="Built" zh="构成" /></dt>
+                <dd><Bi {...bi(exp.data, 'builtPipeline')} /></dd>
+                <dt><Bi en="Research" zh="研究" /></dt>
+                <dd>
+                  <span class="en-only">{exp.data.researchTags.join(' · ')}</span>
+                  <span class="zh-only">
+                    {(exp.data.researchTagsZh.length
+                      ? exp.data.researchTagsZh
+                      : exp.data.researchTags
+                    ).join(' · ')}
+                  </span>
+                </dd>
+                <dt><Bi en="Status" zh="状态" /></dt>
+                <dd><Bi {...bi(exp.data, 'status')} /></dd>
+              </dl>
 
               {exp.data.demo && (
                 <p class="ptry">
@@ -119,27 +280,275 @@ const featured = SITE.homeExperiments
           ))
         }
       </ol>
-
     </div>
   </section>
 
-  <!-- ══ 05 · ABOUT ═══════════════════════════════════════════════ -->
-  <section id="about" class="screen screen--tight" aria-labelledby="about-title">
+  <!-- ══ 04 · CURRENT STUDY ═══════════════════════════════════════
+       The one piece with a protocol attached. Stated as a plan, because
+       that is what it is: no data has been collected. -->
+  <section id="study" class="screen study" aria-labelledby="s-title">
     <div class="wrap">
-      <h2 id="about-title" class="stitle tracked">
-        <span class="snum">05</span><Bi en="About" zh="关于" />
+      <h2 id="s-title" class="stitle tracked">
+        <span class="snum">04</span><Bi en="Current study" zh="正在进行的研究" />
       </h2>
 
-      <p class="about-lead">
-        <Bi en="Why I am here" zh="我为何在此" />
-      </p>
+      <div class="study-head">
+        <h3 class="study-name">
+          <span class="en-only">Sand to Stupa</span>
+          <span class="zh-only">聚沙成塔</span>
+        </h3>
+        <p class="study-sub">
+          <Bi
+            en="A responsive environment for making the invisible body perceptible"
+            zh="一个让不可见的身体状态成为可感知现象的响应式环境"
+          />
+        </p>
+        <p class="study-kw mono">
+          <Bi
+            en="Ambient biofeedback · physiological sensing × breathing × responsive environment"
+            zh="环境式生物反馈 · 生理感知 × 呼吸 × 响应式环境"
+          />
+        </p>
+      </div>
 
-      <p class="about-body">
+      <div class="study-grid">
+        <div class="study-col">
+          <p class="label"><Bi en="System" zh="系统" /></p>
+          <Loop
+            stages={CLOSED_LOOP}
+            returnLabel={{ en: 'new state', zh: '新的状态' }}
+          />
+          <p class="sensors mono">
+            <Bi
+              en="Sensors: Polar H10 / ECG for RR intervals → HRV. EDA under consideration for arousal."
+              zh="传感器：Polar H10 / ECG，用于 RR 间期 → HRV；EDA 作为唤醒度的备选。"
+            />
+          </p>
+        </div>
+
+        <div class="study-col">
+          <p class="label"><Bi en="Research questions" zh="研究问题" /></p>
+          <ol class="rqs">
+            {
+              studyRQs.map((r) => (
+                <li>
+                  <p class="rq-tag mono">
+                    <span class="rq-id">{r.id}</span>
+                    <Bi en={r.tag.en} zh={r.tag.zh} />
+                  </p>
+                  <p class="rq-q">
+                    <Bi en={r.q.en} zh={r.q.zh} />
+                  </p>
+                </li>
+              ))
+            }
+          </ol>
+
+          <p class="label label--gap"><Bi en="Hypotheses" zh="假设" /></p>
+          <ol class="hyps">
+            {
+              studyHypotheses.map((h) => (
+                <li>
+                  <p class="hyp-head mono">
+                    <span class="rq-id">{h.id}</span>
+                    <Bi en={h.name.en} zh={h.name.zh} />
+                  </p>
+                  <p class="hyp-body">
+                    <Bi en={h.body.en} zh={h.body.zh} />
+                  </p>
+                  <p class="hyp-measures mono">{h.measures}</p>
+                </li>
+              ))
+            }
+          </ol>
+        </div>
+      </div>
+
+      <!-- The honest part. -->
+      <div class="study-status">
+        <div class="ss-item">
+          <p class="label"><Bi en="Planned design" zh="计划设计" /></p>
+          <p class="ss-body">
+            <Bi
+              en="Control → breath-only → responsive environment"
+              zh="对照 → 仅呼吸引导 → 响应式环境"
+            />
+          </p>
+        </div>
+        <div class="ss-item">
+          <p class="label"><Bi en="Measures" zh="测量" /></p>
+          <p class="ss-body">
+            <Bi en="Physiology + self-report" zh="生理指标 + 自述量表" />
+          </p>
+        </div>
+        <div class="ss-item">
+          <p class="label"><Bi en="Findings" zh="发现" /></p>
+          <p class="ss-body ss-empty">
+            <Bi en="Not yet collected." zh="尚未采集。" />
+          </p>
+        </div>
+        <div class="ss-item">
+          <p class="label"><Bi en="Stage" zh="阶段" /></p>
+          <p class="ss-body">
+            <Bi
+              en="Phase 1 — technical and interaction validation"
+              zh="第一阶段 —— 技术与交互验证"
+            />
+          </p>
+        </div>
+      </div>
+
+      <p class="study-caveat">
         <Bi
-          en="I studied advertising, and spent years making things look like something — objects, exhibitions, cultural products for museums and gardens. A few years ago I started building instead of designing, which mostly meant learning to program badly and in public. The route here is not a straight line, and the detours are where the material came from."
-          zh="我学的是广告，之后多年都在让东西「看起来像什么」——器物、展览、为博物馆与园林做的文创。几年前我开始动手造，而不只是设计，这主要意味着当众笨拙地学编程。走到这里的路不是直线，而素材恰恰来自那些弯路。"
+          en="The physiology in the running piece is currently simulated: sliders set a modelled sitter's capacity and a modelled breath decides how much of it is expressed. The Bluetooth path reads a real chest strap correctly but has been tested against the protocol, not against a person. The questions and hypotheses above are a plan, not a result."
+          zh="目前运行中的作品，其生理部分是模拟的：滑杆设定一个被建模的打坐者的容量，模拟的呼吸决定其中有多少被表达出来。蓝牙链路能正确读取真实胸带，但只对着协议测过，没有对着人测过。上面的问题与假设是一份计划，不是结论。"
         />
       </p>
+
+      <p class="all">
+        <a class="view-more" href={`/experiments/${study.id}/`}>
+          <Bi en="Read the full experiment" zh="阅读完整实验记录" />
+        </a>
+      </p>
+    </div>
+  </section>
+
+  <!-- ══ 05 · METHOD ══════════════════════════════════════════════ -->
+  <section id="method" class="screen" aria-labelledby="m-title">
+    <div class="wrap">
+      <h2 id="m-title" class="stitle tracked">
+        <span class="snum">05</span><Bi en="How I research" zh="我如何研究" />
+      </h2>
+
+      <div class="two">
+        <div class="two-main">
+          <Chain
+            steps={METHOD.map((m) => ({
+              n: m.n,
+              statement: m.name,
+              note: m.body,
+            }))}
+          />
+        </div>
+        <aside class="two-side">
+          <p class="label"><Bi en="Materials" zh="材料" /></p>
+          <p class="prop-note mono materials-note">
+            <Bi
+              en="Culture gives the system its practices and meanings. Embodiment gives it a human signal. Computation makes the environment responsive."
+              zh="文化为系统提供实践与意义。具身为它提供来自人的信号。计算让环境能够回应。"
+            />
+          </p>
+        </aside>
+      </div>
+
+      <div class="materials">
+        <Bracket
+          items={MATERIALS.map((m) => ({
+            mark: m.mark,
+            name: m.name,
+            meta: m.role,
+            items: m.items,
+          }))}
+          bottom={{ en: 'TAO Garden', zh: 'TAO Garden' }}
+          flow="up"
+        />
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ 06 · WORLDVIEW ═══════════════════════════════════════════
+       The frame arrives after the research, not before it. -->
+  <section id="worldview" class="screen screen--tight" aria-labelledby="w-title">
+    <div class="wrap">
+      <h2 id="w-title" class="stitle tracked">
+        <span class="snum">06</span><Bi en="Worldview" zh="世界观" />
+      </h2>
+
+      <p class="tri">天 × 地 × 人</p>
+      <p class="tri-gloss">
+        <Bi
+          en="Culture × Computation × Embodiment"
+          zh="文化 × 计算 × 具身"
+        />
+      </p>
+
+      <div class="matters">
+        <p class="matters-lead">
+          <Bi en={WHY_IT_MATTERS.lead.en} zh={WHY_IT_MATTERS.lead.zh} />
+        </p>
+        <p class="matters-turn">
+          <Bi en={WHY_IT_MATTERS.turn.en} zh={WHY_IT_MATTERS.turn.zh} />
+        </p>
+        <p class="matters-sig">
+          <Bi
+            en={WHY_IT_MATTERS.signature.en}
+            zh={WHY_IT_MATTERS.signature.zh}
+          />
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ 07 · TRAJECTORY ══════════════════════════════════════════ -->
+  <section id="trajectory" class="screen" aria-labelledby="t-title">
+    <div class="wrap">
+      <h2 id="t-title" class="stitle tracked">
+        <span class="snum">07</span><Bi en="Long-term research" zh="长期方向" />
+      </h2>
+
+      <Bracket
+        top={CROSS_CULTURAL.name}
+        topNote={CROSS_CULTURAL.question}
+        items={TRAJECTORY.map((p) => ({
+          n: `Phase ${p.phase}`,
+          name: p.name,
+          meta: p.horizon,
+          body: p.question,
+          items: [p.items],
+        }))}
+        bottom={{ en: 'Human flourishing', zh: '人的丰盛' }}
+      />
+    </div>
+  </section>
+
+  <!-- ══ 08 · ABOUT ═══════════════════════════════════════════════ -->
+  <section id="about" class="screen screen--tight" aria-labelledby="a-title">
+    <div class="wrap">
+      <h2 id="a-title" class="stitle tracked">
+        <span class="snum">08</span><Bi en="About the researcher" zh="关于研究者" />
+      </h2>
+
+      <div class="about-body">
+        <p>
+          <Bi
+            en="TAO Garden is an independent research practice initiated by Huang Jialu. My background is in advertising and cultural design, and I am currently exploring the intersection of embodied interaction, intelligent environments, cultural practices and human flourishing."
+            zh="TAO Garden 是由黄佳璐发起的独立研究实践。我的背景是广告与文化设计，目前在探索具身交互、智能环境、文化实践与人的丰盛之间的交叉地带。"
+          />
+        </p>
+        <p>
+          <Bi
+            en="I build experimental prototypes to investigate how technology can become more attentive to human states rather than simply optimising human performance."
+            zh="我造实验性原型，用来研究技术如何变得更留意人的状态，而不只是优化人的表现。"
+          />
+        </p>
+        <p>
+          <Bi
+            en="My long-term ambition is to develop TAO Garden into a research platform for exploring technology, culture and environments in service of human flourishing."
+            zh="长期而言，我希望把 TAO Garden 发展成一个研究平台，探索服务于人的丰盛的技术、文化与环境。"
+          />
+        </p>
+      </div>
+
+      <p class="label label--gap"><Bi en="Research interests" zh="研究兴趣" /></p>
+      <ul class="interests mono">
+        <li><Bi en="Embodied interaction" zh="具身交互" /></li>
+        <li><Bi en="Responsive environments" zh="响应式环境" /></li>
+        <li><Bi en="Human–computer interaction" zh="人机交互" /></li>
+        <li><Bi en="Biofeedback" zh="生物反馈" /></li>
+        <li><Bi en="Computational media" zh="计算媒介" /></li>
+        <li><Bi en="Cultural computing" zh="文化计算" /></li>
+        <li><Bi en="Human flourishing" zh="人的丰盛" /></li>
+      </ul>
 
       <p class="about-mail mono">
         <a href={`mailto:${SITE.email}`}>{SITE.email}</a>
@@ -147,7 +556,7 @@ const featured = SITE.homeExperiments
 
       <p class="all">
         <a class="view-more" href="/about/">
-          <Bi en="Read the full account" zh="完整的自述" />
+          <Bi en="Full background and trajectory" zh="完整背景与轨迹" />
         </a>
       </p>
     </div>
@@ -155,39 +564,32 @@ const featured = SITE.homeExperiments
 </Base>
 
 <style>
-  /* ── 01 Manifesto ──────────────────────────────────────────── */
+  /* ── 00 Threshold ──────────────────────────────────────────── */
   .s1 {
     min-height: 100svh;
   }
 
-  /* The grove is the work, so it is not put behind a sheet of black. What is
-     left is only what the type actually needs: a little weight at the very top
-     and bottom for the nav and the scroll hint, and a soft breath behind the
-     centre. The middle of the frame stays open. */
   .s1-scrim {
     position: absolute;
     inset: 0;
     z-index: 1;
     background:
       radial-gradient(
-        ellipse 52% 42% at 50% 46%,
-        rgba(23, 30, 33, 0.66) 0%,
-        rgba(23, 30, 33, 0.34) 52%,
-        rgba(23, 30, 33, 0) 100%
+        ellipse 54% 46% at 50% 46%,
+        rgba(23, 30, 33, 0.72) 0%,
+        rgba(23, 30, 33, 0.4) 54%,
+        rgba(23, 30, 33, 0.08) 100%
       ),
       linear-gradient(
         to bottom,
-        rgba(23, 30, 33, 0.58) 0%,
-        rgba(23, 30, 33, 0) 24%,
-        rgba(23, 30, 33, 0) 72%,
-        rgba(23, 30, 33, 0.72) 100%
+        rgba(23, 30, 33, 0.6) 0%,
+        rgba(23, 30, 33, 0) 26%,
+        rgba(23, 30, 33, 0) 70%,
+        rgba(23, 30, 33, 0.78) 100%
       );
     pointer-events: none;
   }
 
-
-  /* With the scrim mostly gone, the type carries its own contrast rather than
-     borrowing it from a darkened frame. */
   .s1-inner {
     position: relative;
     z-index: 2;
@@ -197,59 +599,61 @@ const featured = SITE.homeExperiments
       0 2px 18px rgba(12, 16, 18, 0.45);
   }
 
-  /* Largest thing on the site. */
   .mark {
     font-family: var(--display);
     font-weight: 300;
-    font-size: clamp(2.6rem, 9vw, 6.5rem);
+    font-size: clamp(2.4rem, 8vw, 5.6rem);
     letter-spacing: 0.24em;
     text-transform: uppercase;
     line-height: 1.08;
     color: var(--mist);
-    margin: 0 auto clamp(2rem, 6vh, 3.5rem);
-    text-indent: 0.24em; /* balance the trailing letter-space */
+    margin: 0 auto 1rem;
+    text-indent: 0.24em;
   }
 
-  /* Then the definition. */
-  .definition {
+  /* The four-term frame, deliberately tiny — it labels the field, it is not
+     the pitch. */
+  .tagline {
+    font-size: 0.5625rem;
+    letter-spacing: 0.26em;
+    text-transform: uppercase;
+    color: color-mix(in srgb, var(--mist) 52%, transparent);
+    margin: 0 auto clamp(2rem, 5vh, 3rem);
+  }
+
+  .lead {
     font-family: var(--display);
-    font-size: clamp(1.15rem, 2.1vw, 1.65rem);
-    line-height: 1.5;
-    max-width: 42ch;
-    margin: 0 auto clamp(1.5rem, 4vh, 2.25rem);
-    color: var(--mist-2);
+    font-size: clamp(1.25rem, 2.4vw, 1.9rem);
+    line-height: 1.4;
+    max-width: 30ch;
+    margin: 0 auto clamp(1.25rem, 3vh, 1.75rem);
+    color: var(--mist);
   }
 
-  /* Then the question. It was bronze while the frame sat under a black sheet;
-     over an open grove bronze drops to ~1.9:1 against lit bamboo, so the line
-     carries its weight through italics and measure instead of through hue.
-     Bronze stays where the ground is predictable. */
   .question {
     font-family: var(--serif);
     font-style: italic;
-    font-size: clamp(1rem, 1.45vw, 1.2rem);
+    font-size: clamp(1rem, 1.5vw, 1.2rem);
     line-height: 1.65;
-    max-width: 52ch;
-    margin: 0 auto clamp(2rem, 5.5vh, 3.25rem);
-    color: var(--mist);
+    max-width: 54ch;
+    margin: 0 auto clamp(2rem, 5vh, 3rem);
+    color: color-mix(in srgb, var(--mist) 88%, transparent);
   }
 
   .actions {
     display: flex;
-    flex-wrap: wrap;
-    gap: 1rem 1.25rem;
     justify-content: center;
   }
 
   .action {
     font-family: var(--sans);
-    font-size: var(--size-meta);
-    letter-spacing: 0.16em;
+    font-size: 0.6875rem;
+    letter-spacing: 0.18em;
     text-transform: uppercase;
     text-decoration: none;
-    color: var(--text-clean);
-    border: 1px solid color-mix(in srgb, var(--text-clean) 26%, transparent);
-    padding: 0.95rem 1.75rem;
+    color: var(--mist);
+    border: 1px solid color-mix(in srgb, var(--mist) 32%, transparent);
+    padding: 0.9rem 1.75rem;
     transition:
       border-color var(--dur) var(--ease),
       background var(--dur) var(--ease),
@@ -257,60 +661,28 @@ const featured = SITE.homeExperiments
   }
 
   .action:hover {
-    color: var(--text-clean);
-    border-color: var(--forest-glow);
-    background: color-mix(in srgb, var(--forest-deep) 60%, transparent);
+    color: var(--bronze);
+    border-color: var(--bronze);
+    background: color-mix(in srgb, var(--bronze) 8%, transparent);
   }
 
-  /* The way down, named rather than instructed. */
   .hint {
     position: absolute;
     left: 50%;
     bottom: clamp(1.5rem, 4vh, 2.5rem);
     transform: translateX(-50%);
-    display: inline-flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.5rem;
-    font-size: 0.6rem;
-    letter-spacing: 0.24em;
-    text-transform: uppercase;
+    z-index: 2;
+    color: color-mix(in srgb, var(--mist) 55%, transparent);
     text-decoration: none;
-    color: color-mix(in srgb, var(--text-clean) 62%, transparent);
-    z-index: 3;
-    margin: 0;
-    white-space: nowrap;
-    transition: color var(--dur) var(--ease);
+    font-size: 0.9rem;
   }
 
-  .hint:hover {
-    color: var(--forest-glow);
-  }
-
-  .arrow {
-    font-size: 0.9em;
-    opacity: 0.8;
-  }
-
-  /* ── shared ────────────────────────────────────────────────── */
-  /* Centred throughout — the front of the site is a sequence of held
-     moments, not a column of reading. */
-  .screen .wrap {
-    text-align: center;
-  }
-
-  .numeral {
-    margin: 0 0 0.8rem;
-    color: var(--forest-glow);
-  }
-
-  /* Section label, in the reference's register: small, widely tracked, bronze.
-     The number sits with its title as one unit, not floating above it. */
+  /* ── Shared section furniture ──────────────────────────────── */
   .stitle {
     font-size: 0.625rem;
     letter-spacing: 0.3em;
     color: var(--text-dim);
-    margin-bottom: clamp(1.75rem, 5vh, 3.5rem);
+    margin-bottom: clamp(2rem, 5vh, 3.5rem);
   }
 
   .snum {
@@ -318,31 +690,144 @@ const featured = SITE.homeExperiments
     margin-right: 1.1em;
   }
 
-  .numeral {
+  .section-lead {
+    max-width: 56ch;
+    font-size: 1.0625rem;
+    line-height: 1.7;
+    color: var(--mist-2);
+    margin: 0 0 clamp(2.5rem, 6vh, 3.5rem);
+  }
+
+  .label {
+    font-family: var(--mono);
+    font-size: 0.625rem;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin: 0 0 1.1rem;
+  }
+
+  .label--gap {
+    margin-top: clamp(2.5rem, 5vh, 3.5rem);
+  }
+
+  /* Two-column: diagram left, commentary right. */
+  .two {
+    display: grid;
+    grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+    gap: clamp(2.5rem, 6vw, 5rem);
+    align-items: start;
+  }
+
+  .two-side {
+    position: sticky;
+    top: calc(var(--nav-h) + 2rem);
+  }
+
+  .prop {
+    max-width: 42ch;
+    font-family: var(--display);
+    font-size: clamp(1.1rem, 1.9vw, 1.4rem);
+    line-height: 1.5;
+    color: var(--mist);
+    margin: 0 0 1.25rem;
+  }
+
+  .prop-note {
+    font-size: 0.625rem;
+    letter-spacing: 0.08em;
+    line-height: 1.8;
+    color: var(--text-dim);
+    max-width: 40ch;
+    margin: 0;
+  }
+
+  .materials-note {
+    font-family: var(--serif);
+    font-size: 0.9375rem;
+    letter-spacing: 0;
+    text-transform: none;
+    line-height: 1.75;
+    color: var(--mist-2);
+  }
+
+  .framework-close {
+    margin: clamp(3rem, 7vh, 4.5rem) auto 0;
+    max-width: 44ch;
+    text-align: center;
+    font-family: var(--display);
+    font-size: clamp(1.1rem, 2vw, 1.45rem);
+    line-height: 1.45;
     color: var(--bronze);
   }
 
-  /* Blocks centre as blocks; multi-line text inside them stays left, because
-     centred paragraphs are slower to read line after line. */
-  .ladder-holder {
-    max-width: 54rem;
-    margin-inline: auto;
+  /* ── 03 Matrix ─────────────────────────────────────────────── */
+  .matrix-wrap {
+    overflow-x: auto;
+    margin-bottom: clamp(3rem, 7vh, 4.5rem);
   }
 
-  /* ── 04 Prototypes ─────────────────────────────────────────── */
-  .protos {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    max-width: none;
+  .matrix {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9375rem;
+    min-width: 40rem;
+  }
+
+  .matrix th,
+  .matrix td {
     text-align: left;
+    vertical-align: top;
+    padding: 1rem 1.5rem 1rem 0;
+    border-bottom: 1px solid var(--line-2);
   }
 
-  /* Four pieces, two by two, all the same size — none of them is the headline. */
+  .matrix thead th {
+    font-family: var(--mono);
+    font-size: 0.5625rem;
+    font-weight: 400;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    padding-bottom: 0.8rem;
+  }
+
+  .matrix tbody th {
+    font-family: var(--display);
+    font-weight: 400;
+    font-size: 1.05rem;
+    color: var(--mist);
+    white-space: nowrap;
+  }
+
+  .matrix tbody th a {
+    text-decoration: none;
+    border-bottom: 1px solid var(--forest-soft);
+  }
+
+  .m-mech {
+    font-family: var(--mono);
+    font-size: 0.625rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--bronze);
+    white-space: nowrap;
+  }
+
+  .m-q {
+    color: var(--mist-2);
+    line-height: 1.6;
+  }
+
+  /* ── 03 Cards ──────────────────────────────────────────────── */
   .protos {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: clamp(2.5rem, 4vw, 3.5rem);
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    max-width: none;
   }
 
   .proto {
@@ -385,7 +870,7 @@ const featured = SITE.homeExperiments
   }
 
   .pq {
-    margin: 0 0 0.6rem;
+    margin: 0 0 1rem;
     font-family: var(--display);
     font-style: italic;
     font-size: 1.0625rem;
@@ -394,21 +879,29 @@ const featured = SITE.homeExperiments
     max-width: none;
   }
 
-  /* Keywords: quiet sans, small and widely tracked rather than monospaced —
-     mono reads as machine output and this is just a label. */
-  .pmeta {
-    margin: 0 0 1.1rem;
-    font-family: var(--sans);
-    font-size: 0.625rem;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: var(--text-dim);
-    max-width: none;
+  .pspec {
+    margin: 0 0 1.25rem;
+    display: grid;
+    grid-template-columns: 4.5rem minmax(0, 1fr);
+    gap: 0.35rem 1rem;
   }
 
-  .dot {
-    margin-inline: 0.6em;
-    opacity: 0.6;
+  .pspec dt {
+    font-family: var(--mono);
+    font-size: 0.5625rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    padding-top: 0.15em;
+  }
+
+  .pspec dd {
+    margin: 0;
+    font-family: var(--mono);
+    font-size: 0.625rem;
+    letter-spacing: 0.06em;
+    line-height: 1.7;
+    color: var(--mist-2);
   }
 
   .ptry {
@@ -436,22 +929,235 @@ const featured = SITE.homeExperiments
     border-color: var(--bronze);
   }
 
-  .all {
-    margin-top: clamp(2.5rem, 6vh, 4rem);
-    max-width: none; /* the global 66ch measure would decentre it */
+  /* ── 04 Current study ──────────────────────────────────────── */
+  .study {
+    background: var(--void-soft);
   }
 
-  /* The reference's outlined button. */
+  .study-head {
+    margin-bottom: clamp(2.5rem, 6vh, 4rem);
+  }
+
+  .study-name {
+    font-family: var(--display);
+    font-weight: 300;
+    font-size: clamp(2rem, 4.4vw, 3.2rem);
+    letter-spacing: 0.06em;
+    line-height: 1.1;
+    color: var(--mist);
+    margin: 0 0 0.75rem;
+  }
+
+  .study-sub {
+    font-family: var(--display);
+    font-size: clamp(1.05rem, 1.8vw, 1.3rem);
+    line-height: 1.45;
+    color: var(--mist-2);
+    max-width: 44ch;
+    margin: 0 0 0.9rem;
+  }
+
+  .study-kw {
+    font-size: 0.5625rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--bronze);
+    margin: 0;
+  }
+
+  .study-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+    gap: clamp(2.5rem, 6vw, 5rem);
+    align-items: start;
+  }
+
+  .sensors {
+    margin: 1.75rem 0 0;
+    font-size: 0.625rem;
+    letter-spacing: 0.06em;
+    line-height: 1.8;
+    color: var(--text-dim);
+    max-width: 34ch;
+  }
+
+  .rqs,
+  .hyps {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    max-width: none;
+  }
+
+  .rqs li,
+  .hyps li {
+    margin: 0 0 1.5rem;
+    padding-left: 1.25rem;
+    border-left: 1px solid var(--line-2);
+  }
+
+  .rq-tag,
+  .hyp-head {
+    display: flex;
+    align-items: baseline;
+    gap: 0.8rem;
+    margin: 0 0 0.4rem;
+    font-size: 0.5625rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+  }
+
+  .rq-id {
+    color: var(--bronze);
+  }
+
+  .rq-q,
+  .hyp-body {
+    margin: 0;
+    max-width: 50ch;
+    font-size: 0.9375rem;
+    line-height: 1.7;
+    color: var(--mist-2);
+  }
+
+  .hyp-measures {
+    margin: 0.5rem 0 0;
+    font-size: 0.5625rem;
+    letter-spacing: 0.12em;
+    color: var(--text-dim);
+  }
+
+  .study-status {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr));
+    gap: 2rem;
+    margin-top: clamp(3rem, 7vh, 4.5rem);
+    padding-top: 2rem;
+    border-top: 1px solid var(--line-2);
+  }
+
+  .ss-body {
+    margin: 0;
+    font-size: 0.9375rem;
+    line-height: 1.6;
+    color: var(--mist-2);
+  }
+
+  /* The one field that must never quietly fill itself in. */
+  .ss-empty {
+    color: var(--bronze);
+  }
+
+  .study-caveat {
+    margin: clamp(2.5rem, 5vh, 3.5rem) 0 2rem;
+    max-width: 68ch;
+    font-size: 0.875rem;
+    line-height: 1.8;
+    color: var(--text-dim);
+    padding-left: 1.25rem;
+    border-left: 1px solid var(--bronze);
+  }
+
+  /* ── 05 Materials ──────────────────────────────────────────── */
+  .materials {
+    margin-top: clamp(3rem, 7vh, 5rem);
+  }
+
+  /* ── 06 Worldview ──────────────────────────────────────────── */
+  .tri {
+    font-family: var(--display);
+    font-weight: 300;
+    font-size: clamp(2.2rem, 6vw, 4rem);
+    letter-spacing: 0.12em;
+    color: var(--mist);
+    margin: 0 0 0.75rem;
+  }
+
+  .tri-gloss {
+    font-family: var(--mono);
+    font-size: 0.625rem;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    color: var(--bronze);
+    margin: 0 0 clamp(3rem, 7vh, 4.5rem);
+  }
+
+  .matters {
+    max-width: 60ch;
+  }
+
+  .matters-lead,
+  .matters-turn {
+    font-size: 1.0625rem;
+    line-height: 1.75;
+    color: var(--mist-2);
+    margin: 0 0 1.25rem;
+  }
+
+  .matters-sig {
+    margin: clamp(2rem, 4vh, 3rem) 0 0;
+    font-family: var(--display);
+    font-size: clamp(1.3rem, 2.6vw, 1.9rem);
+    line-height: 1.35;
+    color: var(--mist);
+    max-width: 30ch;
+  }
+
+  /* ── 08 About ──────────────────────────────────────────────── */
+  .about-body {
+    max-width: 60ch;
+  }
+
+  .about-body p {
+    font-size: 1.0625rem;
+    line-height: 1.8;
+    color: var(--mist-2);
+    margin: 0 0 1.25rem;
+  }
+
+  .interests {
+    list-style: none;
+    margin: 0 0 2.5rem;
+    padding: 0;
+    max-width: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1.75rem;
+    font-size: 0.625rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--mist-2);
+  }
+
+  .interests li {
+    margin: 0;
+  }
+
+  .about-mail {
+    margin: 0 0 2rem;
+  }
+
+  .about-mail a {
+    text-decoration: none;
+    border-bottom: 1px solid var(--forest-soft);
+    padding-bottom: 2px;
+  }
+
+  .all {
+    margin: 0;
+  }
+
   .view-more {
     display: inline-block;
     font-family: var(--sans);
-    font-size: var(--size-meta);
-    letter-spacing: 0.2em;
+    font-size: 0.625rem;
+    letter-spacing: 0.18em;
     text-transform: uppercase;
     text-decoration: none;
     color: var(--mist);
     border: 1px solid var(--line-2);
-    padding: 1rem 3.5rem;
+    padding: 0.75rem 1.5rem;
     transition:
       border-color var(--dur) var(--ease),
       color var(--dur) var(--ease);
@@ -462,47 +1168,21 @@ const featured = SITE.homeExperiments
     border-color: var(--bronze);
   }
 
-  /* ── 05 About ──────────────────────────────────────────────── */
-  .about-lead {
-    font-family: var(--display);
-    font-weight: 300;
-    font-size: clamp(1.7rem, 3.6vw, 2.6rem);
-    line-height: 1.2;
-    margin: 0 auto 1.75rem;
-    max-width: none;
-    color: var(--mist);
-  }
-
-  .about-body {
-    max-width: 56ch;
-    margin: 0 auto 2rem;
-    font-size: 1.0625rem;
-    line-height: 1.75;
-    color: var(--mist-2);
-  }
-
-  .about-mail {
-    margin: 0 auto clamp(2rem, 5vh, 3rem);
-    max-width: none;
-  }
-
-  .about-mail a {
-    text-decoration: none;
-    border-bottom: 1px solid var(--forest-soft);
-    padding-bottom: 2px;
-  }
-
   /* ── Narrow ────────────────────────────────────────────────── */
+  @media (max-width: 62rem) {
+    .two,
+    .study-grid {
+      grid-template-columns: 1fr;
+      gap: 3rem;
+    }
+    .two-side {
+      position: static;
+    }
+  }
+
   @media (max-width: 52rem) {
     .protos {
       grid-template-columns: 1fr;
-    }
-    .mark {
-      letter-spacing: 0.22em;
-      text-indent: 0.22em;
-    }
-    .hint {
-      display: none;
     }
   }
 </style>

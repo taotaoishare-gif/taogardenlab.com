@@ -18,6 +18,20 @@ stack: [MediaPipe Hands, Canvas 2D, Web Audio API]
 summary: 'Take a planet from the river of stars, light an incense stick to set the time, then throw a pot with your hands in the air. Clay that wobbles when you rush.'
 summaryZh: '从星河里掬一颗星球，点一炷香定下时长，然后隔空拉坯。你一急，坯就晃。'
 lang: en
+mechanism: "Computational resistance"
+mechanismZh: "计算材料阻力"
+coreQuestion: "Can environmental resistance change my tempo?"
+coreQuestionZh: "环境的阻力能否改变我的节奏？"
+humanQuestion: "Can embodied hand movement become an interface for focused attention?"
+humanQuestionZh: "手的动作本身，能否成为一个让注意力凝聚的界面？"
+researchQuestion: "Can computational material resistance alter the user's tempo of action and cultivate greater awareness of movement and interaction?"
+researchQuestionZh: "计算生成的「材料阻力」能否改变人的行动节奏，并增强其对自身动作与互动过程的觉察？"
+hypothesis: "Responsive resistance to hurried movement will encourage slower, more attentive interaction."
+hypothesisZh: "当系统对急促动作产生响应式阻力时，用户将倾向于放慢动作，并表现出更高的互动觉察。"
+builtPipeline: "motion sensing → particle material → responsive resistance"
+builtPipelineZh: "动作感知 → 粒子材料 → 响应式阻力"
+researchTags: ['tempo', 'agency', 'material perception']
+researchTagsZh: ['节奏', '能动性', '材料知觉']
 fromAtlas: [dehua-white-porcelain]
 fromReadings: [yuanye-ji-cheng]
 followsFrom: [phoenix-crown]

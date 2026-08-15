@@ -18,6 +18,20 @@ stack: [MediaPipe Hands, Canvas 2D, Web Audio API]
 summary: 'A phoenix crown drawn in gold line, with tassels of jade beads and poem characters hanging from it. A hand passing through sets the strands swinging and sounding.'
 summaryZh: '金线勾出的凤冠，冠下垂着玉珠与诗字流苏。手拂过，珠串便摇曳作响。'
 lang: en
+mechanism: "Non-contact relation"
+mechanismZh: "非接触关系"
+coreQuestion: "Can presence and connection exist without physical touch?"
+coreQuestionZh: "没有物理触碰，存在感与连接还能成立吗？"
+humanQuestion: "Can we remain connected to something we cannot possess or touch?"
+humanQuestionZh: "当我们无法触碰、占有一个事物时，是否仍然可以与它建立关系？"
+researchQuestion: "Can non-contact interaction preserve a sense of agency, presence, and cultural connection when interacting with heritage objects?"
+researchQuestionZh: "当人与文化遗产之间没有直接触碰时，非接触式交互能否仍然建立能动感、存在感与文化连接？"
+hypothesis: "Continuous non-contact response will preserve a sense of agency and cultural presence comparable to direct manipulation."
+hypothesisZh: "持续的非接触回应，能够保留与直接操作相当的能动感与文化在场感。"
+builtPipeline: "gesture / proximity → digital artifact response"
+builtPipelineZh: "手势与距离 → 数字文物的回应"
+researchTags: ['presence', 'agency', 'cultural connection']
+researchTagsZh: ['在场', '能动性', '文化连接']
 fromAtlas: [phoenix-crown-object]
 followsFrom: [guqin-forest]
 ---

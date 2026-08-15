@@ -68,6 +68,24 @@ const experiments = defineCollection({
     summaryZh: z.string().optional(),
     lang,
 
+    /* The research framing, as fields rather than prose. The prototype matrix
+       on the home page and the head of each experiment page are built from
+       exactly these, so the two can never drift apart. */
+    mechanism: z.string().optional(),
+    mechanismZh: z.string().optional(),
+    coreQuestion: z.string().optional(),
+    coreQuestionZh: z.string().optional(),
+    humanQuestion: z.string().optional(),
+    humanQuestionZh: z.string().optional(),
+    researchQuestion: z.string().optional(),
+    researchQuestionZh: z.string().optional(),
+    hypothesis: z.string().optional(),
+    hypothesisZh: z.string().optional(),
+    builtPipeline: z.string().optional(),
+    builtPipelineZh: z.string().optional(),
+    researchTags: z.array(z.string()).default([]),
+    researchTagsZh: z.array(z.string()).default([]),
+
     /* Where this came from, as data rather than as a sentence buried in the
        prose. Renders as a lineage strip: field → reading → experiment, so
        that "how cultural research enters the work" is visible without

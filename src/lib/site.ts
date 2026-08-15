@@ -9,21 +9,29 @@ export const SITE = {
     en: 'How might environments help humans cultivate attention and presence in the age of AI?',
     zh: '环境能否帮助人在人工智能的时代培养注意力与在场？',
   },
-  /* The threshold question. Note the grammar: it names what the practice is
-     *trying to do*, not something it has achieved. The distinction is the
-     whole reason the line beneath it exists — no physiological evaluation has
-     been conducted here, and the site says so wherever the claim appears. */
-  thresholdQuestion: {
-    en: 'How to translate ancient contemplative wisdom into an immersive and responsive space to regulate the human autonomic nervous system.',
-    zh: '如何将古老的沉思智慧，转译为能够调节人类自主神经系统的沉浸式交互空间。',
+  /* The threshold, in three descending steps: what the practice is called,
+     what it does, and the human question underneath.
+
+     The largest human question leads. Where the knowledge comes from —
+     gardens, ritual, craft, contemplative traditions — is stated further down
+     the page, as a *source of knowledge* rather than as a style. Leading with
+     it would file this under contemplative design, which is narrower than the
+     work actually is. */
+  tagline: {
+    en: 'Human flourishing × Culture × Embodiment × Responsive technology',
+    zh: '人的丰盛 × 文化 × 具身 × 响应式技术',
   },
-  thresholdStatus: {
-    en: 'The aim of the practice. Stated as a direction, not a result — nothing here has been physiologically evaluated.',
-    zh: '这是实践的方向，不是结论——本站没有任何内容做过生理评估。',
+  thresholdLead: {
+    en: 'Designing responsive environments for human flourishing.',
+    zh: '为人的丰盛，设计会回应的环境。',
+  },
+  thresholdQuestion: {
+    en: 'Why do humans suffer — and how might technology help us live with greater presence, awareness, and connection?',
+    zh: '人为什么受苦——技术能否帮助我们以更多的在场、觉察与连接去生活？',
   },
   definition: {
-    en: 'An evolving research practice exploring the relationship between humans, intelligent environments, nature, and culture.',
-    zh: '一个持续生长的研究实践，探索人、智能环境、自然与文化之间的关系。',
+    en: 'TAO Garden is an evolving research practice exploring how culture, embodied interaction, and responsive environments can create conditions for human flourishing.',
+    zh: 'TAO Garden 是一个持续演化的研究实践，探索文化、具身交互与响应式环境如何为人的丰盛创造条件。',
   },
 
   /* Three pieces to start with. A chosen entry point is not a ranking: there

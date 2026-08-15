@@ -12,11 +12,11 @@ const { pathname } = Astro.url;
 const isHome = pathname === '/' || pathname === '';
 
 const screens = [
-  { id: 'manifesto', n: '01', t: { en: 'Manifesto', zh: '宣言' } },
-  { id: 'logic', n: '02', t: { en: 'Questions', zh: '问题' } },
-  { id: 'lenses', n: '03', t: { en: 'Worldview', zh: '世界观' } },
-  { id: 'prototypes', n: '04', t: { en: 'Prototypes', zh: '原型' } },
-  { id: 'about', n: '05', t: { en: 'About', zh: '关于' } },
+  { id: 'question', t: { en: 'Question', zh: '问题' } },
+  { id: 'research', t: { en: 'Research', zh: '研究' } },
+  { id: 'prototypes', t: { en: 'Prototypes', zh: '原型' } },
+  { id: 'study', t: { en: 'Current study', zh: '当前研究' } },
+  { id: 'about', t: { en: 'About', zh: '关于' } },
 ];
 
 const backTo = pathname.startsWith('/experiments')

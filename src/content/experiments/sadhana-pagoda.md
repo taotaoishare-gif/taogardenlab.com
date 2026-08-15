@@ -1,6 +1,6 @@
 ---
 number: 4
-name: 'Sadhana'
+name: 'Sand to Stupa'
 nameZh: '聚沙成塔'
 title: 'What is a biofeedback loop when there is no body attached to it?'
 titleZh: '当没有身体接在上面时，生物反馈还剩下什么？'
@@ -18,6 +18,20 @@ stack: [Three.js, Tone.js, Web Bluetooth, GLSL]
 summary: 'Fifty thousand grains of sand gather into a Thai chedi and gild from the spire down as the sitter settles. The sitter, for now, is a model.'
 summaryZh: '五万粒沙聚成一座泰式金塔，随打坐者安定下来，自塔尖向下鎏金。而目前，那位打坐者是一个模型。'
 lang: en
+mechanism: "Physiological feedback"
+mechanismZh: "生理反馈"
+coreQuestion: "Can an environment make my internal state perceptible?"
+coreQuestionZh: "环境能否让我内在的状态变得可感知？"
+humanQuestion: "Can seeing ourselves change how we inhabit ourselves?"
+humanQuestionZh: "当我们真正「看见自己正在发生什么」，我们会不会开始以不同的方式存在？"
+researchQuestion: "How does making otherwise invisible physiological states perceptible through a responsive environment affect bodily awareness and moment-to-moment self-regulation?"
+researchQuestionZh: "将原本不可见的生理状态转化为环境反馈，是否能够增强身体觉察，并影响个体当下时刻的自我调节？"
+hypothesis: "Real-time physiological contingency will increase perceived bodily awareness and engagement with breathing compared with non-contingent or no-feedback conditions."
+hypothesisZh: "与无反馈或非生理关联的反馈相比，实时生理关联的环境反馈将增强个体的身体觉察以及对呼吸过程的参与。"
+builtPipeline: "physiological sensing → environmental visual / audio feedback"
+builtPipelineZh: "生理信号感知 → 环境视觉与听觉反馈"
+researchTags: ['body awareness', 'biofeedback', 'self-regulation']
+researchTagsZh: ['身体觉察', '生物反馈', '自我调节']
 fromAtlas: [lanna-temple-thresholds, tea-as-timing]
 followsFrom: [cosmic-pottery]
 process:
