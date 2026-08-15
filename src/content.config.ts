@@ -37,6 +37,121 @@ const lang = z.enum(['en', 'zh']).default('en');
    than just the chrome. All optional: an entry without them simply stays in
    the language it was written in. */
 
+/* ------------------------------------------------------------------
+   The study frame. An experiment that has grown into an actual study
+   carries this block; the others simply omit it and render as before.
+   The eleven steps are the same for every piece, so a second prototype
+   can adopt the frame without any new code.
+
+   Bilingual pairs are `{ en, zh }` objects here rather than the `Zh`
+   suffix used elsewhere — the block is deeply nested and the pairs read
+   better kept together.
+   ------------------------------------------------------------------ */
+const biText = z.object({ en: z.string(), zh: z.string() });
+
+const study = z
+  .object({
+    subtitle: biText,
+    keywords: biText,
+    stage: biText,
+
+    /* 01 — where the question came from, and the places it came from.
+       Field sites are real, photographed, and dated; nothing is listed
+       here that was not actually visited. */
+    cultural: z.object({
+      heading: biText,
+      question: biText,
+      sites: z
+        .array(
+          z.object({
+            image: z.string(),
+            place: biText,
+            date: z.string(),
+            caption: biText,
+          })
+        )
+        .default([]),
+      principles: z.array(biText).default([]),
+      observations: z
+        .array(
+          z.object({
+            n: z.string(),
+            title: biText,
+            observed: biText,
+            translation: biText,
+          })
+        )
+        .default([]),
+      /* The four-level translation diagram. */
+      ladder: z
+        .array(z.object({ level: biText, items: biText }))
+        .default([]),
+    }),
+
+    /* 02 */
+    human: z.object({
+      question: biText,
+      body: biText,
+      ask: biText,
+      transform: z.array(z.object({ stage: biText, items: biText })).default([]),
+    }),
+
+    /* 03 — stated as influence, never as regulation. There is no evidence
+       for a regulation claim and the page must not imply one. */
+    rq: z.object({
+      primary: biText,
+      secondary: z.array(z.object({ id: z.string(), q: biText })).default([]),
+    }),
+
+    /* 04 */
+    hypotheses: z.array(z.object({ id: z.string(), body: biText })).default([]),
+
+    /* 05 */
+    prototype: z.object({
+      tagline: biText,
+      metaphor: biText,
+      calm: z.array(biText).default([]),
+      unstable: z.array(biText).default([]),
+    }),
+
+    /* 06 */
+    architecture: z.array(z.object({ stage: biText, items: biText })).default([]),
+
+    /* 07 */
+    experiment: z.object({
+      goal: biText,
+      measuresOf: z.array(biText).default([]),
+      conditions: z
+        .array(
+          z.object({
+            id: z.string(),
+            name: biText,
+            user: biText,
+            purpose: biText,
+          })
+        )
+        .default([]),
+    }),
+
+    /* 08 — "potential measures", never "results". */
+    measurement: z
+      .array(z.object({ group: biText, items: biText }))
+      .default([]),
+
+    /* 09 */
+    status: z.object({
+      built: z.array(biText).default([]),
+      limitation: biText,
+    }),
+
+    /* 10 */
+    reflection: z.object({ heading: biText, body: biText }),
+
+    /* 11 */
+    next: z.object({ heading: biText, items: z.array(biText).default([]) }),
+  })
+  .optional();
+
 const experiments = defineCollection({
   loader: glob({ pattern: ['**/*.md', '!**/*.zh.md'], base: './src/content/experiments' }),
   schema: z.object({
@@ -85,6 +200,8 @@ const experiments = defineCollection({
     builtPipelineZh: z.string().optional(),
     researchTags: z.array(z.string()).default([]),
     researchTagsZh: z.array(z.string()).default([]),
+
+    study,
 
     /* Where this came from, as data rather than as a sentence buried in the
        prose. Renders as a lineage strip: field → reading → experiment, so

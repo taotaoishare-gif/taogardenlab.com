@@ -1,0 +1,836 @@
+---
+import Bi from './Bi.astro';
+import Chain from './Chain.astro';
+import Loop from './Loop.astro';
+
+/* The eleven-step study frame, rendered from the `study` block in an
+   experiment's frontmatter. Any prototype that grows into a study gets this
+   structure for free by filling in the same fields.
+
+   Order is fixed and deliberate — cultural inquiry first, findings ninth.
+   A reader arrives at "what was measured" only after seeing what was asked. */
+
+const { study, closedLoop } = Astro.props;
+const s = study;
+
+const secs = [
+  { n: '01', en: 'Cultural inquiry', zh: '文化考察' },
+  { n: '02', en: 'Human question', zh: '人的问题' },
+  { n: '03', en: 'Research question', zh: '研究问题' },
+  { n: '04', en: 'Design hypothesis', zh: '设计假设' },
+  { n: '05', en: 'Prototype', zh: '原型' },
+  { n: '06', en: 'System architecture', zh: '系统架构' },
+  { n: '07', en: 'Experimental design', zh: '实验设计' },
+  { n: '08', en: 'Measurement', zh: '测量' },
+  { n: '09', en: 'Current status', zh: '当前状态' },
+  { n: '10', en: 'Reflection', zh: '反思' },
+  { n: '11', en: 'Next iteration', zh: '下一步' },
+];
+const H = (i: number) => secs[i];
+---
+
+<div class="study">
+  <!-- 01 ─ CULTURAL INQUIRY ─────────────────────────────────── -->
+  <section class="sec" aria-labelledby="cs-01">
+    <h2 id="cs-01" class="sec-h">
+      <span class="sec-n">{H(0).n}</span><Bi en={H(0).en} zh={H(0).zh} />
+    </h2>
+
+    <h3 class="sec-lead">
+      <Bi en={s.cultural.heading.en} zh={s.cultural.heading.zh} />
+    </h3>
+    <p class="sec-q">
+      <Bi en={s.cultural.question.en} zh={s.cultural.question.zh} />
+    </p>
+
+    <p class="label"><Bi en="Field research" zh="田野" /></p>
+    <ul class="sites">
+      {
+        s.cultural.sites.map((site: any) => (
+          <li>
+            <img src={site.image} alt="" loading="lazy" width="1200" height="900" />
+            <p class="site-meta mono">
+              <Bi en={site.place.en} zh={site.place.zh} />
+              <span class="dot">·</span>
+              <time datetime={site.date}>{site.date}</time>
+            </p>
+            <p class="site-cap">
+              <Bi en={site.caption.en} zh={site.caption.zh} />
+            </p>
+          </li>
+        ))
+      }
+    </ul>
+
+    <p class="principles mono">
+      {
+        s.cultural.principles.map((p: any, i: number) => (
+          <>
+            {i > 0 && <span class="dot">·</span>}
+            <Bi en={p.en} zh={p.zh} />
+          </>
+        ))
+      }
+    </p>
+
+    <ol class="obs">
+      {
+        s.cultural.observations.map((o: any) => (
+          <li>
+            <p class="obs-n numeral">{o.n}</p>
+            <h4 class="obs-t">
+              <Bi en={o.title.en} zh={o.title.zh} />
+            </h4>
+            <p class="obs-body">
+              <Bi en={o.observed.en} zh={o.observed.zh} />
+            </p>
+            <p class="obs-tr">
+              <span class="label"><Bi en="Design translation" zh="设计转译" /></span>
+              <Bi en={o.translation.en} zh={o.translation.zh} />
+            </p>
+          </li>
+        ))
+      }
+    </ol>
+
+    <figure class="ladder">
+      <figcaption class="fig-cap">
+        <Bi
+          en="From cultural practice to computational environment"
+          zh="从文化实践到计算环境"
+        />
+      </figcaption>
+      <Chain
+        steps={s.cultural.ladder.map((l: any) => ({
+          level: l.level,
+          statement: l.items,
+        }))}
+      />
+    </figure>
+  </section>
+
+  <!-- 02 ─ HUMAN QUESTION ───────────────────────────────────── -->
+  <section class="sec" aria-labelledby="cs-02">
+    <h2 id="cs-02" class="sec-h">
+      <span class="sec-n">{H(1).n}</span><Bi en={H(1).en} zh={H(1).zh} />
+    </h2>
+
+    <h3 class="sec-lead">
+      <Bi en={s.human.question.en} zh={s.human.question.zh} />
+    </h3>
+    <p class="sec-body">
+      <Bi en={s.human.body.en} zh={s.human.body.zh} />
+    </p>
+    <p class="pull">
+      <Bi en={s.human.ask.en} zh={s.human.ask.zh} />
+    </p>
+
+    <figure class="ladder">
+      <figcaption class="fig-cap">
+        <Bi en="Invisible → visible" zh="不可见 → 可见" />
+      </figcaption>
+      <Chain
+        steps={s.human.transform.map((x: any) => ({
+          level: x.stage,
+          statement: x.items,
+        }))}
+      />
+    </figure>
+  </section>
+
+  <!-- 03 ─ RESEARCH QUESTION ────────────────────────────────── -->
+  <section class="sec" aria-labelledby="cs-03">
+    <h2 id="cs-03" class="sec-h">
+      <span class="sec-n">{H(2).n}</span><Bi en={H(2).en} zh={H(2).zh} />
+    </h2>
+
+    <p class="label"><Bi en="Primary" zh="主问题" /></p>
+    <p class="rq-primary">
+      <Bi en={s.rq.primary.en} zh={s.rq.primary.zh} />
+    </p>
+
+    <p class="scope mono">
+      <Bi
+        en="Stated as influence, not as regulation. Whether such an environment regulates the nervous system is not a claim this study is in a position to make."
+        zh="这里问的是「是否影响」，不是「是否调节」。这个研究目前没有资格声称它能调节神经系统。"
+      />
+    </p>
+
+    <ol class="qs">
+      {
+        s.rq.secondary.map((q: any) => (
+          <li>
+            <span class="qs-id numeral">{q.id}</span>
+            <p>
+              <Bi en={q.q.en} zh={q.q.zh} />
+            </p>
+          </li>
+        ))
+      }
+    </ol>
+  </section>
+
+  <!-- 04 ─ DESIGN HYPOTHESIS ────────────────────────────────── -->
+  <section class="sec" aria-labelledby="cs-04">
+    <h2 id="cs-04" class="sec-h">
+      <span class="sec-n">{H(3).n}</span><Bi en={H(3).en} zh={H(3).zh} />
+    </h2>
+
+    <ol class="qs">
+      {
+        s.hypotheses.map((h: any) => (
+          <li>
+            <span class="qs-id numeral">{h.id}</span>
+            <p>
+              <Bi en={h.body.en} zh={h.body.zh} />
+            </p>
+          </li>
+        ))
+      }
+    </ol>
+
+    <figure class="ladder">
+      <figcaption class="fig-cap">
+        <Bi
+          en="A closed-loop relationship between body and environment"
+          zh="身体与环境之间的闭环关系"
+        />
+      </figcaption>
+      <Loop stages={closedLoop} returnLabel={{ en: 'new state', zh: '新的状态' }} />
+    </figure>
+  </section>
+
+  <!-- 05 ─ PROTOTYPE ────────────────────────────────────────── -->
+  <section class="sec" aria-labelledby="cs-05">
+    <h2 id="cs-05" class="sec-h">
+      <span class="sec-n">{H(4).n}</span><Bi en={H(4).en} zh={H(4).zh} />
+    </h2>
+
+    <h3 class="sec-lead">
+      <Bi en={s.prototype.tagline.en} zh={s.prototype.tagline.zh} />
+    </h3>
+    <p class="pull">
+      <Bi en={s.prototype.metaphor.en} zh={s.prototype.metaphor.zh} />
+    </p>
+
+    <div class="logic">
+      <div class="logic-col">
+        <p class="label"><Bi en="When the body settles" zh="当身体安定下来" /></p>
+        <ol class="steps">
+          {
+            s.prototype.calm.map((x: any) => (
+              <li>
+                <Bi en={x.en} zh={x.zh} />
+              </li>
+            ))
+          }
+        </ol>
+      </div>
+      <div class="logic-col">
+        <p class="label"><Bi en="When signals fluctuate" zh="当信号波动增大" /></p>
+        <ol class="steps">
+          {
+            s.prototype.unstable.map((x: any) => (
+              <li>
+                <Bi en={x.en} zh={x.zh} />
+              </li>
+            ))
+          }
+        </ol>
+      </div>
+    </div>
+  </section>
+
+  <!-- 06 ─ SYSTEM ARCHITECTURE ──────────────────────────────── -->
+  <section class="sec" aria-labelledby="cs-06">
+    <h2 id="cs-06" class="sec-h">
+      <span class="sec-n">{H(5).n}</span><Bi en={H(5).en} zh={H(5).zh} />
+    </h2>
+    <h3 class="sec-lead">
+      <Bi
+        en="Translating body signals into environmental behaviour"
+        zh="把身体信号转译为环境的行为"
+      />
+    </h3>
+    <Chain
+      steps={s.architecture.map((a: any) => ({
+        level: a.stage,
+        statement: a.items,
+      }))}
+    />
+  </section>
+
+  <!-- 07 ─ EXPERIMENTAL DESIGN ──────────────────────────────── -->
+  <section class="sec" aria-labelledby="cs-07">
+    <h2 id="cs-07" class="sec-h">
+      <span class="sec-n">{H(6).n}</span><Bi en={H(6).en} zh={H(6).zh} />
+    </h2>
+
+    <p class="sec-body">
+      <Bi en={s.experiment.goal.en} zh={s.experiment.goal.zh} />
+    </p>
+
+    <p class="scope mono">
+      <Bi
+        en="A demo on its own cannot answer whether it does anything. The comparison is the study."
+        zh="只有一个 demo 无法回答「它是否起作用」。比较本身才是研究。"
+      />
+    </p>
+
+    <ol class="conds">
+      {
+        s.experiment.conditions.map((c: any) => (
+          <li>
+            <p class="cond-id numeral">{c.id}</p>
+            <h4 class="cond-n">
+              <Bi en={c.name.en} zh={c.name.zh} />
+            </h4>
+            <p class="cond-u">
+              <Bi en={c.user.en} zh={c.user.zh} />
+            </p>
+            <p class="cond-p mono">
+              <Bi en={c.purpose.en} zh={c.purpose.zh} />
+            </p>
+          </li>
+        ))
+      }
+    </ol>
+  </section>
+
+  <!-- 08 ─ MEASUREMENT ──────────────────────────────────────── -->
+  <section class="sec" aria-labelledby="cs-08">
+    <h2 id="cs-08" class="sec-h">
+      <span class="sec-n">{H(7).n}</span><Bi en={H(7).en} zh={H(7).zh} />
+    </h2>
+
+    <p class="label label--wide">
+      <Bi en="Potential measures" zh="备选测量指标" />
+    </p>
+
+    <dl class="measures">
+      {
+        s.measurement.map((m: any) => (
+          <>
+            <dt>
+              <Bi en={m.group.en} zh={m.group.zh} />
+            </dt>
+            <dd>
+              <Bi en={m.items.en} zh={m.items.zh} />
+            </dd>
+          </>
+        ))
+      }
+    </dl>
+
+    <p class="scope mono">
+      <Bi
+        en="These are the measures the study would take. No data has been collected, so there are no results on this page."
+        zh="这些是这项研究将要采集的指标。目前没有采集任何数据，因此本页没有结果。"
+      />
+    </p>
+  </section>
+
+  <!-- 09 ─ CURRENT STATUS ───────────────────────────────────── -->
+  <section class="sec" aria-labelledby="cs-09">
+    <h2 id="cs-09" class="sec-h">
+      <span class="sec-n">{H(8).n}</span><Bi en={H(8).en} zh={H(8).zh} />
+    </h2>
+
+    <p class="label"><Bi en="Built" zh="已完成" /></p>
+    <ul class="built">
+      {
+        s.status.built.map((b: any) => (
+          <li>
+            <Bi en={b.en} zh={b.zh} />
+          </li>
+        ))
+      }
+    </ul>
+
+    <div class="limitation">
+      <p class="label"><Bi en="Current limitation" zh="当前局限" /></p>
+      <p>
+        <Bi en={s.status.limitation.en} zh={s.status.limitation.zh} />
+      </p>
+    </div>
+
+    <div class="findings">
+      <p class="label"><Bi en="Findings" zh="研究发现" /></p>
+      <p class="findings-empty">
+        <Bi en="Not yet collected." zh="尚未采集。" />
+      </p>
+    </div>
+  </section>
+
+  <!-- 10 ─ REFLECTION ───────────────────────────────────────── -->
+  <section class="sec" aria-labelledby="cs-10">
+    <h2 id="cs-10" class="sec-h">
+      <span class="sec-n">{H(9).n}</span><Bi en={H(9).en} zh={H(9).zh} />
+    </h2>
+    <h3 class="sec-lead">
+      <Bi en={s.reflection.heading.en} zh={s.reflection.heading.zh} />
+    </h3>
+    <p class="pull pull--big">
+      <Bi en={s.reflection.body.en} zh={s.reflection.body.zh} />
+    </p>
+  </section>
+
+  <!-- 11 ─ NEXT ITERATION ───────────────────────────────────── -->
+  <section class="sec sec--last" aria-labelledby="cs-11">
+    <h2 id="cs-11" class="sec-h">
+      <span class="sec-n">{H(10).n}</span><Bi en={H(10).en} zh={H(10).zh} />
+    </h2>
+    <h3 class="sec-lead">
+      <Bi en={s.next.heading.en} zh={s.next.heading.zh} />
+    </h3>
+    <ul class="next mono">
+      {
+        s.next.items.map((x: any) => (
+          <li>
+            <Bi en={x.en} zh={x.zh} />
+          </li>
+        ))
+      }
+    </ul>
+  </section>
+</div>
+
+<style>
+  .sec {
+    padding-top: clamp(3rem, 7vh, 5rem);
+    margin-bottom: clamp(3rem, 7vh, 5rem);
+    border-top: 1px solid var(--line-2);
+  }
+
+  .sec--last {
+    margin-bottom: 0;
+  }
+
+  .sec-h {
+    font-family: var(--mono);
+    font-size: 0.625rem;
+    font-weight: 400;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin: 0 0 clamp(1.75rem, 4vh, 2.75rem);
+  }
+
+  .sec-n {
+    color: var(--bronze);
+    margin-right: 1.1em;
+  }
+
+  .sec-lead {
+    font-family: var(--display);
+    font-weight: 400;
+    font-size: clamp(1.4rem, 2.8vw, 2rem);
+    line-height: 1.25;
+    letter-spacing: 0;
+    color: var(--mist);
+    max-width: 26ch;
+    margin: 0 0 1.25rem;
+  }
+
+  .sec-q,
+  .sec-body {
+    max-width: 60ch;
+    font-size: 1rem;
+    line-height: 1.75;
+    color: var(--mist-2);
+    margin: 0 0 2rem;
+  }
+
+  .pull {
+    max-width: 46ch;
+    margin: 0 0 2rem;
+    padding-left: 1.25rem;
+    border-left: 1px solid var(--bronze);
+    font-family: var(--display);
+    font-size: clamp(1.1rem, 1.9vw, 1.35rem);
+    line-height: 1.5;
+    color: var(--mist);
+  }
+
+  .pull--big {
+    font-size: clamp(1.3rem, 2.6vw, 1.8rem);
+    max-width: 34ch;
+  }
+
+  .label {
+    font-family: var(--mono);
+    font-size: 0.5625rem;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin: 0 0 1rem;
+    display: block;
+  }
+
+  .label--wide {
+    margin-bottom: 1.5rem;
+  }
+
+  /* A caveat that must stay legible but must not shout. */
+  .scope {
+    max-width: 62ch;
+    font-size: 0.625rem;
+    letter-spacing: 0.05em;
+    line-height: 1.9;
+    color: var(--text-dim);
+    margin: 0 0 2rem;
+  }
+
+  /* 01 field sites */
+  .sites {
+    list-style: none;
+    margin: 0 0 2.5rem;
+    padding: 0;
+    max-width: none;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+    gap: clamp(1.5rem, 3vw, 2.5rem);
+  }
+
+  .sites li {
+    margin: 0;
+  }
+
+  .sites img {
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    object-fit: cover;
+    background: var(--void-soft);
+  }
+
+  .site-meta {
+    margin: 0.75rem 0 0.4rem;
+    font-size: 0.5625rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--bronze);
+  }
+
+  .site-cap {
+    margin: 0;
+    font-size: 0.875rem;
+    line-height: 1.7;
+    color: var(--text-dim);
+  }
+
+  .dot {
+    margin-inline: 0.5em;
+    opacity: 0.6;
+  }
+
+  .principles {
+    font-size: 0.625rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--mist-2);
+    margin: 0 0 clamp(2.5rem, 5vh, 3.5rem);
+  }
+
+  /* observations */
+  .obs {
+    list-style: none;
+    margin: 0 0 clamp(2.5rem, 5vh, 3.5rem);
+    padding: 0;
+    max-width: none;
+  }
+
+  .obs li {
+    margin: 0 0 2.5rem;
+    padding-left: 2.5rem;
+    position: relative;
+    max-width: 62ch;
+  }
+
+  .obs-n {
+    position: absolute;
+    left: 0;
+    top: 0.15em;
+    margin: 0;
+    font-family: var(--mono);
+    font-size: 0.625rem;
+    letter-spacing: 0.16em;
+    color: var(--bronze);
+  }
+
+  .obs-t {
+    font-family: var(--display);
+    font-weight: 400;
+    font-size: 1.2rem;
+    line-height: 1.3;
+    letter-spacing: 0;
+    color: var(--mist);
+    margin: 0 0 0.65rem;
+  }
+
+  .obs-body {
+    margin: 0 0 0.9rem;
+    font-size: 0.9375rem;
+    line-height: 1.75;
+    color: var(--mist-2);
+  }
+
+  .obs-tr {
+    margin: 0;
+    font-size: 0.9375rem;
+    line-height: 1.75;
+    color: var(--mist);
+    padding-left: 1rem;
+    border-left: 1px solid var(--line-2);
+  }
+
+  .obs-tr .label {
+    margin-bottom: 0.4rem;
+  }
+
+  /* diagrams */
+  .ladder {
+    margin: clamp(2rem, 4vh, 3rem) 0 0;
+    max-width: 44rem;
+  }
+
+  .fig-cap {
+    font-family: var(--mono);
+    font-size: 0.5625rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--bronze);
+    margin-bottom: 1.5rem;
+  }
+
+  /* question / hypothesis lists */
+  .qs {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    max-width: none;
+  }
+
+  .qs li {
+    display: grid;
+    grid-template-columns: 3rem minmax(0, 1fr);
+    gap: 1rem;
+    margin: 0 0 1.5rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid var(--line-2);
+    max-width: 62ch;
+  }
+
+  .qs-id {
+    font-family: var(--mono);
+    font-size: 0.625rem;
+    letter-spacing: 0.14em;
+    color: var(--bronze);
+    padding-top: 0.35em;
+  }
+
+  .qs p {
+    margin: 0;
+    font-size: 0.9375rem;
+    line-height: 1.75;
+    color: var(--mist-2);
+  }
+
+  .rq-primary {
+    max-width: 46ch;
+    margin: 0 0 1.5rem;
+    font-family: var(--display);
+    font-size: clamp(1.2rem, 2.2vw, 1.6rem);
+    line-height: 1.4;
+    color: var(--mist);
+  }
+
+  /* 05 interaction logic */
+  .logic {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+    gap: clamp(2rem, 4vw, 3.5rem);
+  }
+
+  .steps {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    max-width: none;
+  }
+
+  .steps li {
+    position: relative;
+    margin: 0 0 0.9rem;
+    padding-left: 1.5rem;
+    font-size: 0.9375rem;
+    line-height: 1.6;
+    color: var(--mist-2);
+  }
+
+  .steps li::before {
+    content: '↓';
+    position: absolute;
+    left: 0;
+    color: var(--bronze);
+    opacity: 0.7;
+    font-size: 0.75rem;
+  }
+
+  .steps li:first-child::before {
+    content: '·';
+  }
+
+  /* 07 conditions */
+  .conds {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    max-width: none;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+    gap: clamp(1.5rem, 3vw, 2.5rem);
+  }
+
+  .conds li {
+    margin: 0;
+    padding-top: 1.1rem;
+    border-top: 1px solid var(--bronze);
+  }
+
+  .cond-id {
+    font-family: var(--mono);
+    font-size: 0.625rem;
+    letter-spacing: 0.2em;
+    color: var(--bronze);
+    margin: 0 0 0.6rem;
+  }
+
+  .cond-n {
+    font-family: var(--display);
+    font-weight: 400;
+    font-size: 1.15rem;
+    line-height: 1.3;
+    letter-spacing: 0;
+    color: var(--mist);
+    margin: 0 0 0.6rem;
+  }
+
+  .cond-u {
+    margin: 0 0 0.6rem;
+    font-size: 0.9375rem;
+    line-height: 1.7;
+    color: var(--mist-2);
+  }
+
+  .cond-p {
+    margin: 0;
+    font-size: 0.5625rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+  }
+
+  /* 08 measures */
+  .measures {
+    margin: 0 0 2rem;
+    display: grid;
+    grid-template-columns: 9rem minmax(0, 1fr);
+    gap: 0.9rem 1.5rem;
+    max-width: 60ch;
+  }
+
+  .measures dt {
+    font-family: var(--mono);
+    font-size: 0.5625rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--bronze);
+    padding-top: 0.35em;
+  }
+
+  .measures dd {
+    margin: 0;
+    font-size: 0.9375rem;
+    line-height: 1.7;
+    color: var(--mist-2);
+  }
+
+  /* 09 status */
+  .built {
+    list-style: none;
+    margin: 0 0 2.5rem;
+    padding: 0;
+    max-width: 62ch;
+  }
+
+  .built li {
+    position: relative;
+    margin: 0 0 0.8rem;
+    padding-left: 1.6rem;
+    font-size: 0.9375rem;
+    line-height: 1.7;
+    color: var(--mist-2);
+  }
+
+  .built li::before {
+    content: '✓';
+    position: absolute;
+    left: 0;
+    color: var(--bronze);
+    font-size: 0.75rem;
+  }
+
+  .limitation {
+    max-width: 62ch;
+    padding-left: 1.25rem;
+    border-left: 1px solid var(--bronze);
+    margin-bottom: 2.5rem;
+  }
+
+  .limitation p {
+    margin: 0;
+    font-size: 0.9375rem;
+    line-height: 1.8;
+    color: var(--mist-2);
+  }
+
+  /* The field that must never quietly fill itself in. */
+  .findings-empty {
+    margin: 0;
+    font-family: var(--display);
+    font-size: 1.35rem;
+    color: var(--bronze);
+  }
+
+  .next {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    max-width: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem 1.75rem;
+    font-size: 0.625rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--mist-2);
+  }
+
+  .next li {
+    margin: 0;
+  }
+
+  @media (max-width: 40rem) {
+    .qs li {
+      grid-template-columns: 1fr;
+      gap: 0.4rem;
+    }
+    .measures {
+      grid-template-columns: 1fr;
+      gap: 0.3rem 0;
+    }
+    .measures dd {
+      margin-bottom: 1rem;
+    }
+  }
+</style>
