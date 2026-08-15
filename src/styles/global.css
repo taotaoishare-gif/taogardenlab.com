@@ -137,11 +137,24 @@
 
   /* Display voice, from the reference: Cormorant for titles and pull-quotes,
      Newsreader for anything you actually have to read at length. */
-  --display: 'Cormorant Garamond', 'Source Han Serif SC', 'Songti SC', Georgia,
-    serif;
-  --serif: 'Newsreader', 'Source Han Serif SC', 'Songti SC', Georgia, serif;
-  --sans: 'Inter', 'Source Han Sans SC', 'PingFang SC', system-ui, sans-serif;
-  --mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+  /* Chinese runs on a clean humanist sans, never on the fallback Songti — a
+     heavy Ming serif at body size reads as a printed notice, not as a research
+     site. PingFang on Apple, YaHei on Windows, Source Han / Noto elsewhere.
+
+     These faces are appended to every latin stack below rather than only to
+     the `.zh-only` rule. A latin face never renders a CJK glyph, so listing
+     them costs nothing for english text — but it means a Chinese character
+     nested anywhere (a markdown h2, a mono label) still lands on PingFang
+     instead of falling through to the system's default Ming. */
+  --cjk-faces: 'PingFang SC', 'HarmonyOS Sans SC', 'Microsoft YaHei', '微软雅黑',
+    'Source Han Sans SC', 'Noto Sans SC', 'Hiragino Sans GB';
+  --cjk: var(--cjk-faces), sans-serif;
+
+  --display: 'Cormorant Garamond', var(--cjk-faces), Georgia, serif;
+  --serif: 'Newsreader', var(--cjk-faces), Georgia, serif;
+  --sans: 'Inter', var(--cjk-faces), system-ui, sans-serif;
+  --mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, var(--cjk-faces),
+    monospace;
 
   /* ---- Type scale ------------------------------------------------------
      Display to body is ~4:1, not the ~2:1 it was. Display appears once per
@@ -208,15 +221,32 @@ svg {
   height: auto;
 }
 
-/* CJK sits optically smaller than latin at the same size — even it out.
+/* Every Chinese string on the site is inside one of these, so this is the
+   single place the CJK face is decided.
 
-   Scoped to the CJK spans themselves, never to `:lang(zh)`: switching the
-   document language to Chinese would otherwise apply font-size-adjust to
-   latin text as well, and on a small-x-height face like Cormorant that
-   silently inflates the wordmark until it wraps. */
+   Scoped to the spans themselves, never to `:lang(zh)`: switching the document
+   language would otherwise restyle latin text too, and the wordmark would
+   stop being Cormorant.
+
+   `font-size-adjust` is deliberately absent. It was tuned for the Songti
+   fallback; against a sans with a normal x-height it distorts the size
+   instead of correcting it. Full-width CJK reads slightly large next to
+   latin at the same px, so it is nudged down a touch rather than re-fitted. */
 .zh-only,
 .cjk {
-  font-size-adjust: 0.52;
+  font-family: var(--cjk);
+  font-size: 0.94em;
+  letter-spacing: 0.01em;
+}
+
+/* Headings keep their weight light — a bold CJK sans at display size is the
+   same mistake as the heavy serif, just in the other direction. */
+h1 .zh-only,
+h2 .zh-only,
+h3 .zh-only,
+.display .zh-only,
+.mark .zh-only {
+  font-weight: 400;
 }
 
 /* ---------- 4. Typography ---------- */

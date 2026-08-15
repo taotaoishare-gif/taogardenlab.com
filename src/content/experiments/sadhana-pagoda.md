@@ -11,7 +11,6 @@ status: 'Built. Simulated physiology. Not evaluated.'
 statusZh: '已造。生理为模拟。未做评估。'
 video: /video/exp-06-sadhana.mp4
 poster: /image/exp-06-sadhana.jpg
-thumb: /image/exp-06-sadhana-thumb.jpg
 demo: /demos/sadhana/
 demoNote: 'Runs in the browser with a simulated body. The chest-strap path needs Web Bluetooth — Chromium only, not Safari or Firefox. Nothing is uploaded or stored either way.'
 demoNoteZh: '可在浏览器里用模拟的身体运行。胸带那条链路需要 Web Bluetooth——仅 Chromium，Safari 与 Firefox 不支持。两种方式都不上传、不存储任何数据。'
