@@ -56,7 +56,7 @@ The transferable principle is **externalised pauses**: a rhythm that comes
 from the environment rather than from any participant, so that stopping
 requires no one to take responsibility for stopping.
 
-The incense timer in [Cosmic Pottery](/experiments/cosmic-pottery) is the
+The incense timer in [Cosmic Pottery](/experiments/cosmic-pottery/) is the
 closest I have come — a duration that nobody has to enforce. It works better
 than a countdown for the same reason the cups work better than an agenda.
 

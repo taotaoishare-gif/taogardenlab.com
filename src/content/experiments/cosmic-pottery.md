@@ -38,10 +38,10 @@ instruction.
 
 I spent time around ceramics in Dehua, where white porcelain is the local
 material and the making is a trade rather than a therapy. See
-[the atlas entry on Dehua](/atlas/dehua-white-porcelain).
+[the atlas entry on Dehua](/atlas/dehua-white-porcelain/).
 
 This is also a direct answer to what I got wrong in
-[Rain Curtain](/experiments/rain-curtain), where speed changed the *sound*.
+[Rain Curtain](/experiments/rain-curtain/), where speed changed the *sound*.
 Here speed changes the *object you are left with*, which is harder to ignore.
 
 ## 03 What I built

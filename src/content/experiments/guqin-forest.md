@@ -45,7 +45,7 @@ The question came from two places. One is the guqin itself, which occupies
 an unusual position in Chinese musical culture: historically it was played
 alone, or for one listener, and the literature around it is more concerned
 with the state of the player than with the audience's judgment. The other is
-[the atlas entry on spatial sequencing in Jiangnan gardens](/atlas/jiangnan-sequencing) —
+[the atlas entry on spatial sequencing in Jiangnan gardens](/atlas/jiangnan-sequencing/) —
 a garden also has no correct way to walk it.
 
 ## 03 What I built

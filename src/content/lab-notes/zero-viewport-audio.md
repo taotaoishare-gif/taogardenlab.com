@@ -7,7 +7,7 @@ lang: en
 experiment: rain-curtain
 ---
 
-I tested [Rain Curtain](/experiments/rain-curtain) in a background tab. It
+I tested [Rain Curtain](/experiments/rain-curtain/) in a background tab. It
 failed to start, silently, with nothing in the console.
 
 It failed because a hidden tab reports `innerWidth` as 0 and freezes

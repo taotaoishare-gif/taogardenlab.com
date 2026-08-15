@@ -51,7 +51,7 @@ problem, and that the solution is: sound that is eventful but not meaningful.
 
 ## 04 Translate
 
-I built [Rain Curtain](/experiments/rain-curtain) from this. The specific
+I built [Rain Curtain](/experiments/rain-curtain/) from this. The specific
 thing I took was the discreteness — individual drops rather than an ambient
 wash — because the wash is what most rain-sound applications produce, and the
 wash is the wrong thing. It is texture, and texture is not events.

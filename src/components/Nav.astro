@@ -20,12 +20,12 @@ const screens = [
 ];
 
 const backTo = pathname.startsWith('/experiments')
-  ? { href: '/experiments', t: UI.experiments }
+  ? { href: '/experiments/', t: UI.experiments }
   : pathname.startsWith('/atlas')
-    ? { href: '/atlas', t: UI.atlas }
+    ? { href: '/atlas/', t: UI.atlas }
     : pathname.startsWith('/notes')
-      ? { href: '/notes', t: UI.notes }
-      : { href: '/index', t: UI.index };
+      ? { href: '/notes/', t: UI.notes }
+      : { href: '/index/', t: UI.index };
 ---
 
 <header class:list={['site-nav', { home: isHome }]} data-nav>

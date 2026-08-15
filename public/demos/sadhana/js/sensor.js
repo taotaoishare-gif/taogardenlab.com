@@ -50,10 +50,37 @@ function gaussian() {
 
 export const RANGE = {
   hr:         { min: 45,  max: 110 },  // BPM
-  rmssd:      { min: 0,   max: 100 },  // ms — HRV proxy
+  rmssd:      { min: 0,   max: 100 },  // ms — overwritten by calibrateTo()
   eda:        { min: 0,   max: 10  },  // µS-ish stress index
   breathRate: { min: 3.5, max: 20  },  // breaths per minute
 };
+
+/**
+ * Rescale the gold channel to one person.
+ *
+ * RMSSD varies about tenfold between individuals — a 24-year-old athlete may
+ * rest near 90 ms and a sedentary 45-year-old near 18 ms. Normalising both
+ * against a fixed 100 ms ceiling gilds the first for doing nothing and leaves
+ * the second unable to be gilded at all; neither reading is about what they
+ * did. With the ceiling at 100, the chime threshold of 0.8 asks for 80 ms,
+ * which in practice only the simulation ever reaches.
+ *
+ * Resonance-frequency breathing reliably lifts RMSSD to roughly three or four
+ * times resting in an untrained sitter, so 3.2× resting is the ceiling that
+ * makes the full range of the channel traversable by *this* body. The floor
+ * stays at 0 rather than at their resting value: arriving already part-gilded
+ * reads as a gift, and the ratchet then only ever has to run upward.
+ *
+ * Feed it the resting RMSSD from a 3-minute seated baseline — h808s-bench.html
+ * measures it and prints the call.
+ *
+ * @param {number} restingRmssd  ms
+ */
+export function calibrateTo(restingRmssd) {
+  if (!Number.isFinite(restingRmssd) || restingRmssd <= 0) return RANGE.rmssd.max;
+  RANGE.rmssd.max = Math.max(40, Math.round(restingRmssd * 3.2 / 5) * 5);
+  return RANGE.rmssd.max;
+}
 
 /**
  * Cardiorespiratory resonance frequency. Around 6 breaths/min (0.1 Hz) the
@@ -226,6 +253,7 @@ export class SensorEngine {
   /** Switch between the internal model and real hardware. */
   setSource(mode) {
     if (mode === this.source) return;
+    const from = this.source;
     this.source = mode;
     const L = this.live;
     L.lastBeatAt = 0;
@@ -233,7 +261,26 @@ export class SensorEngine {
     L.lastCrossAt = 0;
     L.armed = false;
     L.stale = false;
-    // Keep _msd: a strap that reconnects should not have to re-earn its gold.
+
+    // A strap that drops and reconnects should not have to re-earn its gold —
+    // that reconnection is live→live, and `_msd` survives it untouched.
+    //
+    // Crossing from the model to a body is a different event. The guided arc
+    // ends at 5.48 breaths/min with the HRV capacity at 0.95, which settles
+    // `_msd` at an RMSSD around 86 ms — goldIndex 0.86. Carrying that into a
+    // live session hands the sitter a gilded pagoda they did not earn, and
+    // then spends the next forty seconds taking it away as the estimator
+    // finds their real value. De-gilding is the one thing this piece promises
+    // never to do, and it would be the first thing a real body ever saw it do.
+    //
+    // So the estimator starts from the floor and they build it.
+    if (from === SOURCE.MOCK && mode === SOURCE.LIVE) {
+      this._msd = 0;
+      this._lastRR = 1000;
+      this._cohesion = 0;
+      this._goldIndex = 0;
+      this._stability = 0.5;
+    }
   }
 
   /**
@@ -458,6 +505,7 @@ export class SensorEngine {
     return this._publish(dt, {
       hr, rmssd, rmssdNorm, eda, edaNorm,
       phase, respWave, rateNow, depthNow, respDepthScore,
+      edaMeasured: true,   // the model always supplies one
     });
   }
 
@@ -542,14 +590,28 @@ export class SensorEngine {
       hr, rmssd, rmssdNorm, eda, edaNorm,
       phase, respWave, rateNow, depthNow: regularity, respDepthScore,
       warmup: warmup && !L.stale,
+      edaMeasured: edaLive,   // true only if a GSR rig fed pushEda() recently
     });
   }
 
   // ─── Shared tail: metrics, easing, publication, graph history ─────────
 
   _publish(dt, r) {
-    // Spec formula, verbatim.
-    const cohesionRaw = (1 - r.edaNorm) * 0.6 + r.respDepthScore * 0.4;
+    // The 0.6/0.4 split assumes both terms are measured. On a live strap with
+    // no GSR rig the EDA term is not a measurement — it is wherever the panel
+    // slider was left, which is 5.0, which is exactly 0.30 of a constant.
+    //
+    // That is not merely inert, it is a ceiling. The sitter can only move the
+    // remaining 0.40, so cohesion tops out at 0.700 while the bowl fires at
+    // `> 0.7`: a metronomically perfect breather lands one float short of the
+    // only reward in this channel and never hears it. Sixty percent of the
+    // number is something they cannot touch.
+    //
+    // So when EDA is not being measured, it does not get a vote, and breath
+    // carries the whole weight. The channel spans a real 0..1 again.
+    const cohesionRaw = r.edaMeasured
+      ? (1 - r.edaNorm) * 0.6 + r.respDepthScore * 0.4
+      : r.respDepthScore;
 
     // Slow easing so a twitchy sensor never snaps the pagoda apart. Gathering
     // is deliberately lazier than scattering: it should feel earned.

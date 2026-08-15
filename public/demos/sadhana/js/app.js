@@ -11,10 +11,32 @@
  *                                                 └→ AudioEngine  (params)
  */
 
-import { SensorEngine, SensorData, SOURCE, clamp, lerp } from './sensor.js';
+import { SensorEngine, SensorData, SOURCE, clamp, lerp, calibrateTo } from './sensor.js';
 import { VisualEngine } from './visuals.js';
 import { AudioEngine } from './audio.js';
 import { BleSensor } from './ble.js';
+
+/**
+ * ── The one number to change before a live sitting ──────────────────────
+ *
+ * Resting RMSSD in milliseconds, from a 3-minute seated baseline. Run
+ * /demos/h808s-bench.html, press "开始 3 分钟基线", and copy the figure it
+ * prints here.
+ *
+ * Leave it null and the gold channel is normalised against a fixed 100 ms,
+ * which is a clinical scale ceiling rather than any particular person's:
+ * an ordinary first-time sitter sits at 25 ms and cannot reach the 0.8 the
+ * chimes need, so the whole reward layer stays dark no matter what they do.
+ *
+ * One number per person. It is not a preference, it is a unit conversion.
+ */
+const RESTING_RMSSD_MS = 45.3;   // e.g. 26.1
+
+if (RESTING_RMSSD_MS) {
+  const ceiling = calibrateTo(RESTING_RMSSD_MS);
+  console.info(`[sadhana] gold ceiling calibrated to ${ceiling} ms ` +
+               `(resting ${RESTING_RMSSD_MS} ms × 3.2)`);
+}
 
 const $ = (id) => document.getElementById(id);
 

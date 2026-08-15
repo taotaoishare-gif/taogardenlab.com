@@ -35,7 +35,7 @@ Chinese has a phrase for the sound of hanging ornaments: 环佩玎珰. It is a
 sound that means someone is moving. Wedding poetry uses it as a way of saying
 a body is present without describing the body.
 
-This continues a thread from [Rain Curtain](/experiments/rain-curtain) — both
+This continues a thread from [Rain Curtain](/experiments/rain-curtain/) — both
 are hanging strands that a hand passes through. I built them a day apart. The
 difference is that rain is a material and a crown is an artefact, which turns
 out to matter a great deal.
@@ -70,7 +70,7 @@ a specific collection, and I would then be responsible for its accuracy. Line
 drawing is visibly an interpretation.
 
 Synthesis over sampling, for the same reason as
-[Guqin Forest](/experiments/guqin-forest): a sample of a real chime is a
+[Guqin Forest](/experiments/guqin-forest/): a sample of a real chime is a
 recording of a real object, and I did not want to imply I had access to one.
 
 The idle breeze exists because this was built to survive being left running in
@@ -110,7 +110,7 @@ crown, which is the obvious control and the one I should run.
   characters come from is about a marriage that ends in two suicides. I have
   taken the ornament and the sound and left the grief, and I do not think
   "it's an interaction study" fully answers that. See step 05 of
-  [the atlas entry on this](/atlas/phoenix-crown-object).
+  [the atlas entry on this](/atlas/phoenix-crown-object/).
 
 ## 07 What comes next
 

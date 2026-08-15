@@ -104,6 +104,14 @@ export class BleSensor {
     this.onStatus = null;  // (state, detail)
     this._decoder = new TextDecoder();
     this._nusBuf = '';
+
+    // Artefact accounting. Surfaced so a session can be judged on the spot:
+    // under 2% is a well-seated strap, over 5% means go and re-wet the
+    // electrodes rather than reach for the code.
+    this.artefacts = 0;
+    this.beatsAccepted = 0;
+    this._lastAcceptedRR = null;
+    this._rejectRun = 0;
   }
 
   static get available() {
@@ -213,12 +221,41 @@ export class BleSensor {
     const t0 = arrivedAt - total;
     let elapsed = 0;
 
-    // Sanity-gate each one: 300–2000 ms is 30–200 bpm, and anything outside
-    // that is a dropped or doubled beat, which would poison RMSSD badly —
-    // one bogus 400 ms jump raises the estimate for the next dozen beats.
+    // Two gates, not one. The absolute range only catches intervals that are
+    // impossible; it does not catch the common ones that are merely wrong.
+    //
+    // A dropped beat fuses two intervals into one — 900 ms becomes 1800 ms —
+    // which is a perfectly legal heart rate and sails through the absolute
+    // test. It then reaches the RMSSD estimator as a ~900 ms successive
+    // difference, and because that term is squared, a single artefact drives
+    // the estimate from 22 ms to its 100 ms ceiling in one beat: full gold and
+    // every chime, earned by a loose electrode. Dropped beats are routine in
+    // the first minutes, before the electrodes are properly wetted.
+    //
+    // The relative gate is the standard remedy: a real beat-to-beat change
+    // beyond ±20% is not physiologically plausible at rest. Rejected beats do
+    // not update the reference, so bad data cannot drag it along — but after
+    // four consecutive rejections the reference is re-seated, because by then
+    // the change is sustained and is a body doing something (standing up),
+    // not a sensor glitch.
     for (const rr of m.rr) {
       elapsed += rr;
-      if (rr >= 300 && rr <= 2000 && this.onBeat) this.onBeat(rr, t0 + elapsed);
+      if (rr < 300 || rr > 2000) { this.artefacts++; continue; }
+
+      const ref = this._lastAcceptedRR;
+      if (ref !== null && Math.abs(rr - ref) / ref > 0.20) {
+        this.artefacts++;
+        if (++this._rejectRun >= 4) {
+          this._lastAcceptedRR = rr;
+          this._rejectRun = 0;
+        }
+        continue;
+      }
+
+      this._rejectRun = 0;
+      this._lastAcceptedRR = rr;
+      this.beatsAccepted++;
+      if (this.onBeat) this.onBeat(rr, t0 + elapsed);
     }
 
     // Straps that report no RR at all cannot drive this piece: RMSSD and the

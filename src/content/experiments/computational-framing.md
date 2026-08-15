@@ -31,10 +31,10 @@ framing, not of what is behind it.
 ## 02 Context
 
 This follows directly from
-[the atlas entry on framing and borrowed scenery](/atlas/framing-borrowed-scenery).
+[the atlas entry on framing and borrowed scenery](/atlas/framing-borrowed-scenery/).
 It is also the first experiment where I tried to isolate one garden principle
 rather than build an atmosphere. The previous piece,
-[Guqin Forest](/experiments/guqin-forest), had a whole landscape in it, and I
+[Guqin Forest](/experiments/guqin-forest/), had a whole landscape in it, and I
 could not tell which part of it was doing the work.
 
 ## 03 What I built

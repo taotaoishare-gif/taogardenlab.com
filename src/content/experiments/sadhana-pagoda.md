@@ -37,11 +37,11 @@ rather know that before I spend four months on hardware.
 
 Fifty thousand grains of sand lie scattered on a dark plain and gather into a
 Thai chedi. The form comes from the temple compounds in
-[the Chiang Mai entry](/atlas/lanna-temple-thresholds); the pacing comes from
-[tea](/atlas/tea-as-timing) — a duration nobody has to enforce.
+[the Chiang Mai entry](/atlas/lanna-temple-thresholds/); the pacing comes from
+[tea](/atlas/tea-as-timing/) — a duration nobody has to enforce.
 
 It also comes directly out of what
-[Cosmic Pottery](/experiments/cosmic-pottery) got wrong. There, the reward for
+[Cosmic Pottery](/experiments/cosmic-pottery/) got wrong. There, the reward for
 being unhurried could be obtained by not moving. Breath is harder to fake by
 doing nothing.
 

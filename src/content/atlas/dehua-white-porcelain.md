@@ -48,7 +48,7 @@ cannot scan it. Looking at Dehua white for any length of time, the looking
 turns back on itself, because the object supplies almost no incident.
 
 That is the same structural move as the lattice window in
-[framing and borrowed scenery](/atlas/framing-borrowed-scenery) — withhold
+[framing and borrowed scenery](/atlas/framing-borrowed-scenery/) — withhold
 content, and something happens to the attention that was expecting it.
 
 ## 04 Translate
@@ -58,7 +58,7 @@ the work. What can carry over is the **absence of incident** — surfaces with
 no texture to inspect, no gradient to follow, no reward for scanning.
 
 I built the celadon version of
-[Cosmic Pottery](/experiments/cosmic-pottery) partly out of this entry, and
+[Cosmic Pottery](/experiments/cosmic-pottery/) partly out of this entry, and
 the specific thing I took was restraint of surface detail rather than the
 colour.
 

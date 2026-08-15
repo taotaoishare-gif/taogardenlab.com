@@ -1,0 +1,38 @@
+# Cloudflare Pages response headers.
+#
+# Pages defaults everything to `max-age=0, must-revalidate`, which means a
+# returning visitor re-checks every font, every wasm blob and every video on
+# every visit. The edge still answers fast, but it is a round trip per file —
+# and the MediaPipe vendor directory alone is ~42 MB across a dozen files.
+#
+# The rule for how long to cache is simply: can this file's contents change
+# without its name changing?
+
+# Astro fingerprints these — the name changes whenever the bytes do.
+/_astro/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# Self-hosted fonts. Fixed files from a pinned @fontsource version.
+/fonts/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# MediaPipe / three.js / Tone.js, all pinned to exact versions. Upgrading
+# means new files, so these can be held for as long as a browser will hold
+# anything. This is where nearly all the weight is.
+/vendor/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# Media keeps its filename across re-encodes, so a long cache would strand
+# viewers on an old cut. A day is enough to make repeat visits cheap while
+# keeping a re-render visible by tomorrow.
+/video/*
+  Cache-Control: public, max-age=86400
+/image/*
+  Cache-Control: public, max-age=86400
+
+# The demos are hand-edited single files and change without warning.
+# Left on the default so an edit is live the moment it deploys.
+
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin

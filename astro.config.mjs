@@ -40,6 +40,12 @@ export default defineConfig({
     },
   },
   devToolbar: { enabled: false },
+  /* Astro reads --port or this field, not $PORT. Honour the environment so a
+     harness that assigns a free port is obeyed, and fall back to the default
+     when nothing is set. Nothing here depends on 4321 specifically. */
+  server: {
+    port: Number(process.env.PORT) || 4321,
+  },
   vite: {
     plugins: [serveDemoIndexes()],
   },

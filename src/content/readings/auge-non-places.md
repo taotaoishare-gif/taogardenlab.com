@@ -53,12 +53,12 @@ Not "how many people" — I do not want that number and will not collect it.
 But there is a difference in kind between a piece someone opens once and a
 piece someone opens again on a different day, and it is the difference between
 a place and a corridor. Every piece I have built is designed for a single
-visit. The poster in [Cosmic Pottery](/experiments/cosmic-pottery) is the only
+visit. The poster in [Cosmic Pottery](/experiments/cosmic-pottery/) is the only
 object that leaves the tab, and it leaves as an image, not as a reason to
 return.
 
 I notice I am uneasy here, because "designing for return" is a sentence that
 belongs equally to Augé and to growth teams, and the vocabulary does not
 distinguish them. I think the difference is whether the return is *invited* or
-*engineered* — but see the note on [Rosa](/notes/rosa-resonance), where the
+*engineered* — but see the note on [Rosa](/notes/rosa-resonance/), where the
 same distinction is doing a suspicious amount of work.

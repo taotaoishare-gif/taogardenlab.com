@@ -8,13 +8,13 @@ export const GET: APIRoute = async ({ site }) => {
 
   const staticPaths = [
     '/',
-    '/preface',
-    '/research',
-    '/experiments',
-    '/atlas',
-    '/notes',
-    '/about',
-    '/index',
+    '/preface/',
+    '/research/',
+    '/experiments/',
+    '/atlas/',
+    '/notes/',
+    '/about/',
+    '/index/',
   ];
 
   const entries = await allEntries();

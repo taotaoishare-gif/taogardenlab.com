@@ -49,7 +49,7 @@ does the system **guarantee** an outcome, or does it **make room** for one? A
 guarantee makes the thing available. Room does not.
 
 Whether that distinction survives contact with an actual build is unresolved.
-The wobble mechanism in [Cosmic Pottery](/experiments/cosmic-pottery) is a
+The wobble mechanism in [Cosmic Pottery](/experiments/cosmic-pottery/) is a
 place where I quietly crossed the line: the clay does not make room for
 steadiness, it rewards it, and a reward is a guarantee with extra steps.
 

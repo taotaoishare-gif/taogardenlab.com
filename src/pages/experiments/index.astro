@@ -27,7 +27,7 @@ const experiments = (await getCollection('experiments')).sort(
       {
         experiments.map((exp) => (
           <li class="card reveal">
-            <a href={`/experiments/${exp.id}`}>
+            <a href={`/experiments/${exp.id}/`}>
               <div class="thumb">
                 <img
                   src={exp.data.thumb ?? exp.data.poster}

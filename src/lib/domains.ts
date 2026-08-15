@@ -23,7 +23,7 @@ export const DOMAINS = [
       { en: 'Chan aesthetics', zh: '禅宗美学' },
       { en: 'Garden phenomenology', zh: '园林空间现象学' },
     ],
-    href: '/atlas',
+    href: '/atlas/',
   },
   {
     numeral: 'II',
@@ -40,7 +40,7 @@ export const DOMAINS = [
       { en: 'Spatial audio synthesis', zh: '空间音频合成' },
       { en: 'Vision & bio-signal input', zh: '视觉与生理信号输入' },
     ],
-    href: '/experiments',
+    href: '/experiments/',
   },
   {
     numeral: 'III',
@@ -57,7 +57,7 @@ export const DOMAINS = [
       { en: 'Pace and resistance', zh: '节奏与阻力' },
       { en: 'Self-reported experience', zh: '自述经验' },
     ],
-    href: '/notes',
+    href: '/notes/',
   },
 ] as const;
 

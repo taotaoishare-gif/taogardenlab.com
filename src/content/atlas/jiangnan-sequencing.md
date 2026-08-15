@@ -66,7 +66,7 @@ visual style but a structural refusal — no map, no progress bar, no scrubber,
 no way to see how much is left.
 
 I tried the shape rather than the principle in
-[Computational Framing](/experiments/computational-framing) and it did not
+[Computational Framing](/experiments/computational-framing/) and it did not
 work, which is the most useful result I have had from this entry.
 
 ## 05 Question

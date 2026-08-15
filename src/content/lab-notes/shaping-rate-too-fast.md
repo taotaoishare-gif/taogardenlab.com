@@ -7,7 +7,7 @@ lang: en
 experiment: cosmic-pottery
 ---
 
-I tested [Cosmic Pottery](/experiments/cosmic-pottery) with the shaping rate at
+I tested [Cosmic Pottery](/experiments/cosmic-pottery/) with the shaping rate at
 roughly three times its current value, because the slow version felt
 unresponsive and unresponsive felt like a bug.
 

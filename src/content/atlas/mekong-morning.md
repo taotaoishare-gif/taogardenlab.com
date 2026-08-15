@@ -46,7 +46,7 @@ What problem does a daily practice at a fixed natural hour solve?
 no notification, no schedule circulated, no leader. The trigger is dawn, which
 is available to everyone simultaneously and costs nothing to distribute.
 
-Compare the parade in [the Fuzhou entry](/atlas/fuzhou-parade-gods): that
+Compare the parade in [the Fuzhou entry](/atlas/fuzhou-parade-gods/): that
 achieves synchrony through a rare, loud, imposed event. This achieves it
 through a daily, quiet, repeated one. Both are producing a shared attentional
 moment; the parade uses intensity, this uses regularity.

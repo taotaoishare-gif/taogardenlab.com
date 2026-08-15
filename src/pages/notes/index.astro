@@ -26,7 +26,7 @@ const rows: Row[] = [
     kind: 'observation' as const,
     kindLabel: 'observation',
     title: e.data.title,
-    href: `/notes/${e.id}`,
+    href: `/notes/${e.id}/`,
     date: e.data.date,
     meta: e.data.place,
     body: e.body
@@ -39,7 +39,7 @@ const rows: Row[] = [
     kind: 'reading' as const,
     kindLabel: 'reading',
     title: e.data.title,
-    href: `/notes/${e.id}`,
+    href: `/notes/${e.id}/`,
     date: e.data.date,
     meta: `${e.data.author} · ${e.data.work}${e.data.year ? `, ${e.data.year}` : ''}`,
   })),
@@ -47,7 +47,7 @@ const rows: Row[] = [
     kind: 'lab' as const,
     kindLabel: 'lab note',
     title: e.data.title,
-    href: `/notes/${e.id}`,
+    href: `/notes/${e.id}/`,
     date: e.data.date,
   })),
 ].sort((a, b) => b.date.getTime() - a.date.getTime());

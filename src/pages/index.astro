@@ -83,7 +83,7 @@ const featured = SITE.homeExperiments
         {
           featured.map((exp, i) => (
             <li class:list={['proto', { lead: i === 0 }]}>
-              <a class="cover" href={`/experiments/${exp.id}`}>
+              <a class="cover" href={`/experiments/${exp.id}/`}>
                 <VideoLoop
                   src={exp.data.video}
                   poster={exp.data.thumb ?? exp.data.poster}
@@ -93,7 +93,7 @@ const featured = SITE.homeExperiments
               </a>
 
               <h3 class="pname">
-                <a href={`/experiments/${exp.id}`}>
+                <a href={`/experiments/${exp.id}/`}>
                   <span class="en-only">{exp.data.name}</span>
                   <span class="zh-only">{exp.data.nameZh ?? exp.data.name}</span>
                 </a>
@@ -120,7 +120,7 @@ const featured = SITE.homeExperiments
       </ol>
 
       <p class="all">
-        <a class="view-more" href="/experiments">
+        <a class="view-more" href="/experiments/">
           <Bi en="View more" zh="查看更多" />
         </a>
       </p>
@@ -150,7 +150,7 @@ const featured = SITE.homeExperiments
       </p>
 
       <p class="all">
-        <a class="view-more" href="/about">
+        <a class="view-more" href="/about/">
           <Bi en="Read the full account" zh="完整的自述" />
         </a>
       </p>

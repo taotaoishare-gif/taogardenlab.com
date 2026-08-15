@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>H808S 传感台 · Sensor Bench</title>
+<style>
+  :root{
+    --bg:#0d0f10; --ink:#e8e3d8; --dim:#7d8384; --line:#232829;
+    --gold:#c9a227; --jade:#5f8d78; --red:#b4483c; --panel:#141718;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+       font:14px/1.55 ui-monospace,SFMono-Regular,Menlo,monospace;padding:22px}
+  h1{font-size:17px;font-weight:600;letter-spacing:.14em;margin:0 0 3px}
+  .sub{color:var(--dim);font-size:12px;margin-bottom:20px}
+  .grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));max-width:1500px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:5px;padding:14px 16px}
+  .card h2{font-size:11px;letter-spacing:.19em;color:var(--dim);margin:0 0 12px;
+           font-weight:500;text-transform:uppercase}
+  .row{display:flex;justify-content:space-between;gap:12px;padding:4px 0;
+       border-bottom:1px solid #1b1f20}
+  .row:last-child{border-bottom:0}
+  .row b{font-weight:500;color:var(--dim)}
+  .row span{font-variant-numeric:tabular-nums;text-align:right}
+  .big{font-size:30px;font-variant-numeric:tabular-nums;letter-spacing:.02em}
+  .unit{font-size:12px;color:var(--dim);margin-left:3px}
+  button{background:#1d2122;color:var(--ink);border:1px solid #333a3b;padding:9px 17px;
+         border-radius:4px;cursor:pointer;font:inherit;font-size:13px}
+  button:hover:not(:disabled){border-color:var(--gold);color:var(--gold)}
+  button:disabled{opacity:.35;cursor:not-allowed}
+  button.primary{background:var(--gold);color:#0d0f10;border-color:var(--gold);font-weight:600}
+  button.primary:hover:not(:disabled){filter:brightness(1.14);color:#0d0f10}
+  .ok{color:var(--jade)} .bad{color:var(--red)} .warn{color:var(--gold)} .dim{color:var(--dim)}
+  canvas{width:100%;display:block;background:#0a0c0d;border:1px solid var(--line);border-radius:3px}
+  #log{height:190px;overflow-y:auto;font-size:11px;line-height:1.5;color:var(--dim);
+       background:#0a0c0d;border:1px solid var(--line);border-radius:3px;padding:9px}
+  #log div{white-space:pre;font-variant-numeric:tabular-nums}
+  .bar{height:7px;background:#1b1f20;border-radius:4px;overflow:hidden;margin-top:5px}
+  .bar i{display:block;height:100%;background:var(--gold);width:0;transition:width .25s}
+  .toolbar{display:flex;gap:9px;flex-wrap:wrap;align-items:center;margin-bottom:16px}
+  .pill{padding:4px 11px;border:1px solid var(--line);border-radius:99px;font-size:11px;
+        letter-spacing:.1em;color:var(--dim)}
+  .pill.live{border-color:var(--jade);color:var(--jade)}
+  .pill.err{border-color:var(--red);color:var(--red)}
+  .note{font-size:11px;color:var(--dim);margin-top:9px;line-height:1.6}
+  code{background:#1b1f20;padding:1px 5px;border-radius:3px;font-size:11px}
+</style>
+</head>
+<body>
+
+<h1>H808S 传感台</h1>
+<div class="sub">隔离测试 · 不碰聚沙成塔，只回答「带子能不能连、数据干不干净、你的基线是多少」</div>
+
+<div class="toolbar">
+  <button id="btnConnect" class="primary">连接心率带</button>
+  <button id="btnBaseline" disabled>开始 3 分钟基线</button>
+  <button id="btnCsv" disabled>导出 CSV</button>
+  <span id="pill" class="pill">未连接</span>
+  <span id="pillBat" class="pill" style="display:none"></span>
+</div>
+
+<div class="grid">
+
+  <div class="card">
+    <h2>0 · 环境自检</h2>
+    <div id="env"></div>
+    <div class="note">这一栏必须全绿才可能连上。Web Bluetooth 只在 Chromium 系（Chrome / Edge / Arc）存在，
+    且需要安全上下文 —— <code>https</code> 或 <code>localhost</code>。</div>
+  </div>
+
+  <div class="card">
+    <h2>1 · 实时读数</h2>
+    <div class="row"><b>心率 HR</b><span><span id="hr" class="big">—</span><span class="unit">bpm</span></span></div>
+    <div class="row"><b>最新 RR</b><span id="rr">—</span></div>
+    <div class="row"><b>接收包 / RR 总数</b><span id="pkt">0 / 0</span></div>
+    <div class="row"><b>RR 支持</b><span id="rrsup" class="dim">—</span></div>
+    <div class="row"><b>皮肤接触</b><span id="contact" class="dim">—</span></div>
+    <div class="row"><b>运行时长</b><span id="elapsed">0:00</span></div>
+  </div>
+
+  <div class="card">
+    <h2>2 · 伪迹（最关键的一栏）</h2>
+    <div class="row"><b>绝对门限外 <span class="dim">&lt;300 / &gt;2000ms</span></b><span id="artAbs">0</span></div>
+    <div class="row"><b>相对门限外 <span class="dim">|ΔRR| &gt; 20%</span></b><span id="artRel" class="warn">0</span></div>
+    <div class="row"><b>总伪迹率</b><span id="artPct" class="big" style="font-size:22px">0.0%</span></div>
+    <div class="bar"><i id="artBar"></i></div>
+    <div class="note">聚沙成塔现在<strong>只做绝对门限</strong>。相对门限那一行就是会漏进去的伪迹数量——
+    每一次都会让 goldIndex 瞬间跳满并触发风铃。<br>
+    &lt;2% 优秀 · 2–5% 可用 · &gt;5% 请调整带子位置或打湿电极。</div>
+  </div>
+
+  <div class="card">
+    <h2>3 · RMSSD 双算法对比</h2>
+    <div class="row"><b>指数加权 12 拍 <span class="dim">聚沙成塔用的</span></b><span id="rmssdEw">—</span></div>
+    <div class="row"><b>60 秒滑窗 <span class="dim">规范算法</span></b><span id="rmssd60">—</span></div>
+    <div class="row"><b>已清洗 60 秒滑窗</b><span id="rmssdClean" class="ok">—</span></div>
+    <div class="row"><b>→ goldIndex <span class="dim">= RMSSD/100</span></b><span id="gold">—</span></div>
+    <div class="row"><b>风铃阈值 0.80</b><span id="chime" class="bad">未达到</span></div>
+    <div class="note">三个数字差得越远，说明伪迹污染越重。第一行是正片实际吃进去的值。</div>
+  </div>
+
+  <div class="card" style="grid-column:1/-1">
+    <h2>4 · 心动周期图 Tachogram <span style="color:var(--gold)">RR 序列</span> ·
+        <span style="color:var(--jade)">RSA 反推呼吸</span></h2>
+    <canvas id="cv" height="210"></canvas>
+    <div class="row" style="margin-top:9px"><b>呼吸频率</b><span id="brate">—</span></div>
+    <div class="row"><b>呼吸规律度 <span class="dim">变异系数反算</span></b><span id="breg">—</span></div>
+    <div class="row"><b>已检出呼吸周期</b><span id="bper">0</span></div>
+    <div class="note">金线是 RR 间期，青线是从 RR 反推的呼吸波（吸气缩短 RR、呼气拉长）。
+    慢呼吸时青线应该是清晰的正弦；如果它是毛刺状的噪声，说明 RSA 太弱或伪迹太多，
+    正片里的呼吸相位就是假的。</div>
+  </div>
+
+  <div class="card">
+    <h2>5 · 你的个体基线 <span id="baseState" class="dim">未采集</span></h2>
+    <div class="bar"><i id="baseBar"></i></div>
+    <div class="row" style="margin-top:10px"><b>静息 HR</b><span id="bHr">—</span></div>
+    <div class="row"><b>静息 RMSSD</b><span id="bRmssd">—</span></div>
+    <div class="row"><b>自然呼吸频率</b><span id="bRate">—</span></div>
+    <div class="row"><b>RR 标准差 SDNN</b><span id="bSdnn">—</span></div>
+    <div class="note">这四个数字就是重新标定聚沙成塔所需的全部输入。
+    采集时请安静端坐、自然呼吸、不要刻意调整。采完会给你一段可直接粘贴的配置。</div>
+  </div>
+
+  <div class="card">
+    <h2>6 · 标定输出</h2>
+    <pre id="calib" style="margin:0;font-size:11px;color:var(--dim);white-space:pre-wrap">采集基线后在此生成。</pre>
+  </div>
+
+  <div class="card" style="grid-column:1/-1">
+    <h2>7 · 原始报文</h2>
+    <div id="log"></div>
+    <div class="note">格式：<code>时刻 | 十六进制 | flags 解码 | HR | RR 列表</code>。
+    如果 RR 列表长期为空，说明这条带子没有置位 RR 标志——那它驱动不了这件作品。</div>
+  </div>
+
+</div>
+
+<script>
+'use strict';
+// ═══════════════════════════════════════════════════════════════════════
+// H808S 传感台 —— 单文件，无依赖。
+// 与 sadhana/js/ble.js + sensor.js 的 LIVE 路径使用同一套算法，
+// 所以这里跑通 = 正片的传感器路径跑通。
+// ═══════════════════════════════════════════════════════════════════════
+
+const $ = id => document.getElementById(id);
+const RR_UNIT_MS = 1000 / 1024;   // ⚠️ RR 单位是 1/1024 秒，不是毫秒
+const clamp = (v,lo=0,hi=1)=> v<lo?lo:v>hi?hi:v;
+const smoothK = (dt,tau)=> 1-Math.exp(-dt/Math.max(tau,1e-5));
+
+// ─── 0. 环境自检 ──────────────────────────────────────────────────────
+(function envCheck(){
+  const ua = navigator.userAgent;
+  const chromium = /Chrome|Chromium|Edg|OPR/.test(ua) && !/Safari\/[\d.]+$/.test(ua.replace(/Chrome.*/,''));
+  const checks = [
+    ['浏览器', chromium ? 'Chromium 系 ✓' : '非 Chromium ✗', chromium],
+    ['navigator.bluetooth', navigator.bluetooth ? '存在 ✓' : '不存在 ✗', !!navigator.bluetooth],
+    ['安全上下文', window.isSecureContext ? 'true ✓' : 'false ✗', window.isSecureContext],
+    ['协议', location.protocol, location.protocol==='https:'||location.hostname==='localhost'||location.protocol==='file:'],
+  ];
+  $('env').innerHTML = checks.map(([k,v,ok])=>
+    `<div class="row"><b>${k}</b><span class="${ok?'ok':'bad'}">${v}</span></div>`).join('');
+  if(!navigator.bluetooth || !window.isSecureContext){
+    $('btnConnect').disabled = true;
+    $('pill').textContent = '环境不支持';
+    $('pill').className = 'pill err';
+  }
+})();
+
+// ─── 报文解码（与 ble.js parseHeartRate 逐行等价）──────────────────────
+function parseHeartRate(dv){
+  const flags = dv.getUint8(0);
+  const hr16 = (flags & 0x01) !== 0;
+  const contactSupported = (flags & 0x04) !== 0;
+  const contact = (flags & 0x02) !== 0;
+  const energyPresent = (flags & 0x08) !== 0;
+  const rrPresent = (flags & 0x10) !== 0;
+
+  let i = 1;
+  const hr = hr16 ? dv.getUint16(i,true) : dv.getUint8(i);
+  i += hr16 ? 2 : 1;
+  if (energyPresent) i += 2;
+
+  const rr = [];
+  if (rrPresent) for(; i+1 < dv.byteLength; i += 2) rr.push(dv.getUint16(i,true) * RR_UNIT_MS);
+
+  return { flags, hr, rr, rrSupported: rrPresent,
+           contactOk: contactSupported ? contact : true, contactSupported };
+}
+
+// ─── 状态 ────────────────────────────────────────────────────────────
+const S = {
+  device:null, t0:0, packets:0, rrTotal:0,
+  artAbs:0, artRel:0,
+  beats:[],            // {t, rr, bad}
+  msdEw:400, lastRR:null,
+  // RSA 呼吸反推（与 sensor.js _deriveRespiration 等价）
+  rrSlow:0, respAmp:20, respRaw:0, respWave:0,
+  lastBeatAt:0, armed:false, lastCrossAt:0, periods:[],
+  base:null, baseT0:0,
+};
+
+function log(msg){
+  const d = document.createElement('div');
+  d.textContent = msg;
+  $('log').prepend(d);
+  while($('log').childElementCount > 220) $('log').lastChild.remove();
+}
+
+// ─── 连接 ────────────────────────────────────────────────────────────
+$('btnConnect').onclick = async () => {
+  if(S.device){
+    try{ S.device.gatt.disconnect(); }catch{}
+    S.device = null;
+    $('btnConnect').textContent = '连接心率带';
+    $('pill').textContent = '已断开'; $('pill').className = 'pill';
+    return;
+  }
+  try{
+    $('pill').textContent = '选择设备…';
+    S.device = await navigator.bluetooth.requestDevice({
+      filters:[{services:['heart_rate']}],
+      optionalServices:['battery_service'],
+    });
+    S.device.addEventListener('gattserverdisconnected', ()=>{
+      $('pill').textContent = '连接丢失'; $('pill').className = 'pill err';
+      log('⚠ GATT 断开');
+    });
+    const server = await S.device.gatt.connect();
+    const svc = await server.getPrimaryService('heart_rate');
+    const ch  = await svc.getCharacteristic('heart_rate_measurement');
+    ch.addEventListener('characteristicvaluechanged', e => onPacket(e.target.value));
+    await ch.startNotifications();
+
+    try{
+      const bs = await server.getPrimaryService('battery_service');
+      const bl = await bs.getCharacteristic('battery_level');
+      const lvl = (await bl.readValue()).getUint8(0);
+      $('pillBat').style.display=''; $('pillBat').textContent = `电量 ${lvl}%`;
+      if(lvl < 20) $('pillBat').className = 'pill err';
+    }catch{}
+
+    S.t0 = performance.now();
+    $('pill').textContent = S.device.name || '已连接';
+    $('pill').className = 'pill live';
+    $('btnConnect').textContent = '断开';
+    $('btnBaseline').disabled = false;
+    $('btnCsv').disabled = false;
+    log(`✓ 已连接 ${S.device.name||'(无名)'}`);
+  }catch(err){
+    $('pill').textContent = err.name==='NotFoundError' ? '已取消' : '连接失败';
+    $('pill').className = 'pill err';
+    log('✗ ' + (err.message||err));
+    S.device = null;
+  }
+};
+
+// ─── 收包 ────────────────────────────────────────────────────────────
+function onPacket(dv){
+  const arrivedAt = performance.now();
+  let m; try{ m = parseHeartRate(dv); }catch(e){ log('✗ 报文畸形'); return; }
+
+  S.packets++;
+  const hex = [...new Uint8Array(dv.buffer)].map(b=>b.toString(16).padStart(2,'0')).join(' ');
+  const fl = `hr${m.flags&1?16:8} ${m.contactSupported?(m.contactOk?'contact':'NO-CONTACT'):'no-cs'} ${m.rrSupported?'RR':'--'}`;
+  log(`${((arrivedAt-S.t0)/1000).toFixed(1)}s | ${hex} | ${fl} | ${m.hr}bpm | [${m.rr.map(r=>r.toFixed(0)).join(', ')}]`);
+
+  $('hr').textContent = m.hr;
+  $('rrsup').textContent = m.rrSupported ? '是 ✓' : '否 ✗ 无法驱动作品';
+  $('rrsup').className = m.rrSupported ? 'ok' : 'bad';
+  $('contact').textContent = m.contactSupported ? (m.contactOk?'良好 ✓':'脱落 ✗') : '设备不上报';
+  $('contact').className = m.contactSupported ? (m.contactOk?'ok':'bad') : 'dim';
+
+  // 多个 RR 必须回溯定时：它们不是都发生在「现在」
+  const total = m.rr.reduce((a,b)=>a+b,0);
+  const t0 = arrivedAt - total;
+  let elapsed = 0;
+  for(const rr of m.rr){ elapsed += rr; pushBeat(rr, t0+elapsed); }
+
+  if(m.rr.length) $('rr').textContent = m.rr.map(r=>r.toFixed(0)+'ms').join(' · ');
+  $('pkt').textContent = `${S.packets} / ${S.rrTotal}`;
+}
+
+function pushBeat(rr, at){
+  S.rrTotal++;
+
+  // ── 双重伪迹判定 ──
+  const badAbs = rr < 300 || rr > 2000;
+  const badRel = S.lastRR !== null && Math.abs(rr - S.lastRR)/S.lastRR > 0.20;
+  if(badAbs) S.artAbs++;
+  else if(badRel) S.artRel++;
+  const bad = badAbs || badRel;
+
+  S.beats.push({t:at, rr, bad});
+  if(S.beats.length > 3000) S.beats.shift();
+
+  // 指数加权 RMSSD —— 正片用的那个，故意不做相对剔除，用来演示后果
+  if(!badAbs && S.lastRR !== null){
+    const d = rr - S.lastRR;
+    const w = 1 - Math.exp(-1/12);
+    S.msdEw += (d*d - S.msdEw) * w;
+  }
+  if(!badAbs) S.lastRR = rr;
+
+  deriveResp(rr, at);
+}
+
+// ─── RSA 反推呼吸（与 sensor.js 同算法）───────────────────────────────
+function deriveResp(rr, now){
+  if(!S.lastBeatAt){ S.rrSlow = rr; S.lastBeatAt = now; return; }
+  const beatDt = (now - S.lastBeatAt)/1000;
+  S.lastBeatAt = now;
+
+  S.rrSlow += (rr - S.rrSlow) * smoothK(beatDt, 15);   // 15s 去趋势
+  const resid = rr - S.rrSlow;
+  S.respAmp += (Math.abs(resid)*1.6 - S.respAmp) * smoothK(beatDt, 10);
+  S.respRaw = clamp(-resid/Math.max(S.respAmp,5), -1, 1);  // 吸气缩短 RR → 取反
+
+  const H = 0.25;                                       // 施密特触发，防抖
+  if(S.respRaw < -H) S.armed = true;
+  else if(S.armed && S.respRaw > H){
+    S.armed = false;
+    if(S.lastCrossAt){
+      const p = (now - S.lastCrossAt)/1000;
+      if(p > 3 && p < 20){ S.periods.push(p); if(S.periods.length > 8) S.periods.shift(); }
+    }
+    S.lastCrossAt = now;
+  }
+}
+
+// ─── 规范 RMSSD（60 秒窗）──────────────────────────────────────────
+function rmssd60(useClean){
+  const now = performance.now();
+  const w = S.beats.filter(b => now - b.t < 60000 && (!useClean || !b.bad));
+  if(w.length < 3) return null;
+  let s = 0, n = 0;
+  for(let i=1;i<w.length;i++){ const d = w[i].rr - w[i-1].rr; s += d*d; n++; }
+  return n ? Math.sqrt(s/n) : null;
+}
+
+// ─── 主循环 ──────────────────────────────────────────────────────────
+let lastFrame = performance.now();
+function tick(){
+  const now = performance.now();
+  const dt = Math.min((now - lastFrame)/1000, 0.1);
+  lastFrame = now;
+
+  S.respWave += (S.respRaw - S.respWave) * smoothK(dt, 0.7);
+
+  if(S.t0){
+    const sec = Math.floor((now - S.t0)/1000);
+    $('elapsed').textContent = `${Math.floor(sec/60)}:${String(sec%60).padStart(2,'0')}`;
+  }
+
+  // 伪迹
+  const artTotal = S.artAbs + S.artRel;
+  const pct = S.rrTotal ? artTotal/S.rrTotal*100 : 0;
+  $('artAbs').textContent = S.artAbs;
+  $('artRel').textContent = S.artRel;
+  $('artPct').textContent = pct.toFixed(1)+'%';
+  $('artPct').className = 'big ' + (pct<2?'ok':pct<5?'warn':'bad');
+  $('artPct').style.fontSize = '22px';
+  $('artBar').style.width = Math.min(pct*10,100)+'%';
+
+  // RMSSD 三算
+  const ew = Math.sqrt(S.msdEw), r60 = rmssd60(false), rc = rmssd60(true);
+  $('rmssdEw').textContent = S.rrTotal>3 ? ew.toFixed(1)+' ms' : '—';
+  $('rmssd60').textContent = r60 ? r60.toFixed(1)+' ms' : '—';
+  $('rmssdClean').textContent = rc ? rc.toFixed(1)+' ms' : '—';
+  const g = clamp(ew/100);
+  $('gold').textContent = S.rrTotal>3 ? g.toFixed(2) : '—';
+  $('chime').textContent = g>0.8 ? '已触发 ✓' : `未达到（差 ${(0.8-g).toFixed(2)}）`;
+  $('chime').className = g>0.8 ? 'ok' : 'bad';
+
+  // 呼吸
+  if(S.periods.length >= 1){
+    const mean = S.periods.reduce((a,b)=>a+b,0)/S.periods.length;
+    $('brate').textContent = (60/mean).toFixed(1)+' 次/分';
+    if(S.periods.length >= 2){
+      const varr = S.periods.reduce((a,b)=>a+(b-mean)**2,0)/S.periods.length;
+      const reg = clamp(1 - Math.sqrt(varr)/mean/0.35);
+      $('breg').textContent = reg.toFixed(2);
+      $('breg').className = reg>0.6?'ok':reg>0.35?'warn':'bad';
+    }
+  }
+  $('bper').textContent = S.periods.length;
+
+  // 基线采集
+  if(S.base){
+    const el = (now - S.baseT0)/1000, dur = 180;
+    $('baseBar').style.width = Math.min(el/dur*100,100)+'%';
+    if(el >= dur){ finishBaseline(); }
+    else $('baseState').textContent = `采集中 ${Math.floor(dur-el)}s`;
+  }
+
+  draw();
+  requestAnimationFrame(tick);
+}
+
+// ─── 绘图 ────────────────────────────────────────────────────────────
+const cv = $('cv'), ctx = cv.getContext('2d');
+function draw(){
+  const w = cv.clientWidth, h = cv.height;
+  if(cv.width !== w) cv.width = w;
+  ctx.clearRect(0,0,w,h);
+
+  const now = performance.now(), SPAN = 90000;   // 可见 90 秒
+  const vis = S.beats.filter(b => now - b.t < SPAN);
+  if(vis.length < 2) return;
+
+  const rrs = vis.map(b=>b.rr);
+  let lo = Math.min(...rrs), hi = Math.max(...rrs);
+  const pad = Math.max((hi-lo)*0.18, 25); lo -= pad; hi += pad;
+  const X = t => w - (now - t)/SPAN*w;
+  const Y = rr => h*0.68 - (rr-lo)/(hi-lo)*h*0.56;
+
+  // 网格
+  ctx.strokeStyle = '#1b1f20'; ctx.lineWidth = 1;
+  for(let i=0;i<=4;i++){ const y = h*0.12 + i*h*0.56/4;
+    ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(w,y); ctx.stroke(); }
+
+  // RR 折线
+  ctx.strokeStyle = '#c9a227'; ctx.lineWidth = 1.5; ctx.beginPath();
+  vis.forEach((b,i)=> i?ctx.lineTo(X(b.t),Y(b.rr)):ctx.moveTo(X(b.t),Y(b.rr)));
+  ctx.stroke();
+
+  // 伪迹红点
+  ctx.fillStyle = '#b4483c';
+  vis.filter(b=>b.bad).forEach(b=>{
+    ctx.beginPath(); ctx.arc(X(b.t),Y(b.rr),3.2,0,7); ctx.fill(); });
+
+  // 呼吸波（底部带）
+  const bandY = h*0.87, bandH = h*0.11;
+  ctx.strokeStyle = '#5f8d78'; ctx.lineWidth = 1.5; ctx.beginPath();
+  let started = false, wv = 0;
+  vis.forEach((b,i)=>{
+    // 用已缓存的残差近似重画（可视化用，非精确重算）
+    const idx = S.beats.indexOf(b);
+    const localSlow = vis.slice(Math.max(0,i-14), i+1).reduce((a,c)=>a+c.rr,0)/Math.min(i+1,15);
+    const r = -(b.rr - localSlow)/Math.max(S.respAmp,5);
+    wv = clamp(r,-1,1);
+    const y = bandY - wv*bandH;
+    started ? ctx.lineTo(X(b.t),y) : (ctx.moveTo(X(b.t),y), started=true);
+  });
+  ctx.stroke();
+  ctx.strokeStyle = '#232829'; ctx.beginPath();
+  ctx.moveTo(0,bandY); ctx.lineTo(w,bandY); ctx.stroke();
+
+  ctx.fillStyle = '#7d8384'; ctx.font = '10px ui-monospace';
+  ctx.fillText(`${hi.toFixed(0)}ms`, 5, h*0.12+9);
+  ctx.fillText(`${lo.toFixed(0)}ms`, 5, h*0.68-2);
+  ctx.fillText('呼吸', 5, bandY-bandH-3);
+}
+
+// ─── 基线 ────────────────────────────────────────────────────────────
+$('btnBaseline').onclick = () => {
+  S.base = { startIdx: S.beats.length };
+  S.baseT0 = performance.now();
+  $('btnBaseline').disabled = true;
+  $('baseState').textContent = '采集中';
+  $('baseState').className = 'warn';
+  log('▶ 基线采集开始 —— 请安静端坐、自然呼吸 3 分钟');
+};
+
+function finishBaseline(){
+  const seg = S.beats.slice(S.base.startIdx).filter(b=>!b.bad);
+  S.base = null;
+  $('btnBaseline').disabled = false;
+  $('baseState').textContent = '已完成'; $('baseState').className = 'ok';
+  if(seg.length < 60){ $('calib').textContent = '有效心搏太少，请检查佩戴后重采。'; return; }
+
+  const rrs = seg.map(b=>b.rr);
+  const mean = rrs.reduce((a,b)=>a+b,0)/rrs.length;
+  const hr = 60000/mean;
+  const sdnn = Math.sqrt(rrs.reduce((a,b)=>a+(b-mean)**2,0)/rrs.length);
+  let s=0; for(let i=1;i<rrs.length;i++) s += (rrs[i]-rrs[i-1])**2;
+  const rm = Math.sqrt(s/(rrs.length-1));
+  const brate = S.periods.length ? 60/(S.periods.reduce((a,b)=>a+b,0)/S.periods.length) : null;
+
+  $('bHr').textContent    = hr.toFixed(1)+' bpm';
+  $('bRmssd').textContent = rm.toFixed(1)+' ms';
+  $('bRate').textContent  = brate ? brate.toFixed(1)+' 次/分' : '未测到';
+  $('bSdnn').textContent  = sdnn.toFixed(1)+' ms';
+
+  // 建议上限：静息 RMSSD 的 3.2 倍 —— 共振呼吸通常能把 RMSSD 推到静息的 3–4 倍
+  const suggestedMax = Math.max(Math.round(rm*3.2/5)*5, 40);
+  $('calib').textContent =
+`// ── 粘进 sadhana/js/sensor.js ──────────────────
+// 由 h808s-bench 于 ${new Date().toLocaleString('zh-CN')} 实测生成
+// 被试静息基线：HR ${hr.toFixed(1)}bpm · RMSSD ${rm.toFixed(1)}ms · SDNN ${sdnn.toFixed(1)}ms
+
+export const BASELINE = {
+  restingHr:    ${hr.toFixed(1)},
+  restingRmssd: ${rm.toFixed(1)},
+  sdnn:         ${sdnn.toFixed(1)},
+  breathRate:   ${brate ? brate.toFixed(1) : 'null'},
+};
+
+// RANGE.rmssd.max 原为 100（临床上限，非本人可达上限）。
+// 改为静息值的 3.2 倍后，goldIndex 才能在这个人身上真正走完 0→1：
+RANGE.rmssd.max = ${suggestedMax};
+
+// 校验：静息时 goldIndex ≈ ${(rm/suggestedMax).toFixed(2)}
+//       风铃阈值 0.80 需要 RMSSD ≈ ${(suggestedMax*0.8).toFixed(0)}ms（静息的 ${(suggestedMax*0.8/rm).toFixed(1)} 倍）`;
+  log('■ 基线完成 —— 标定输出已生成');
+}
+
+// ─── CSV ────────────────────────────────────────────────────────────
+$('btnCsv').onclick = () => {
+  const rows = ['t_ms,rr_ms,artifact'];
+  S.beats.forEach(b => rows.push(`${(b.t-S.t0).toFixed(1)},${b.rr.toFixed(2)},${b.bad?1:0}`));
+  const url = URL.createObjectURL(new Blob([rows.join('\n')],{type:'text/csv'}));
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `h808s_${new Date().toISOString().slice(0,19).replace(/[:T]/g,'-')}.csv`;
+  a.click(); URL.revokeObjectURL(url);
+};
+
+tick();
+</script>
+</body>
+</html>

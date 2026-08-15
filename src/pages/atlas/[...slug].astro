@@ -64,7 +64,7 @@ const d = entry.data;
                 <span class="numeral">
                   {String(exp.number).padStart(2, '0')}
                 </span>
-                <a href={`/experiments/${exp.id}`}>{exp.title}</a>
+                <a href={`/experiments/${exp.id}/`}>{exp.title}</a>
               </li>
             ))}
           </ul>
@@ -74,7 +74,7 @@ const d = entry.data;
 
     <footer class="foot">
       <EvidenceTag value={d.evidence} />
-      <p class="mono back"><a href="/atlas">← Field Atlas</a></p>
+      <p class="mono back"><a href="/atlas/">← Field Atlas</a></p>
     </footer>
   </article>
 </Base>

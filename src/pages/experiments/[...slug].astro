@@ -90,7 +90,7 @@ const hasLineage =
                     {lineage.field.map((x, i) => (
                       <>
                         {i > 0 && <span class="sep"> · </span>}
-                        <a href={`/atlas/${x.id}`}>{x.label}</a>
+                        <a href={`/atlas/${x.id}/`}>{x.label}</a>
                       </>
                     ))}
                   </span>
@@ -105,7 +105,7 @@ const hasLineage =
                     {lineage.reading.map((x, i) => (
                       <>
                         {i > 0 && <span class="sep"> · </span>}
-                        <a href={`/notes/${x.id}`}>{x.label}</a>
+                        <a href={`/notes/${x.id}/`}>{x.label}</a>
                       </>
                     ))}
                   </span>
@@ -120,7 +120,7 @@ const hasLineage =
                     {lineage.follows.map((x, i) => (
                       <>
                         {i > 0 && <span class="sep"> · </span>}
-                        <a href={`/experiments/${x.id}`}>{x.label}</a>
+                        <a href={`/experiments/${x.id}/`}>{x.label}</a>
                       </>
                     ))}
                   </span>

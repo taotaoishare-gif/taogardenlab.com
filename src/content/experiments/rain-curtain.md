@@ -41,7 +41,7 @@ listener is indoors, the rain is outside, nothing is happening and the not-
 happening is the subject.
 
 The question came out of what failed in
-[Computational Framing](/experiments/computational-framing): the frame alone
+[Computational Framing](/experiments/computational-framing/): the frame alone
 did not hold anyone. Material behaviour might.
 
 ## 03 What I built

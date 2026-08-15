@@ -43,7 +43,7 @@ before a marriage that ends in her death and her husband's.
 
 The problem the object solves is not ornament. It is **the marking of an
 irreversible transition** — the same category as the temple sill in
-[the Chiang Mai entry](/atlas/lanna-temple-thresholds), but worn.
+[the Chiang Mai entry](/atlas/lanna-temple-thresholds/), but worn.
 
 The weight is functional. It constrains the wearer's movement, so the body
 enters a different mode; you cannot move casually in it. The sound is
@@ -54,7 +54,7 @@ A vitrine preserves the shape and deletes the function.
 
 ## 04 Translate
 
-I built [Phoenix Crown](/experiments/phoenix-crown) directly from this entry,
+I built [Phoenix Crown](/experiments/phoenix-crown/) directly from this entry,
 restoring the swing and the sound as a simulation.
 
 What I could not restore: weight, and therefore constraint. And weight was
