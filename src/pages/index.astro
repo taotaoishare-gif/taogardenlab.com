@@ -82,8 +82,8 @@ const featured = SITE.homeExperiments
 
       <ol class="protos">
         {
-          featured.map((exp, i) => (
-            <li class:list={['proto', { lead: i === 0 }]}>
+          featured.map((exp) => (
+            <li class="proto">
               <a class="cover" href={`/experiments/${exp.id}/`}>
                 <VideoLoop
                   src={exp.data.video}
@@ -120,11 +120,6 @@ const featured = SITE.homeExperiments
         }
       </ol>
 
-      <p class="all">
-        <a class="view-more" href="/experiments/">
-          <Bi en="View more" zh="查看更多" />
-        </a>
-      </p>
     </div>
   </section>
 
@@ -343,19 +338,15 @@ const featured = SITE.homeExperiments
     text-align: left;
   }
 
-  /* The lead piece runs the full width; the other three share the row below. */
+  /* Four pieces, two by two, all the same size — none of them is the headline. */
   .protos {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: clamp(2.5rem, 4vw, 3.5rem);
   }
 
   .proto {
     margin: 0;
-  }
-
-  .proto.lead {
-    grid-column: 1 / -1;
   }
 
   .cover {
@@ -384,10 +375,6 @@ const featured = SITE.homeExperiments
     letter-spacing: 0.02em;
   }
 
-  .lead .pname {
-    font-size: clamp(1.6rem, 2.8vw, 2.1rem);
-  }
-
   .pname a {
     color: var(--mist);
     text-decoration: none;
@@ -405,10 +392,6 @@ const featured = SITE.homeExperiments
     line-height: 1.45;
     color: var(--mist-2);
     max-width: none;
-  }
-
-  .lead .pq {
-    font-size: 1.2rem;
   }
 
   /* Keywords: quiet sans, small and widely tracked rather than monospaced —
