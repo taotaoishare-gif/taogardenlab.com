@@ -5,6 +5,7 @@ import Bi from '../components/Bi.astro';
 import Chain from '../components/Chain.astro';
 import Bracket from '../components/Bracket.astro';
 import Loop from '../components/Loop.astro';
+import WorldviewTriad from '../components/WorldviewTriad.astro';
 import { getCollection } from 'astro:content';
 import { SITE, iso } from '../lib/site';
 import { UI } from '../lib/ui';
@@ -16,7 +17,6 @@ import {
   REGULATION,
   FLOURISHING,
   METHOD,
-  MATERIALS,
   WHY_IT_MATTERS,
   TRAJECTORY,
   CROSS_CULTURAL,
@@ -452,26 +452,7 @@ const studyHypotheses = [
         <span class="snum">06</span><Bi en="Worldview" zh="世界观" />
       </h2>
 
-      <p class="tri">天 × 地 × 人</p>
-      <p class="tri-gloss">
-        <Bi
-          en="Culture × Computation × Embodiment"
-          zh="文化 × 计算 × 具身"
-        />
-      </p>
-
-      <div class="materials worldview-materials">
-        <Bracket
-          items={MATERIALS.map((m) => ({
-            mark: m.mark,
-            name: m.name,
-            meta: m.role,
-            items: m.items,
-          }))}
-          bottom={{ en: 'TAO Garden', zh: 'TAO Garden' }}
-          flow="up"
-        />
-      </div>
+      <WorldviewTriad />
 
       <div class="matters">
         <p class="matters-lead">
@@ -1060,32 +1041,11 @@ const studyHypotheses = [
     border-left: 1px solid var(--bronze);
   }
 
-  /* ── 05 Materials ──────────────────────────────────────────── */
-  .materials {
-    margin-top: clamp(3rem, 7vh, 5rem);
-  }
-
   /* ── 06 Worldview ──────────────────────────────────────────── */
-  .tri {
-    font-family: var(--display);
-    font-weight: 300;
-    font-size: clamp(2.2rem, 6vw, 4rem);
-    letter-spacing: 0.12em;
-    color: var(--mist);
-    margin: 0 0 0.75rem;
-  }
-
-  .tri-gloss {
-    font-family: var(--mono);
-    font-size: 0.625rem;
-    letter-spacing: 0.24em;
-    text-transform: uppercase;
-    color: var(--bronze);
-    margin: 0 0 clamp(3rem, 7vh, 4.5rem);
-  }
-
   .matters {
     max-width: 60ch;
+    margin-inline: auto;
+    text-align: center;
   }
 
   .matters-lead,
@@ -1097,7 +1057,7 @@ const studyHypotheses = [
   }
 
   .matters-sig {
-    margin: clamp(2rem, 4vh, 3rem) 0 0;
+    margin: clamp(2rem, 4vh, 3rem) auto 0;
     font-family: var(--display);
     font-size: clamp(1.3rem, 2.6vw, 1.9rem);
     line-height: 1.35;

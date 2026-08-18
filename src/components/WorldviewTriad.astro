@@ -1,0 +1,202 @@
+---
+import Bi from './Bi.astro';
+import { MATERIALS } from '../lib/research';
+
+const marks = ['天', '地', '人'];
+const domains = marks.map((mark) => MATERIALS.find((item) => item.mark === mark)!);
+---
+
+<figure class="triad" aria-labelledby="triad-title" aria-describedby="triad-desc">
+  <figcaption class="sr-only">
+    <span id="triad-title">TAO Garden worldview</span>
+    <span id="triad-desc">
+      Heaven, Earth and Human are three equal research domains that together
+      inform TAO Garden.
+    </span>
+  </figcaption>
+
+  <div class="domains">
+    {
+      domains.map((domain, index) => (
+        <section class:list={['domain', `domain--${index + 1}`]} aria-label={domain.mark}>
+          <p class="mark" aria-hidden="true">{domain.mark}</p>
+          <h3><Bi en={domain.name.en} zh={domain.name.zh} /></h3>
+          <p class="role"><Bi en={domain.role.en} zh={domain.role.zh} /></p>
+          <ul>
+            {
+              domain.items.map((item) => (
+                <li><Bi en={item.en} zh={item.zh} /></li>
+              ))
+            }
+          </ul>
+        </section>
+      ))
+    }
+  </div>
+
+  <svg class="convergence" viewBox="0 0 900 88" preserveAspectRatio="none" aria-hidden="true">
+    <path d="M150 0 L450 72" />
+    <path d="M450 0 L450 72" />
+    <path d="M750 0 L450 72" />
+    <circle cx="450" cy="72" r="3" />
+  </svg>
+
+  <div class="result" aria-label="TAO Garden">
+    <p class="mono">a shared research practice</p>
+    <strong>TAO Garden</strong>
+    <p class="result-note">Culture, computation and embodiment held in one responsive environment.</p>
+  </div>
+</figure>
+
+<style>
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  .triad {
+    width: min(100%, 58rem);
+    margin: clamp(2.5rem, 7vh, 5rem) auto clamp(1.5rem, 3vh, 2.5rem);
+  }
+
+  .domains {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: clamp(0.75rem, 2vw, 1.5rem);
+  }
+
+  .domain {
+    min-height: clamp(19rem, 28vw, 24rem);
+    padding: clamp(1.5rem, 3vw, 2.5rem);
+    border: 1px solid var(--line-2);
+    background: rgba(232, 230, 224, 0.012);
+    text-align: center;
+  }
+
+  .domain--1 { border-top: 2px solid var(--bronze); }
+  .domain--2 { border-top: 2px solid var(--jade); }
+  .domain--3 { border-top: 2px solid var(--mist-2); }
+
+  .mark {
+    margin: 0 0 2.75rem;
+    font-family: var(--display);
+    font-size: clamp(2.6rem, 5vw, 4rem);
+    font-weight: 300;
+    line-height: 0.8;
+    color: var(--mist);
+  }
+
+  h3 {
+    margin: 0;
+    font-family: var(--sans);
+    font-size: clamp(0.72rem, 1.05vw, 0.88rem);
+    font-weight: 500;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+    color: var(--mist);
+  }
+
+  .role {
+    min-height: 4.2em;
+    margin: 0.85rem 0 0;
+    font-family: var(--serif);
+    font-size: clamp(0.78rem, 1.05vw, 0.9rem);
+    line-height: 1.5;
+    color: var(--mist-2);
+  }
+
+  ul {
+    display: grid;
+    gap: 0.55rem;
+    margin: 1.8rem 0 0;
+    padding: 1rem 0 0;
+    border-top: 1px solid rgba(232, 230, 224, 0.13);
+    list-style: none;
+    font-family: var(--mono);
+    font-size: clamp(0.5rem, 0.66vw, 0.58rem);
+    letter-spacing: 0.1em;
+    line-height: 1.4;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    text-align: center;
+  }
+
+  li::before {
+    content: '—';
+    margin-right: 0.55rem;
+    color: var(--bronze);
+  }
+
+  .convergence {
+    display: block;
+    width: 100%;
+    height: clamp(3.5rem, 8vw, 5.5rem);
+    margin-top: -1px;
+    overflow: visible;
+  }
+
+  .convergence path {
+    fill: none;
+    stroke: var(--line-2);
+    stroke-width: 1;
+  }
+
+  .convergence path:first-child { stroke: color-mix(in srgb, var(--bronze) 65%, var(--line-2)); }
+  .convergence path:nth-child(2) { stroke: var(--mist-2); }
+  .convergence path:nth-child(3) { stroke: color-mix(in srgb, var(--jade) 65%, var(--line-2)); }
+  .convergence circle { fill: var(--bronze); }
+
+  .result {
+    max-width: 31rem;
+    margin: -0.2rem auto 0;
+    padding: clamp(1.4rem, 3vw, 2.1rem) clamp(1.5rem, 4vw, 3rem);
+    border: 1px solid color-mix(in srgb, var(--bronze) 65%, var(--line-2));
+    text-align: center;
+  }
+
+  .result > .mono {
+    margin: 0 0 0.65rem;
+    font-size: 0.5rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--bronze);
+  }
+
+  strong {
+    font-family: var(--display);
+    font-size: clamp(1.8rem, 4vw, 3rem);
+    font-weight: 300;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--mist);
+  }
+
+  .result-note {
+    max-width: 42ch;
+    margin: 0.85rem auto 0;
+    font-family: var(--serif);
+    font-size: clamp(0.74rem, 1vw, 0.85rem);
+    line-height: 1.5;
+    color: var(--mist-2);
+  }
+
+  @media (max-width: 42rem) {
+    .domains { gap: 0.65rem; }
+    .domain { min-height: 17rem; padding: 1.15rem 0.85rem; }
+    .mark { margin-bottom: 1.8rem; font-size: 2rem; }
+    h3 { font-size: 0.58rem; letter-spacing: 0.09em; }
+    .role { min-height: 5.8em; margin-top: 0.7rem; font-size: 0.68rem; }
+    ul { gap: 0.4rem; margin-top: 1rem; padding-top: 0.7rem; font-size: 0.38rem; letter-spacing: 0.06em; }
+    li::before { margin-right: 0.25rem; }
+    .convergence { height: 3.25rem; }
+    .result { padding: 1.3rem 1rem; }
+    .result-note { font-size: 0.72rem; }
+  }
+</style>
