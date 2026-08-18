@@ -5,7 +5,10 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "check": "astro check"
+    "check": "astro check",
+    "audit": "node scripts/audit.mjs dist",
+    "validate": "npm run build && npm run audit",
+    "publish": "./publish.sh"
   },
   "author": "",
   "license": "ISC",
