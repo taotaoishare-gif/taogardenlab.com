@@ -267,8 +267,6 @@ const studyHypotheses = [
                     ).join(' · ')}
                   </span>
                 </dd>
-                <dt><Bi en="Status" zh="状态" /></dt>
-                <dd><Bi {...bi(exp.data, 'status')} /></dd>
               </dl>
 
               {exp.data.demo && (
@@ -443,18 +441,6 @@ const studyHypotheses = [
         </aside>
       </div>
 
-      <div class="materials">
-        <Bracket
-          items={MATERIALS.map((m) => ({
-            mark: m.mark,
-            name: m.name,
-            meta: m.role,
-            items: m.items,
-          }))}
-          bottom={{ en: 'TAO Garden', zh: 'TAO Garden' }}
-          flow="up"
-        />
-      </div>
     </div>
   </section>
 
@@ -473,6 +459,19 @@ const studyHypotheses = [
           zh="文化 × 计算 × 具身"
         />
       </p>
+
+      <div class="materials worldview-materials">
+        <Bracket
+          items={MATERIALS.map((m) => ({
+            mark: m.mark,
+            name: m.name,
+            meta: m.role,
+            items: m.items,
+          }))}
+          bottom={{ en: 'TAO Garden', zh: 'TAO Garden' }}
+          flow="up"
+        />
+      </div>
 
       <div class="matters">
         <p class="matters-lead">
