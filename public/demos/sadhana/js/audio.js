@@ -7,7 +7,7 @@
  *   1. MANTRA DRONE (梵音)  — monastic throat-chant; breathes with respPhase
  *   2. SINGING BOWL (颂钵)  — additive, non-harmonic; struck on deep calm
  *   3. TEMPLE CHIMES (风铃) — Thai-tuned brass; scattered on high HRV
- *   + TURBULENCE TONE      — a quiet, rootless resonance under high stress
+ *   + TURBULENCE RESPONSE  — high stress thins the mix without adding noise
  *
  * This module receives ONLY scalars from app.js. It never sees a matrix, a
  * vector or a Three.js object.
@@ -52,7 +52,7 @@ const lerp = (a, b, t) => a + (b - a) * t;
  * slightly different rate, producing the slow beating "singing". Rates are
  * mutually irrational so the pattern never audibly repeats.
  */
-const BOWL_PARTIALS = [
+export const BOWL_PARTIALS = [
   { ratio: 1.00, gain: 1.00, lfoRate: 0.21, lfoDepth: 0.10 },
   { ratio: 1.40, gain: 0.50, lfoRate: 0.33, lfoDepth: 0.32 },
   { ratio: 2.70, gain: 0.24, lfoRate: 0.47, lfoDepth: 0.46 },
@@ -102,7 +102,17 @@ function pickChime() {
  * threshold, ~22/min at full gold.
  */
 function restInterval(intensity) {
-  return lerp(14.0, 4.0, intensity) * (0.5 + Math.random());
+  return lerp(24.0, 12.0, intensity) * (0.7 + Math.random() * 0.6);
+}
+
+/** Pure mapping policy, kept testable without constructing a Web Audio graph. */
+export function selectSoundState({ cohesion, goldIndex, edaNorm, respPhase }) {
+  const turbulence = edaNorm > 0.6;
+  return {
+    turbulence,
+    bowl: !turbulence && respPhase !== 0 && cohesion > 0.68,
+    chime: !turbulence && goldIndex > 0.92 && cohesion < 0.68 && edaNorm < 0.55,
+  };
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -171,16 +181,22 @@ export class AudioEngine {
     this._bowlArmed = true;
     this._bowlNext = 0;
     this._bowlIdx = 3;
+    this._calmDwell = 0;
+    this._bowlStrikes = 0;
 
     // Chime scheduling state.
-    this._chimeTimer = 0;
+    this._chimeTimer = 12;
     this._gustLeft = 0;
     this._gustGap = 0;
+    this._chimeStrikes = 0;
 
-    // Continuous params are only rewritten at PARAM_HZ, not per frame:
-    // scheduling ~10 ramps × 60 fps into the Web Audio graph is a reliable
-    // way to make the whole thing crackle.
+    // Continuous params are sampled at 4 Hz and only scheduled when the
+    // target has materially changed. Replacing an unfinished multi-second
+    // ramp 12 times a second caused automation churn and audible drop-outs
+    // on consumer laptops while the 50k-particle shader was busy.
     this._paramT = 0;
+    this._paramTargets = Object.create(null);
+    this._automationWrites = 0;
     this._lastPhase = 999;
     this._chaosOn = false;
   }
@@ -189,6 +205,13 @@ export class AudioEngine {
   async start() {
     if (this.ready) return;
     await Tone.start();
+
+    // This installation values continuity over instrument-style latency.
+    // A slightly larger Web Audio look-ahead keeps scheduled envelopes on
+    // time even if the visual thread briefly misses a frame.
+    const context = Tone.getContext();
+    context.lookAhead = Math.max(context.lookAhead || 0, 0.16);
+    context.updateInterval = 0.05;
 
     // ── master ────────────────────────────────────────────────────────
     // A little more headroom than the original graph. Additive bowl voices
@@ -200,7 +223,9 @@ export class AudioEngine {
 
     // ── temple reverb send ────────────────────────────────────────────
     // Long, dark tail: a stone-and-gold hall, not a plate.
-    this.reverb = new Tone.Reverb({ decay: 9.5, preDelay: 0.05, wet: 1 });
+    // 6.5 s preserves the stone-hall bloom while using a substantially
+    // shorter convolution kernel than the old 9.5 s room.
+    this.reverb = new Tone.Reverb({ decay: 6.5, preDelay: 0.05, wet: 1 });
     await this.reverb.generate();
     this.reverbReturn = new Tone.Gain(0.68).connect(this.master);
     this.reverb.connect(this.reverbReturn);
@@ -214,6 +239,15 @@ export class AudioEngine {
     // Fade the room up over 4 s rather than snapping on.
     this.master.gain.rampTo(0.78, 4);
     this.ready = true;
+  }
+
+  /** Schedule a smooth change only when the destination actually moved. */
+  _smooth(key, param, target, seconds, epsilon = 0.012) {
+    const previous = this._paramTargets[key];
+    if (previous !== undefined && Math.abs(previous - target) < epsilon) return;
+    this._paramTargets[key] = target;
+    param.rampTo(target, seconds);
+    this._automationWrites++;
   }
 
   // ── 1. THE MANTRA DRONE (梵音) ───────────────────────────────────────
@@ -269,7 +303,7 @@ export class AudioEngine {
     this.droneFilter.connect(this.droneDirect);
 
     this.chorus = new Tone.Chorus({
-      frequency: 0.32, delayTime: 6.5, depth: 0.4, spread: 180,
+      frequency: 0.32, delayTime: 6.5, depth: 0.72, spread: 180, wet: 0.28,
     }).start();
     this.widener = new Tone.StereoWidener(0.35);
 
@@ -286,7 +320,9 @@ export class AudioEngine {
 
   // ── 2. SINGING BOWLS (颂钵) ──────────────────────────────────────────
   _buildBowls() {
-    this.bowlBus = new Tone.Gain(0.55).connect(this.master);
+    // The first-version bowl is deliberately the foreground calm reward.
+    // Its exact 1 / 1.4 / 2.7 / 4.2 partial model remains unchanged above.
+    this.bowlBus = new Tone.Gain(0.68).connect(this.master);
     this.bowlSend = new Tone.Gain(0.8).connect(this.send);
     this.bowlBus.connect(this.bowlSend);
     // Three voices: enough for one bowl to still be ringing under the next.
@@ -294,11 +330,13 @@ export class AudioEngine {
   }
 
   _strikeBowl(freq, velocity) {
-    const now = Tone.now() + 0.06;
+    const now = Tone.now() + 0.1;
     // Steal the voice that has been ringing longest.
     let voice = this.bowls[0];
     for (const v of this.bowls) if (v.busy < voice.busy) voice = v;
     voice.strike(freq, velocity, now);
+    this._bowlStrikes++;
+    console.info(`[audio] singing bowl ${freq.toFixed(2)} Hz`);
   }
 
   // ── 3. THAI TEMPLE CHIMES (泰式风铃) ─────────────────────────────────
@@ -341,36 +379,19 @@ export class AudioEngine {
     // argument has moved around between Tone versions and this is cheap.
     v.synth.frequency.setValueAtTime(freq, t);
     v.synth.triggerAttackRelease(freq, 0.5, t, velocity);
+    this._chimeStrikes++;
+    console.info(`[audio] temple chime ${freq.toFixed(2)} Hz`);
   }
 
-  // ── 4. TURBULENCE TONE ──────────────────────────────────────────────
+  // ── 4. TURBULENCE RESPONSE ──────────────────────────────────────────
   /**
-   * The sound of a mind that will not settle. It is intentionally tonal:
-   * three quiet sines move through a slow resonant filter. The former brown
-   * noise layer was broadband and was easily mistaken for an electrical or
-   * grounding fault. There is now no Noise/NoiseSynth node in the graph.
-   * The tritone relation still leaves the ear without a stable root.
+   * Stress is communicated by thinning the drone and withholding the bowl.
+   * It intentionally creates no additional oscillator or noise source: the
+   * former wind layer, even after being made tonal, was heard as an
+   * electrical hum and competed with meditation.
    */
   _buildChaos() {
     this.chaosBus = new Tone.Gain(0).connect(this.master);
-    this.chaosSend = new Tone.Gain(0.5).connect(this.send);
-    this.chaosBus.connect(this.chaosSend);
-
-    this.windBP = new Tone.Filter({ type: 'bandpass', frequency: 260, Q: 1.1 });
-    this.windLFO = new Tone.LFO({ frequency: 0.045, min: 180, max: 520 }).start();
-    this.windLFO.connect(this.windBP.frequency);
-    this.windPan = new Tone.AutoPanner({ frequency: 0.055, depth: 0.65 }).start();
-
-    // 58.0 and 82.1 Hz — a ratio of 1.4155, ~594 cents. A very soft upper
-    // partial gives the filter something to breathe without adding hiss.
-    this.hollowA = new Tone.Oscillator({ frequency: 58.0, type: 'sine' }).start();
-    this.hollowB = new Tone.Oscillator({ frequency: 82.1, type: 'sine' }).start();
-    this.hollowC = new Tone.Oscillator({ frequency: 116.7, type: 'sine' }).start();
-    this.hollowGain = new Tone.Gain(0.11);
-    this.hollowA.connect(this.hollowGain);
-    this.hollowB.connect(this.hollowGain);
-    this.hollowC.connect(this.hollowGain);
-    this.hollowGain.chain(this.windBP, this.windPan, this.chaosBus);
   }
 
   // ─────────────────────────────────────────────────────────────────────
@@ -386,78 +407,83 @@ export class AudioEngine {
   update(m) {
     if (!this.ready || this.muted) return;
     const { cohesion, goldIndex, edaNorm, respPhase, dt } = m;
+    const soundState = selectSoundState({ cohesion, goldIndex, edaNorm, respPhase });
 
     // ── Breath → drone. Only re-ramp on an actual phase CHANGE. ────────
     if (respPhase !== this._lastPhase) {
       this._lastPhase = respPhase;
       if (respPhase === 1) {
         // INHALE — open the valve, let the overtones bloom, narrow the image.
-        this.droneFilter.frequency.rampTo(lerp(520, 1500, cohesion), 2.2);
-        this.chorus.depth = 0.22;
-        this.widener.width.rampTo(0.34, 2.2);
-        this.droneOut.gain.rampTo(lerp(0.45, 0.72, cohesion), 2.2);
+        this._smooth('drone-filter', this.droneFilter.frequency, lerp(520, 1500, cohesion), 2.2, 18);
+        this._smooth('chorus-wet', this.chorus.wet, 0.18, 2.2);
+        this._smooth('stereo-width', this.widener.width, 0.34, 2.2);
+        this._smooth('drone-out', this.droneOut.gain, lerp(0.42, 0.64, cohesion), 2.2);
       } else if (respPhase === -1) {
         // EXHALE — close the valve, but widen and deepen: the sound stops
         // getting brighter and starts getting *bigger*. Reads as release.
-        this.droneFilter.frequency.rampTo(lerp(180, 320, cohesion), 3.0);
-        this.chorus.depth = 0.85;
-        this.widener.width.rampTo(0.95, 3.0);
-        this.droneOut.gain.rampTo(lerp(0.40, 0.62, cohesion), 3.0);
+        this._smooth('drone-filter', this.droneFilter.frequency, lerp(180, 320, cohesion), 3.0, 18);
+        // Chorus depth is fixed because changing it directly introduces a
+        // discontinuity. Ramping the wet path gives the same expansion cleanly.
+        this._smooth('chorus-wet', this.chorus.wet, 0.58, 3.0);
+        this._smooth('stereo-width', this.widener.width, 0.9, 3.0);
+        this._smooth('drone-out', this.droneOut.gain, lerp(0.38, 0.56, cohesion), 3.0);
       } else {
         // ERRATIC — the drone loses its centre.
-        this.droneFilter.frequency.rampTo(340, 1.2);
-        this.chorus.depth = 0.6;
-        this.widener.width.rampTo(0.6, 1.2);
-        this.droneOut.gain.rampTo(0.34, 1.2);
+        this._smooth('drone-filter', this.droneFilter.frequency, 340, 1.5, 18);
+        this._smooth('chorus-wet', this.chorus.wet, 0.36, 1.5);
+        this._smooth('stereo-width', this.widener.width, 0.58, 1.5);
+        this._smooth('drone-out', this.droneOut.gain, 0.3, 1.5);
       }
     }
 
     // ── Throttled continuous params ───────────────────────────────────
     this._paramT += dt;
-    if (this._paramT > 1 / 12) {
+    if (this._paramT > 1 / 4) {
       this._paramT = 0;
 
       // Chaos crossfade. `edaNorm > 0.6` per spec — normalised, i.e. EDA 6/10.
-      const chaosWanted = edaNorm > 0.6;
-      const chaosAmt = clamp((edaNorm - 0.55) / 0.45);
-      this.chaosBus.gain.rampTo(chaosAmt * 0.18, 2.5);
-      this.windLFO.frequency.rampTo(lerp(0.035, 0.09, edaNorm), 3);
+      const chaosWanted = soundState.turbulence;
 
       if (chaosWanted !== this._chaosOn) {
         this._chaosOn = chaosWanted;
         // Mute the pure bowls under turbulence — a clean bowl would read as
         // resolution, and nothing has resolved.
-        this.bowlBus.gain.rampTo(chaosWanted ? 0.0 : 0.55, 3.0);
+        this._smooth('bowl-bus', this.bowlBus.gain, chaosWanted ? 0.0 : 0.68, 3.0);
       }
 
       // The drone thins out as the mind scatters.
-      this.droneFMGain.gain.rampTo(lerp(0.025, 0.075, cohesion), 2);
-      this.chimeBus.gain.rampTo(lerp(0.25, 0.85, goldIndex), 2);
+      this._smooth('drone-fm', this.droneFMGain.gain, lerp(0.018, 0.06, cohesion), 2);
+      this._smooth('chime-bus', this.chimeBus.gain, lerp(0.1, 0.28, goldIndex), 2);
     }
 
-    // ── Singing bowl: struck on entering deep calm ────────────────────
-    // Hysteresis (arm at 0.62, fire at 0.70) stops a sensor hovering on the
-    // threshold from machine-gunning the bowl.
+    // ── Singing bowl: the primary reward for stable breath ────────────
+    // Require two seconds of coherent breathing, then strike the exact
+    // additive bowl from version one. Hysteresis stops threshold chatter.
     const now = Tone.now();
-    if (cohesion < 0.62) this._bowlArmed = true;
+    const calmAndBreathing = soundState.bowl;
+    this._calmDwell = calmAndBreathing ? Math.min(8, this._calmDwell + dt) : 0;
+    if (cohesion < 0.62 || this._chaosOn) this._bowlArmed = true;
 
-    if (!this._chaosOn && cohesion > 0.7 && now > this._bowlNext) {
+    if (this._calmDwell >= 2 && now > this._bowlNext) {
       const sustained = !this._bowlArmed;
       // Deeper calm reaches for a deeper bowl.
-      const want = Math.round(lerp(BOWL_NOTES.length - 1, 0, clamp((cohesion - 0.7) / 0.3)));
+      const want = Math.round(lerp(BOWL_NOTES.length - 1, 0, clamp((cohesion - 0.68) / 0.32)));
       this._bowlIdx = sustained ? Math.round(lerp(this._bowlIdx, want, 0.5)) : want;
 
-      // Struck softly on arrival, softer still on each return.
-      this._strikeBowl(BOWL_NOTES[this._bowlIdx], sustained ? 0.42 : 0.62);
+      // The first arrival is clearly audible; later returns stay restrained.
+      this._strikeBowl(BOWL_NOTES[this._bowlIdx], sustained ? 0.46 : 0.68);
       this._bowlArmed = false;
-      // Re-strike every 14–22 s while the calm holds.
-      this._bowlNext = now + lerp(22, 14, cohesion) + Math.random() * 4;
+      // Let the 16-second shell decay breathe before another strike.
+      this._bowlNext = now + lerp(26, 19, cohesion) + Math.random() * 4;
     }
 
-    // ── Chimes: sparse, organic, only at high HRV ──────────────────────
-    if (goldIndex > 0.8) {
-      // Rate rises steeply across the last fifth of the gold index.
-      const intensity = clamp((goldIndex - 0.8) / 0.2);
+    // ── Chimes: a rare transitional accent, never the calm reward ──────
+    // High HRV alone used to fire bright bells while the user was breathing
+    // steadily. Keep them only for the liminal state before full cohesion;
+    // stable breath is represented exclusively by the singing bowl.
+    const chimeEligible = soundState.chime;
+    if (chimeEligible) {
+      const intensity = clamp((goldIndex - 0.92) / 0.08);
       this._chimeTimer -= dt;
 
       if (this._gustLeft > 0) {
@@ -477,9 +503,9 @@ export class AudioEngine {
         }
       } else if (this._chimeTimer <= 0) {
         // Between gusts: Poisson-ish waiting time, so it never feels metered.
-        if (Math.random() < 0.28) {
-          this._gustLeft = 2 + ((Math.random() * 3) | 0);
-          this._gustGap = 0.5;
+        if (Math.random() < 0.16) {
+          this._gustLeft = 2;
+          this._gustGap = 0.72;
           this._chimeTimer = 0;
         } else {
           this._triggerChime(pickChime(), lerp(0.18, 0.5, Math.random()) * intensity);
@@ -488,8 +514,23 @@ export class AudioEngine {
       }
     } else {
       this._gustLeft = 0;
-      this._chimeTimer = 1.5;
+      this._chimeTimer = 12;
     }
+  }
+
+  /** Read-only counters for browser regression checks. */
+  diagnostics() {
+    const raw = Tone.getContext().rawContext;
+    return {
+      ready: this.ready,
+      state: raw.state,
+      sampleRate: raw.sampleRate,
+      baseLatency: raw.baseLatency || 0,
+      lookAhead: Tone.getContext().lookAhead,
+      automationWrites: this._automationWrites,
+      bowlStrikes: this._bowlStrikes,
+      chimeStrikes: this._chimeStrikes,
+    };
   }
 
   setMuted(v) {

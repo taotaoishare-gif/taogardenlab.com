@@ -13,7 +13,7 @@
 
 import { SensorEngine, SensorData, SOURCE, clamp, lerp, calibrateTo } from './sensor.js';
 import { VisualEngine } from './visuals.js';
-import { AudioEngine } from './audio.js';
+import { AudioEngine } from './audio.js?v=20260825-audio2';
 import { WearableHub, TRANSPORT } from './wearables.js?v=20260825-pairing2';
 
 // Personal baseline from the existing installation calibration. Set to null
