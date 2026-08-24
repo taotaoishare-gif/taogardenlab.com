@@ -7,14 +7,14 @@ titleZh: '一个环境，是否能够帮助人感知那些原本不可见的内�
 date: 2026-08-11
 lenses: [embodied-interaction, contemplative-traditions, computational-media]
 evidence: built
-status: 'Built. Simulated physiology. Not evaluated.'
-statusZh: '已造。生理为模拟。未做评估。'
+status: 'Built. Simulated by default; wearable integrations implemented. Not evaluated.'
+statusZh: '已造。默认使用模拟生理信号；已实现可穿戴设备接入。未做评估。'
 video: /video/exp-06-sadhana.mp4
 poster: /image/exp-06-sadhana.jpg
 demo: /demos/sadhana/
-demoNote: 'Runs in the browser with a simulated body. The chest-strap path needs Web Bluetooth — Chromium only, not Safari or Firefox. Nothing is uploaded or stored either way.'
-demoNoteZh: '可在浏览器里用模拟的身体运行。胸带那条链路需要 Web Bluetooth——仅 Chromium，Safari 与 Firefox 不支持。两种方式都不上传、不存储任何数据。'
-stack: [Three.js, Tone.js, Web Bluetooth, GLSL]
+demoNote: 'Runs with simulated biosignals by default. Pair standards-compliant wearables through Web Bluetooth, or use a companion Health integration for Apple Watch and closed consumer ecosystems. Nothing is uploaded or stored.'
+demoNoteZh: '默认使用模拟生理信号。支持通过标准蓝牙接入兼容设备；Apple Watch 与封闭消费级生态可通过伴侣应用 / 健康协议转接。所有数据均不上传、不存储。'
+stack: [Three.js, Tone.js, Web Bluetooth, Health integration, GLSL]
 summary: 'Fifty thousand grains of sand gather into a Thai chedi and gild from the spire down as the sitter settles. The sitter, for now, is a model.'
 summaryZh: '五万粒沙聚成一座泰式金塔，随打坐者安定下来，自塔尖向下鎏金。而目前，那位打坐者是一个模型。'
 lang: en
@@ -36,7 +36,7 @@ fromAtlas: [lanna-temple-thresholds, tea-as-timing]
 followsFrom: [cosmic-pottery]
 process:
   - version: V01
-    note: 'Cohesion and gold as two independent drives, so that gathering and gilding can disagree. Scripted 205-second guided arc so the piece can be shown without a body attached. Web Bluetooth ingest written against the standard Heart Rate Service, tested against the protocol rather than against a person.'
+    note: 'Cohesion and gold remain independent drives. A scripted 205-second arc keeps the work demonstrable without hardware. Consumer wearables enter through standards-compliant Bluetooth or a companion Health bridge; both paths are protocol-tested, not yet evaluated with participants.'
 study:
   subtitle:
     en: 'Responsive biofeedback environment for embodied awareness'
@@ -204,8 +204,8 @@ study:
       items: { en: 'respiration · heart rate', zh: '呼吸 · 心率' }
     - stage: { en: 'Sensing', zh: '感知' }
       items:
-        en: 'BLE chest strap (Polar H10 class) · microphone · future sensors'
-        zh: 'BLE 胸带（Polar H10 一类） · 麦克风 · 未来的传感器'
+        en: 'standard Bluetooth wearables · companion app / Health integration · simulated signals'
+        zh: '标准蓝牙可穿戴设备 · 伴侣应用 / 健康数据集成 · 模拟信号'
     - stage: { en: 'Processing', zh: '处理' }
       items:
         en: 'signal extraction · feature calculation'
@@ -271,8 +271,8 @@ study:
         zh: '视听反馈——空间低频、颂钵、寺院钟磬'
       - en: 'Breath-guided interaction — a scripted 205-second arc that runs without a sensor attached'
         zh: '呼吸引导交互——一段 205 秒的脚本弧线，不接传感器也能运行'
-      - en: 'Real-time heart-rate input over Web Bluetooth, written against the standard Heart Rate Service — validated against the protocol, not yet against a wearer'
-        zh: '通过 Web Bluetooth 接入实时心率，按标准 Heart Rate Service 实现——已对协议验证，尚未在真人身上验证'
+      - en: 'Consumer wearable input through the standard Bluetooth Heart Rate Service or a companion Health-integration bridge — protocol-tested, not yet evaluated in a participant session'
+        zh: '通过标准蓝牙 Heart Rate Service 或伴侣应用健康数据桥接入消费级可穿戴设备——已完成协议测试，尚未在参与者会话中评估'
     limitation:
       en: 'This prototype currently explores experiential possibilities. The physiology driving the running piece is a model, not a measurement: sliders set a simulated sitter’s capacity and a simulated breath decides how much of it is expressed. Further controlled studies are needed to evaluate measurable effects.'
       zh: '这个原型目前探索的是体验上的可能性。驱动运行中作品的生理是一个模型，而不是测量：滑杆设定被模拟者的容量，模拟的呼吸决定其中有多少被表达出来。要评估可测量的效果，还需要进一步的对照研究。'
@@ -336,10 +336,12 @@ The architecture keeps the three subsystems apart: only scalars cross between
 the sensor model, the Three.js scene and the Tone.js audio. No geometry ever
 reaches the audio, no audio node ever reaches the visuals.
 
-There are two ways to drive it. A **chest strap** over Web Bluetooth, reading
-RR intervals from the standard Heart Rate Service. Or the **guided arc**: a
-scripted 205-second descent from agitation to stillness, which is what runs on
-entry, and what you see in the recording above.
+There are three ways to drive it. A **standards-compliant consumer wearable**
+can connect directly over Web Bluetooth when it exposes the Heart Rate Service.
+A **companion app / Health integration** can relay data from devices such as
+Apple Watch that do not expose those readings directly to the browser. Or the
+**guided arc** can run a scripted 205-second descent from agitation to stillness,
+which is what runs on entry, and what you see in the recording above.
 
 ## 04 Why I designed it this way
 
@@ -375,7 +377,8 @@ non-responsive recording of the same thing — is exactly what I have not run.
 
 ## 06 What did not work
 
-- **The physiology is a model, not a measurement.** The sliders set a
+- **The default physiology is a model, not a measurement.** When no wearable is
+  connected, the sliders set a
   simulated sitter's capacity and a simulated breath decides how much of it is
   expressed. It is built on a real and well-documented relationship — breathing
   near six breaths a minute drives respiratory sinus arrhythmia into resonance
@@ -383,13 +386,14 @@ non-responsive recording of the same thing — is exactly what I have not run.
   relationship is something I have read, not something I have measured.** The
   numbers on screen are outputs of my model of a body. They are not readings
   from one.
-- **The Bluetooth path is tested against the protocol, not against a person.**
-  The code reads the standard Heart Rate Service correctly. Whether the
-  resulting values behave sensibly on a real chest over twenty minutes is
-  unknown.
-- **Chromium only.** Web Bluetooth does not exist in Safari or Firefox, so on
-  an iPhone this piece can only ever be the simulation. That is a real limit on
-  a piece meant to be entered rather than watched.
+- **The wearable paths are tested against protocols, not against participants.**
+  The code reads the standard Heart Rate Service and accepts normalized health
+  samples from a companion bridge. Behaviour across different watches, bands,
+  rings and heart-rate monitors over a full session remains untested.
+- **Direct Web Bluetooth remains browser-dependent.** Chromium browsers can use
+  the direct path; Safari, Apple Watch and devices that keep health data inside
+  their native ecosystems require the companion-app bridge. That bridge must be
+  supplied by the host installation or mobile app.
 - **It needs a server.** ES modules will not load from `file://`, so unlike
   every other experiment here this one cannot be opened by double-clicking.
 - **"Cohesion" is doing suspicious work.** It blends arousal and breath depth
@@ -398,10 +402,10 @@ non-responsive recording of the same thing — is exactly what I have not run.
 
 ## 07 What comes next
 
-The next step is not a better simulation. It is one chest strap, one room, and
-a sham condition — the same visuals and sound, not coupled to anything — so
-that the question "is it the biofeedback, or is it just a beautiful pagoda"
-can actually be answered.
+The next step is not a better simulation. It is one everyday wearable, one
+room, and a sham condition — the same visuals and sound, not coupled to anything
+— so that the question "is it the biofeedback, or is it just a beautiful
+pagoda" can actually be answered.
 
 Until that exists, nothing here is evidence about bodies. It is evidence about
 what I can build.
@@ -417,5 +421,5 @@ the biofeedback was never the load-bearing part, and that I have been planning
 four months of hardware to add something the work does not need.
 
 Both readings are alive. The reason I am writing this down now, before I have
-the strap, is that once the hardware exists I will want the first reading to
-be true.
+completed a live-device participant session, is that once that evidence exists
+I will want the first reading to be true.

@@ -18,9 +18,10 @@
  * shallow with the HRV slider at max and the pagoda still will not gild.
  * That coupling is the whole meditation.
  *
- * Swapping in real hardware later means replacing `mockUpdate()` with a BLE
- * ingest that writes `hr` / `rr` / `eda` and calling `pushBeat()` per R-peak;
- * everything downstream is unchanged.
+ * Real hardware enters through transport-neutral push methods (`pushBeat`,
+ * `pushHeartRate`, `pushHrv`, `pushRespiration`, `pushEda`). The browser may
+ * receive those values from standard Bluetooth or from a HealthKit / Health
+ * Connect companion; everything downstream is unchanged.
  */
 
 // ─── Math helpers ────────────────────────────────────────────────────────
@@ -50,32 +51,12 @@ function gaussian() {
 
 export const RANGE = {
   hr:         { min: 45,  max: 110 },  // BPM
-  rmssd:      { min: 0,   max: 100 },  // ms — overwritten by calibrateTo()
+  rmssd:      { min: 0,   max: 100 },  // ms — may be personalised by calibrateTo()
   eda:        { min: 0,   max: 10  },  // µS-ish stress index
   breathRate: { min: 3.5, max: 20  },  // breaths per minute
 };
 
-/**
- * Rescale the gold channel to one person.
- *
- * RMSSD varies about tenfold between individuals — a 24-year-old athlete may
- * rest near 90 ms and a sedentary 45-year-old near 18 ms. Normalising both
- * against a fixed 100 ms ceiling gilds the first for doing nothing and leaves
- * the second unable to be gilded at all; neither reading is about what they
- * did. With the ceiling at 100, the chime threshold of 0.8 asks for 80 ms,
- * which in practice only the simulation ever reaches.
- *
- * Resonance-frequency breathing reliably lifts RMSSD to roughly three or four
- * times resting in an untrained sitter, so 3.2× resting is the ceiling that
- * makes the full range of the channel traversable by *this* body. The floor
- * stays at 0 rather than at their resting value: arriving already part-gilded
- * reads as a gift, and the ratchet then only ever has to run upward.
- *
- * Feed it the resting RMSSD from a 3-minute seated baseline — h808s-bench.html
- * measures it and prints the call.
- *
- * @param {number} restingRmssd  ms
- */
+/** Personalise the gold-channel ceiling from a seated resting baseline. */
 export function calibrateTo(restingRmssd) {
   if (!Number.isFinite(restingRmssd) || restingRmssd <= 0) return RANGE.rmssd.max;
   RANGE.rmssd.max = Math.max(40, Math.round(restingRmssd * 3.2 / 5) * 5);
@@ -114,7 +95,7 @@ const SHALLOW_THRESHOLD = 0.26;
 /** Signal sources. */
 export const SOURCE = { MOCK: 'mock', LIVE: 'live' };
 
-/** Seconds without an R-peak before a live strap counts as lost. */
+/** Seconds without any health sample before a live wearable counts as lost. */
 const STALE_AFTER = 5;
 
 // ─── Ring buffer for the debug panel's rolling graphs ───────────────────
@@ -231,13 +212,21 @@ export class SensorEngine {
 
     /**
      * Where the numbers come from. MOCK runs the internal cardiorespiratory
-     * model off the sliders; LIVE takes R-peaks from a real chest strap via
-     * ble.js and derives everything it can from the RR series.
+     * model off the sliders; LIVE takes whatever a consumer wearable can
+     * honestly provide. RR intervals remain the richest path, while direct
+     * HR/HRV/respiration samples are accepted from companion integrations.
      */
     this.source = SOURCE.MOCK;
 
     this.live = {
       lastBeatAt: 0,      // performance.now() of the last ingested R-peak
+      beatCount: 0,
+      lastHeartAt: 0,
+      hrDirect: 72,
+      hrvAt: 0,
+      rmssdDirect: 0,
+      respAt: 0,
+      respDirect: { rate: null, phase: null, wave: null, regularity: null },
       rrSlow: 900,        // slow RR baseline, ms — the tachogram's trend
       respAmp: 20,        // adaptive RSA amplitude, ms
       respRaw: 0,         // -1..1 breath estimate at the last beat
@@ -257,23 +246,17 @@ export class SensorEngine {
     this.source = mode;
     const L = this.live;
     L.lastBeatAt = 0;
+    L.beatCount = 0;
+    L.lastHeartAt = 0;
+    L.hrvAt = 0;
+    L.respAt = 0;
+    L.respDirect = { rate: null, phase: null, wave: null, regularity: null };
     L.periods.length = 0;
     L.lastCrossAt = 0;
     L.armed = false;
     L.stale = false;
-
-    // A strap that drops and reconnects should not have to re-earn its gold —
-    // that reconnection is live→live, and `_msd` survives it untouched.
-    //
-    // Crossing from the model to a body is a different event. The guided arc
-    // ends at 5.48 breaths/min with the HRV capacity at 0.95, which settles
-    // `_msd` at an RMSSD around 86 ms — goldIndex 0.86. Carrying that into a
-    // live session hands the sitter a gilded pagoda they did not earn, and
-    // then spends the next forty seconds taking it away as the estimator
-    // finds their real value. De-gilding is the one thing this piece promises
-    // never to do, and it would be the first thing a real body ever saw it do.
-    //
-    // So the estimator starts from the floor and they build it.
+    // Do not carry a highly gilded guided-demo estimator into a real body.
+    // Reconnection is live→live and therefore does not enter this branch.
     if (from === SOURCE.MOCK && mode === SOURCE.LIVE) {
       this._msd = 0;
       this._lastRR = 1000;
@@ -289,9 +272,38 @@ export class SensorEngine {
    * characteristic if the sitter has a GSR rig; otherwise the panel slider
    * keeps supplying it and `edaAt` stays 0.
    */
-  pushEda(value) {
+  pushEda(value, atMs = performance.now()) {
     this.targets.eda = clamp(value, RANGE.eda.min, RANGE.eda.max);
-    this.live.edaAt = performance.now();
+    this.live.edaAt = atMs;
+  }
+
+  /** Direct BPM sample for wearables that do not expose beat intervals. */
+  pushHeartRate(bpm, atMs = performance.now()) {
+    if (!Number.isFinite(bpm)) return;
+    this.live.hrDirect = clamp(bpm, RANGE.hr.min, 220);
+    this.live.lastHeartAt = atMs;
+  }
+
+  /** Direct RMSSD sample from a companion Health integration. */
+  pushHrv(rmssdMs, atMs = performance.now()) {
+    if (!Number.isFinite(rmssdMs)) return;
+    this.live.rmssdDirect = clamp(rmssdMs, RANGE.rmssd.min, 250);
+    this.live.hrvAt = atMs;
+  }
+
+  /**
+   * Optional respiratory sample from a companion integration. Every field
+   * is optional; direct wave/phase wins over RSA derivation while fresh.
+   */
+  pushRespiration(sample = {}, atMs = performance.now()) {
+    const target = this.live.respDirect;
+    if (Number.isFinite(sample.rate))
+      target.rate = clamp(sample.rate, RANGE.breathRate.min, RANGE.breathRate.max);
+    if (Number.isFinite(sample.phase))
+      target.phase = sample.phase > 0 ? 1 : sample.phase < 0 ? -1 : 0;
+    if (Number.isFinite(sample.wave)) target.wave = clamp(sample.wave, -1, 1);
+    if (Number.isFinite(sample.regularity)) target.regularity = clamp(sample.regularity);
+    this.live.respAt = atMs;
   }
 
   /**
@@ -335,14 +347,17 @@ export class SensorEngine {
     this._lastRR = rrMs;
     SensorData.beats++;
 
-    if (this.source === SOURCE.LIVE) this._deriveRespiration(rrMs, atMs);
+    if (this.source === SOURCE.LIVE) {
+      this.live.beatCount++;
+      this._deriveRespiration(rrMs, atMs);
+    }
   }
 
   /**
    * RSA-derived respiration (an "ECG-derived respiration" estimate).
    *
-   * A chest strap reports only R-peaks — it cannot see the ribcage. But the
-   * breath is written into the RR series anyway: inhalation shortens RR,
+   * A heart-rate source may report only R-peaks — it cannot see the ribcage.
+   * But the breath is written into the RR series anyway: inhalation shortens RR,
    * exhalation lengthens it. Detrending the tachogram and normalising by its
    * own recent swing recovers the breathing waveform without any extra
    * hardware.
@@ -505,15 +520,16 @@ export class SensorEngine {
     return this._publish(dt, {
       hr, rmssd, rmssdNorm, eda, edaNorm,
       phase, respWave, rateNow, depthNow, respDepthScore,
-      edaMeasured: true,   // the model always supplies one
+      edaMeasured: true,
     });
   }
 
   // ─── Live step ────────────────────────────────────────────────────────
 
   /**
-   * Hardware path. Everything here comes from the RR series; nothing is
-   * simulated. What a chest strap genuinely cannot tell you:
+   * Hardware path. Values come from a wearable directly where available;
+   * missing respiration is derived from RR intervals. Nothing is silently
+   * invented. What an HR-only device genuinely cannot tell you:
    *
    *   - breath DEPTH. It sees R-peaks, not a ribcage. Using RSA amplitude as
    *     a depth proxy would be circular — RSA amplitude is what RMSSD already
@@ -527,14 +543,31 @@ export class SensorEngine {
     const L = this.live;
     const now = performance.now();
 
-    // Watchdog. A strap that stops reporting must not leave the pagoda
+    const fresh = (at, seconds = STALE_AFTER) => !!at && now - at < seconds * 1000;
+
+    // Watchdog. A wearable that stops reporting must not leave the pagoda
     // frozen mid-air looking like it is still reading someone.
-    const sinceBeat = L.lastBeatAt ? (now - L.lastBeatAt) / 1000 : 999;
-    L.stale = sinceBeat > STALE_AFTER;
+    const latestSampleAt = Math.max(L.lastBeatAt, L.lastHeartAt, L.hrvAt, L.respAt, L.edaAt);
+    L.stale = !latestSampleAt || now - latestSampleAt > STALE_AFTER * 1000;
+
+    const directRespFresh = fresh(L.respAt, 8);
+    const direct = L.respDirect;
 
     // Ease the coarse ~1 Hz breath estimate into a continuous wave.
     const prevEased = L.respWave;
-    L.respWave += (L.respRaw - L.respWave) * smoothK(dt, 0.7);
+    let respTarget = L.respRaw;
+    // A companion may provide rate but not a continuous waveform. In that
+    // case the rate drives a neutral guide oscillator: its timing is measured,
+    // while amplitude/regularity remain unclaimed until explicitly supplied.
+    if (directRespFresh && direct.wave !== null) {
+      respTarget = direct.wave;
+    } else if (directRespFresh && direct.rate !== null && direct.phase === null) {
+      this._phase = (this._phase + dt * direct.rate / 60) % 1;
+      respTarget = -Math.cos(this._phase * Math.PI * 2) * 0.72;
+    } else if (directRespFresh && direct.phase !== null) {
+      respTarget = direct.phase * 0.62;
+    }
+    L.respWave += (respTarget - L.respWave) * smoothK(dt, 0.7);
     if (L.stale) L.respWave *= 1 - smoothK(dt, 2); // let it fall still
     const respWave = L.respWave;
     const slope = respWave - prevEased;
@@ -546,7 +579,7 @@ export class SensorEngine {
     // anything doubled the warm-up to ~34 s at 5.5 breaths/min — most of a
     // minute of a live sitting spent showing nothing.
     const P = L.periods;
-    const warmup = P.length < 2;
+    const warmup = !directRespFresh && P.length < 2;
     let rateNow = 12, regularity = 0;
     if (P.length >= 1) {
       const mean = P.reduce((a, b) => a + b, 0) / P.length;
@@ -557,6 +590,10 @@ export class SensorEngine {
         regularity = clamp(1 - Math.sqrt(varr) / mean / 0.35);
       }
     }
+    if (directRespFresh) {
+      if (direct.rate !== null) rateNow = direct.rate;
+      if (direct.regularity !== null) regularity = direct.regularity;
+    }
 
     // respPhase from the slope of the recovered wave: rising = inhale.
     // The slope is tiny per frame, so compare against a threshold scaled by
@@ -565,7 +602,12 @@ export class SensorEngine {
     // to wait on a period estimate.
     const moving = Math.abs(slope) > 1e-4 * (dt * 60);
     const tooFlat = Math.abs(respWave) < 0.10 && !moving;
-    const phase = L.stale || tooFlat || !L.lastBeatAt ? 0 : slope >= 0 ? 1 : -1;
+    const hasRespSignal = directRespFresh || !!L.lastBeatAt;
+    const phase = L.stale || tooFlat || !hasRespSignal
+      ? 0
+      : directRespFresh && direct.phase !== null
+        ? direct.phase
+        : slope >= 0 ? 1 : -1;
 
     this._stability += ((phase === 0 ? 0 : 1) - this._stability) * smoothK(dt, 3.0);
 
@@ -575,9 +617,20 @@ export class SensorEngine {
     const eda = clamp(this._eda, RANGE.eda.min, RANGE.eda.max);
     const edaNorm = invLerp(RANGE.eda.min, RANGE.eda.max, eda);
 
-    const rmssd = L.stale ? 0 : clamp(Math.sqrt(this._msd), RANGE.rmssd.min, RANGE.rmssd.max);
+    const directHrvFresh = fresh(L.hrvAt, 12);
+    const rmssd = L.stale
+      ? 0
+      : directHrvFresh
+        ? clamp(L.rmssdDirect, RANGE.rmssd.min, RANGE.rmssd.max)
+        : L.beatCount >= 2
+          ? clamp(Math.sqrt(this._msd), RANGE.rmssd.min, RANGE.rmssd.max)
+          : 0;
     const rmssdNorm = invLerp(RANGE.rmssd.min, RANGE.rmssd.max, rmssd);
-    const hr = clamp(60000 / Math.max(L.rrSlow, 1), RANGE.hr.min, RANGE.hr.max);
+    const hr = fresh(L.lastHeartAt, 8)
+      ? clamp(L.hrDirect, RANGE.hr.min, RANGE.hr.max)
+      : L.beatCount
+        ? clamp(60000 / Math.max(L.rrSlow, 1), RANGE.hr.min, RANGE.hr.max)
+        : SensorData.hr;
 
     // Same geometric-mean shape as the mock path, with regularity standing in
     // for amplitude.
@@ -590,25 +643,16 @@ export class SensorEngine {
       hr, rmssd, rmssdNorm, eda, edaNorm,
       phase, respWave, rateNow, depthNow: regularity, respDepthScore,
       warmup: warmup && !L.stale,
-      edaMeasured: edaLive,   // true only if a GSR rig fed pushEda() recently
+      edaMeasured: edaLive,
     });
   }
 
   // ─── Shared tail: metrics, easing, publication, graph history ─────────
 
   _publish(dt, r) {
-    // The 0.6/0.4 split assumes both terms are measured. On a live strap with
-    // no GSR rig the EDA term is not a measurement — it is wherever the panel
-    // slider was left, which is 5.0, which is exactly 0.30 of a constant.
-    //
-    // That is not merely inert, it is a ceiling. The sitter can only move the
-    // remaining 0.40, so cohesion tops out at 0.700 while the bowl fires at
-    // `> 0.7`: a metronomically perfect breather lands one float short of the
-    // only reward in this channel and never hears it. Sixty percent of the
-    // number is something they cannot touch.
-    //
-    // So when EDA is not being measured, it does not get a vote, and breath
-    // carries the whole weight. The channel spans a real 0..1 again.
+    // Do not let an unmeasured EDA slider consume 60% of a live score. When
+    // EDA is genuinely present the original 0.6/0.4 formula applies; without
+    // it, respiration carries the available evidence on its own.
     const cohesionRaw = r.edaMeasured
       ? (1 - r.edaNorm) * 0.6 + r.respDepthScore * 0.4
       : r.respDepthScore;

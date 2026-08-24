@@ -7,7 +7,7 @@
  *   1. MANTRA DRONE (梵音)  — monastic throat-chant; breathes with respPhase
  *   2. SINGING BOWL (颂钵)  — additive, non-harmonic; struck on deep calm
  *   3. TEMPLE CHIMES (风铃) — Thai-tuned brass; scattered on high HRV
- *   + CHAOS TEXTURE        — hollow, ungrounded wind when stress takes over
+ *   + TURBULENCE TONE      — a quiet, rootless resonance under high stress
  *
  * This module receives ONLY scalars from app.js. It never sees a matrix, a
  * vector or a Three.js object.
@@ -191,14 +191,18 @@ export class AudioEngine {
     await Tone.start();
 
     // ── master ────────────────────────────────────────────────────────
-    this.limiter = new Tone.Limiter(-1).toDestination();
+    // A little more headroom than the original graph. Additive bowl voices
+    // can overlap for 15+ seconds; keeping their summed peak below the hard
+    // ceiling avoids the short digital ticks that otherwise sound like an
+    // intermittent electrical fault.
+    this.limiter = new Tone.Limiter(-2.5).toDestination();
     this.master = new Tone.Gain(0.0).connect(this.limiter);
 
     // ── temple reverb send ────────────────────────────────────────────
     // Long, dark tail: a stone-and-gold hall, not a plate.
     this.reverb = new Tone.Reverb({ decay: 9.5, preDelay: 0.05, wet: 1 });
     await this.reverb.generate();
-    this.reverbReturn = new Tone.Gain(0.9).connect(this.master);
+    this.reverbReturn = new Tone.Gain(0.68).connect(this.master);
     this.reverb.connect(this.reverbReturn);
     this.send = new Tone.Gain(1).connect(this.reverb);
 
@@ -208,37 +212,41 @@ export class AudioEngine {
     this._buildChaos();
 
     // Fade the room up over 4 s rather than snapping on.
-    this.master.gain.rampTo(0.9, 4);
+    this.master.gain.rampTo(0.78, 4);
     this.ready = true;
   }
 
   // ── 1. THE MANTRA DRONE (梵音) ───────────────────────────────────────
   /**
-   * Deep monastic chant. Built from detuned sawtooths at A1 plus a fifth,
-   * with an FM voice for the buzzing edge of throat singing, then coloured
+   * Deep monastic chant. Built from detuned triangles at A1 plus a fifth,
+   * with a softly modulated FM voice for the edge of throat singing, then coloured
    * by a parallel formant bank so it reads as a human "Om" rather than a
    * synth bass.
    */
   _buildDrone() {
-    this.droneSum = new Tone.Gain(0.22);
+    this.droneSum = new Tone.Gain(0.19);
 
     // A1 = 55 Hz fundamental, one voice detuned ±7 cents for chorus beating,
     // plus E2 (55 × 1.5) — the open fifth that Gyuto chant sits on.
     this.droneOscs = [
-      new Tone.Oscillator({ frequency: 55.0, type: 'sawtooth', detune: -7 }),
-      new Tone.Oscillator({ frequency: 55.0, type: 'sawtooth', detune: +7 }),
-      new Tone.Oscillator({ frequency: 82.5, type: 'sawtooth', detune: +3 }),
+      // Triangle waves retain the odd harmonics needed by the formant bank,
+      // without the broadband edge of sawtooths that read as mains/static
+      // noise on laptop speakers and consumer earbuds.
+      new Tone.Oscillator({ frequency: 55.0, type: 'triangle', detune: -7 }),
+      new Tone.Oscillator({ frequency: 55.0, type: 'triangle', detune: +7 }),
+      new Tone.Oscillator({ frequency: 82.5, type: 'triangle', detune: +3 }),
       new Tone.Oscillator({ frequency: 110.0, type: 'sine' }), // octave, steadies the pitch
     ];
     this.droneOscs.forEach((o) => { o.connect(this.droneSum); o.start(); });
 
-    // The FM voice supplies the rasp. Non-integer harmonicity keeps it from
-    // locking into a clean harmonic and sounding like a bass patch.
+    // The FM voice supplies a soft throat edge. The previous square-wave
+    // modulator produced discontinuities rich in upper partials; on small
+    // transducers those partials sounded exactly like electrical crackle.
     this.droneFM = new Tone.FMOscillator({
-      frequency: 55, type: 'sine', modulationType: 'square',
-      harmonicity: 1.503, modulationIndex: 2.6,
+      frequency: 55, type: 'sine', modulationType: 'sine',
+      harmonicity: 1.503, modulationIndex: 0.85,
     }).start();
-    this.droneFMGain = new Tone.Gain(0.10).connect(this.droneSum);
+    this.droneFMGain = new Tone.Gain(0.065).connect(this.droneSum);
     this.droneFM.connect(this.droneFMGain);
 
     // The breath valve.
@@ -308,15 +316,19 @@ export class AudioEngine {
     // genuinely travels across the stereo field instead of pulsing in place.
     this.chimes = [0, 1, 2, 3].map(() => {
       const pan = new Tone.Panner(0).connect(this.chimeBus);
+      // MetalSynth can generate a brittle ultrasonic skirt. The low-pass is
+      // deliberately per voice, before panning and feedback, so the delay
+      // cannot accumulate that skirt into a fizzy electrical tail.
+      const polish = new Tone.Filter({ type: 'lowpass', frequency: 6200, rolloff: -24, Q: 0.5 });
       const synth = new Tone.MetalSynth({
-        envelope: { attack: 0.001, decay: 1.5, release: 0.25 },
+        envelope: { attack: 0.004, decay: 1.5, release: 0.25 },
         harmonicity: 8.5,      // wide, inharmonic — small struck brass
-        modulationIndex: 26,
-        resonance: 5200,
-        octaves: 1.1,   // higher values push partials past 10 kHz and glare
-        volume: -22,
-      }).connect(pan);
-      return { synth, pan };
+        modulationIndex: 18,
+        resonance: 4200,
+        octaves: 0.85,  // higher values push partials past 10 kHz and glare
+        volume: -23,
+      }).chain(polish, pan);
+      return { synth, polish, pan };
     });
     this._chimeIdx = 0;
   }
@@ -331,33 +343,34 @@ export class AudioEngine {
     v.synth.triggerAttackRelease(freq, 0.5, t, velocity);
   }
 
-  // ── 4. CHAOS TEXTURE ────────────────────────────────────────────────
+  // ── 4. TURBULENCE TONE ──────────────────────────────────────────────
   /**
-   * The sound of a mind that will not settle: brown noise through a slowly
-   * swept resonant band (breath you cannot control), over two sines a
-   * tritone apart. The tritone is deliberate — it is the one interval with
-   * no root, so the ear can never decide where the floor is.
+   * The sound of a mind that will not settle. It is intentionally tonal:
+   * three quiet sines move through a slow resonant filter. The former brown
+   * noise layer was broadband and was easily mistaken for an electrical or
+   * grounding fault. There is now no Noise/NoiseSynth node in the graph.
+   * The tritone relation still leaves the ear without a stable root.
    */
   _buildChaos() {
     this.chaosBus = new Tone.Gain(0).connect(this.master);
     this.chaosSend = new Tone.Gain(0.5).connect(this.send);
     this.chaosBus.connect(this.chaosSend);
 
-    this.windBP = new Tone.Filter({ type: 'bandpass', frequency: 0, Q: 2.4 });
-    this.windLFO = new Tone.LFO({ frequency: 0.055, min: 180, max: 900 }).start();
+    this.windBP = new Tone.Filter({ type: 'bandpass', frequency: 260, Q: 1.1 });
+    this.windLFO = new Tone.LFO({ frequency: 0.045, min: 180, max: 520 }).start();
     this.windLFO.connect(this.windBP.frequency);
+    this.windPan = new Tone.AutoPanner({ frequency: 0.055, depth: 0.65 }).start();
 
-    this.windPan = new Tone.AutoPanner({ frequency: 0.07, depth: 0.85 }).start();
-    this.noise = new Tone.Noise('brown').start();
-    this.noiseGain = new Tone.Gain(0.9);
-    this.noise.chain(this.windBP, this.noiseGain, this.windPan, this.chaosBus);
-
-    // 58.0 and 82.1 Hz — a ratio of 1.4155, ~594 cents. Rootless.
+    // 58.0 and 82.1 Hz — a ratio of 1.4155, ~594 cents. A very soft upper
+    // partial gives the filter something to breathe without adding hiss.
     this.hollowA = new Tone.Oscillator({ frequency: 58.0, type: 'sine' }).start();
     this.hollowB = new Tone.Oscillator({ frequency: 82.1, type: 'sine' }).start();
-    this.hollowGain = new Tone.Gain(0.16).connect(this.chaosBus);
+    this.hollowC = new Tone.Oscillator({ frequency: 116.7, type: 'sine' }).start();
+    this.hollowGain = new Tone.Gain(0.11);
     this.hollowA.connect(this.hollowGain);
     this.hollowB.connect(this.hollowGain);
+    this.hollowC.connect(this.hollowGain);
+    this.hollowGain.chain(this.windBP, this.windPan, this.chaosBus);
   }
 
   // ─────────────────────────────────────────────────────────────────────
@@ -407,8 +420,8 @@ export class AudioEngine {
       // Chaos crossfade. `edaNorm > 0.6` per spec — normalised, i.e. EDA 6/10.
       const chaosWanted = edaNorm > 0.6;
       const chaosAmt = clamp((edaNorm - 0.55) / 0.45);
-      this.chaosBus.gain.rampTo(chaosAmt * 0.5, 2.5);
-      this.windLFO.frequency.rampTo(lerp(0.04, 0.14, edaNorm), 3);
+      this.chaosBus.gain.rampTo(chaosAmt * 0.18, 2.5);
+      this.windLFO.frequency.rampTo(lerp(0.035, 0.09, edaNorm), 3);
 
       if (chaosWanted !== this._chaosOn) {
         this._chaosOn = chaosWanted;
@@ -418,7 +431,7 @@ export class AudioEngine {
       }
 
       // The drone thins out as the mind scatters.
-      this.droneFMGain.gain.rampTo(lerp(0.05, 0.16, cohesion), 2);
+      this.droneFMGain.gain.rampTo(lerp(0.025, 0.075, cohesion), 2);
       this.chimeBus.gain.rampTo(lerp(0.25, 0.85, goldIndex), 2);
     }
 
@@ -481,6 +494,6 @@ export class AudioEngine {
 
   setMuted(v) {
     this.muted = v;
-    if (this.ready) this.master.gain.rampTo(v ? 0 : 0.9, 0.6);
+    if (this.ready) this.master.gain.rampTo(v ? 0 : 0.78, 0.6);
   }
 }

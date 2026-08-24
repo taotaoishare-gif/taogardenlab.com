@@ -14,28 +14,14 @@
 import { SensorEngine, SensorData, SOURCE, clamp, lerp, calibrateTo } from './sensor.js';
 import { VisualEngine } from './visuals.js';
 import { AudioEngine } from './audio.js';
-import { BleSensor } from './ble.js';
+import { WearableHub, TRANSPORT } from './wearables.js';
 
-/**
- * ── The one number to change before a live sitting ──────────────────────
- *
- * Resting RMSSD in milliseconds, from a 3-minute seated baseline. Run
- * /demos/h808s-bench.html, press "开始 3 分钟基线", and copy the figure it
- * prints here.
- *
- * Leave it null and the gold channel is normalised against a fixed 100 ms,
- * which is a clinical scale ceiling rather than any particular person's:
- * an ordinary first-time sitter sits at 25 ms and cannot reach the 0.8 the
- * chimes need, so the whole reward layer stays dark no matter what they do.
- *
- * One number per person. It is not a preference, it is a unit conversion.
- */
-const RESTING_RMSSD_MS = 45.3;   // e.g. 26.1
-
+// Personal baseline from the existing installation calibration. Set to null
+// for an anonymous public kiosk, or provide a session baseline dynamically.
+const RESTING_RMSSD_MS = 45.3;
 if (RESTING_RMSSD_MS) {
   const ceiling = calibrateTo(RESTING_RMSSD_MS);
-  console.info(`[sadhana] gold ceiling calibrated to ${ceiling} ms ` +
-               `(resting ${RESTING_RMSSD_MS} ms × 3.2)`);
+  console.info(`[sand-to-stupa] gold ceiling ${ceiling} ms (resting ${RESTING_RMSSD_MS} ms)`);
 }
 
 const $ = (id) => document.getElementById(id);
@@ -43,12 +29,124 @@ const $ = (id) => document.getElementById(id);
 const sensor = new SensorEngine();
 const visuals = new VisualEngine($('stage'));
 const audio = new AudioEngine();
-const ble = new BleSensor();
+const wearables = new WearableHub();
 
 let running = false;
 let last = performance.now();
 let guided = false;
 let guidedT = 0;
+
+// ─────────────────────────────────────────────────────────────────────────
+// Language — one language at a time, never mixed labels
+// ─────────────────────────────────────────────────────────────────────────
+
+const COPY = {
+  zh: {
+    documentTitle: '聚沙成塔',
+    title: '聚沙成塔', hudKicker: '呼吸 · 脉动 · 成塔',
+    cohesion: '聚合度', goldIndex: '金色指数',
+    interactionHint: '拖动旋转 · 滚轮靠近<br>D — 打开仪表面板', panel: '面板',
+    wearableEyebrow: '实时生物反馈', pairWearables: '接入可穿戴设备',
+    wearableConnected: '可穿戴设备已接入', disconnect: '断开设备',
+    recommendedDevices: '💡 推荐设备：支持心率带、智能手环、智能戒指、Apple Watch等支持标准蓝牙/健康协议的穿戴设备。',
+    signals: '生理信号', heartRate: '心率', hrv: '心率变异性 · RMSSD', respiration: '呼吸',
+    calibration: '模拟与校准', breathRate: '呼吸频率', breathDepth: '呼吸深度',
+    stressEda: '压力 · EDA', hrvCapacity: 'HRV 潜能', restingHr: '静息心率', rmssdWindow: 'RMSSD 窗口',
+    mode: '模式', guided: '引导演示', audio: '声音', diagnostics: '诊断信息',
+    fps: '帧率', particles: '粒子数', respPhase: '呼吸相位', respScore: '呼吸评分', beats: '心搏数',
+    pairTitle: '选择接入方式', pairCopy: '选择你的设备能够使用的健康数据通道。',
+    standardBluetooth: '标准蓝牙',
+    standardBluetoothDesc: '适用于广播标准心率服务的心率带、手环与戒指；需要 Chrome 或 Edge。',
+    companionApp: '伴侣应用 / 健康协议',
+    companionAppDesc: '适用于 Apple Watch、HealthKit、Health Connect 及不开放网页蓝牙数据的消费级设备。',
+    pairTruth: 'Apple Watch 不允许网页直接读取健康数据，需要通过伴侣应用转接。',
+    veilSub: '呼吸生物反馈冥想', poem: '息 深 则 沙 聚<br>脉 和 则 塔 金',
+    begin: '开始静心', beginHint: '点击后开启声音',
+    veilNote: '建议佩戴耳机 · 点击后开启声音<br><span class="only-touch">拖动旋转 · 双指捏合靠近<br></span>默认使用模拟生理信号 · 不调用摄像头或麦克风',
+    stateSamadhi: '寂 照', stateGilding: '鎏 金', stateRising: '成 塔', stateGathering: '凝 聚', stateScattered: '风 沙',
+    signalLost: '失 联', calibrating: '校 准', inhale: '入 息', exhale: '出 息', erratic: '散 乱',
+    phaseInhale: '吸气', phaseExhale: '呼气', phaseErratic: '散乱',
+    source: '数据源', simulated: '模拟', live: '实时', connecting: '连接中', waiting: '等待数据',
+    reconnecting: '重新连接', unavailable: '不可用', battery: '电量', hrvUnavailable: '无 HRV 数据',
+    respirationUnavailable: '无连续呼吸数据', transportBluetooth: '标准蓝牙', transportCompanion: '伴侣应用',
+    rateUnit: '次/分', bpmUnit: '次/分', msUnit: '毫秒', beatsUnit: '拍',
+    langAria: 'Switch to English', close: '关闭',
+    detail_select_device: '请在系统窗口选择设备', detail_cancelled: '已取消', detail_pair_failed: '配对失败',
+    detail_bluetooth_unavailable: '此浏览器不支持蓝牙，请使用 Chrome 或 Edge',
+    detail_secure_context_required: '蓝牙需要 HTTPS 或 localhost', detail_waiting_companion: '等待伴侣应用发送健康数据',
+    detail_opening_bridge: '正在打开健康数据桥', detail_waiting_data: '健康桥已连接，等待数据',
+    detail_bridge_url_invalid: '健康桥地址无效', detail_bridge_failed: '健康桥连接失败', detail_bridge_closed: '健康桥已断开',
+    detail_opening_bluetooth: '正在连接蓝牙设备', detail_contact_lost: '请确认设备已正确佩戴',
+    detail_heart_rate_only: '已接收心率；设备未提供 HRV', detail_reconnecting: '正在重新连接设备',
+    detail_sensor_lost: '设备连接已丢失', detail_disconnected: '未接入设备',
+  },
+  en: {
+    documentTitle: 'Sand to Stupa',
+    title: 'Sand to Stupa', hudKicker: 'BREATH · PULSE · FORM',
+    cohesion: 'Cohesion', goldIndex: 'Gold Index',
+    interactionHint: 'Drag to orbit · Scroll to approach<br>D — open instrument panel', panel: 'Panel',
+    wearableEyebrow: 'Live Biofeedback', pairWearables: 'Pair Wearables',
+    wearableConnected: 'Wearable Connected', disconnect: 'Disconnect Device',
+    recommendedDevices: '💡 Recommended Devices: Supports smart bands, heart rate monitors, smart rings, and Apple Watch (via companion app) compatible with standard Bluetooth or Health integration protocols.',
+    signals: 'Physiological Signals', heartRate: 'Heart Rate', hrv: 'Heart Rate Variability · RMSSD', respiration: 'Respiration',
+    calibration: 'Simulation & Calibration', breathRate: 'Breath Rate', breathDepth: 'Breath Depth',
+    stressEda: 'Stress · EDA', hrvCapacity: 'HRV Capacity', restingHr: 'Resting Heart Rate', rmssdWindow: 'RMSSD Window',
+    mode: 'Mode', guided: 'Guided', audio: 'Audio', diagnostics: 'Diagnostics',
+    fps: 'FPS', particles: 'Particles', respPhase: 'Respiration Phase', respScore: 'Respiration Score', beats: 'Beats',
+    pairTitle: 'Choose a Connection', pairCopy: 'Select the health-data path available to your device.',
+    standardBluetooth: 'Standard Bluetooth',
+    standardBluetoothDesc: 'For heart rate monitors, bands, and rings that broadcast the standard Heart Rate Service. Chrome or Edge required.',
+    companionApp: 'Companion App / Health Integration',
+    companionAppDesc: 'For Apple Watch, HealthKit, Health Connect, and consumer devices that do not expose health data to web Bluetooth.',
+    pairTruth: 'Apple Watch does not allow a webpage to read Health data directly; it connects through a companion app.',
+    veilSub: 'A Biofeedback Meditation',
+    poem: 'With each deep breath, sand gathers<br>With each steady pulse, the stupa turns gold',
+    begin: 'Begin Meditation', beginHint: 'Sound begins after this gesture',
+    veilNote: 'Headphones recommended · Sound begins on entry<br><span class="only-touch">Drag to orbit · Pinch to approach<br></span>Simulated biosignals by default · No camera or microphone',
+    stateSamadhi: 'Stillness', stateGilding: 'Gilding', stateRising: 'Stupa Rising', stateGathering: 'Gathering', stateScattered: 'Scattered',
+    signalLost: 'Signal Lost', calibrating: 'Calibrating', inhale: 'Inhale', exhale: 'Exhale', erratic: 'Erratic',
+    phaseInhale: 'Inhale', phaseExhale: 'Exhale', phaseErratic: 'Erratic',
+    source: 'Source', simulated: 'Simulated', live: 'Live', connecting: 'Connecting', waiting: 'Waiting for Data',
+    reconnecting: 'Reconnecting', unavailable: 'Unavailable', battery: 'Battery', hrvUnavailable: 'HRV unavailable',
+    respirationUnavailable: 'Continuous respiration unavailable', transportBluetooth: 'Standard Bluetooth', transportCompanion: 'Companion App',
+    rateUnit: '/ min', bpmUnit: 'bpm', msUnit: 'ms', beatsUnit: 'beats',
+    langAria: '切换至中文', close: 'Close',
+    detail_select_device: 'Choose a device in the system dialog', detail_cancelled: 'Cancelled', detail_pair_failed: 'Pairing failed',
+    detail_bluetooth_unavailable: 'Web Bluetooth is unavailable; use Chrome or Edge',
+    detail_secure_context_required: 'Bluetooth requires HTTPS or localhost', detail_waiting_companion: 'Waiting for health data from the companion app',
+    detail_opening_bridge: 'Opening the health-data bridge', detail_waiting_data: 'Health bridge connected; waiting for data',
+    detail_bridge_url_invalid: 'Invalid health bridge URL', detail_bridge_failed: 'Health bridge connection failed', detail_bridge_closed: 'Health bridge disconnected',
+    detail_opening_bluetooth: 'Opening the Bluetooth connection', detail_contact_lost: 'Check that the device is being worn correctly',
+    detail_heart_rate_only: 'Heart rate received; this device does not provide HRV', detail_reconnecting: 'Reconnecting the wearable',
+    detail_sensor_lost: 'Wearable connection lost', detail_disconnected: 'No wearable connected',
+  },
+};
+
+let language = (() => {
+  try { return localStorage.getItem('sand-to-stupa-language') || (navigator.language.startsWith('zh') ? 'zh' : 'en'); }
+  catch { return 'zh'; }
+})();
+if (!COPY[language]) language = 'zh';
+const t = (key) => COPY[language][key] ?? key;
+
+function applyLanguage(next) {
+  language = COPY[next] ? next : 'zh';
+  document.documentElement.lang = language === 'zh' ? 'zh-CN' : 'en';
+  document.title = t('documentTitle');
+  document.querySelectorAll('[data-i18n]').forEach((el) => {
+    const copy = t(el.dataset.i18n);
+    if (copy !== undefined) el.textContent = copy;
+  });
+  document.querySelectorAll('[data-i18n-html]').forEach((el) => {
+    const copy = t(el.dataset.i18nHtml);
+    if (copy !== undefined) el.innerHTML = copy;
+  });
+  $('langBtn').textContent = language === 'zh' ? 'EN' : '中文';
+  $('langBtn').setAttribute('aria-label', t('langAria'));
+  $('pairClose').setAttribute('aria-label', t('close'));
+  if ($('sWin')) $('lbWin').textContent = $('sWin').value + ' ' + t('beatsUnit');
+  try { localStorage.setItem('sand-to-stupa-language', language); } catch { /* kiosk storage may be disabled */ }
+}
 
 // ─────────────────────────────────────────────────────────────────────────
 // Calibration sliders → sensor.mockUpdate()
@@ -69,11 +167,11 @@ function pushSliders() {
     hr: +S.hr.value,
   });
   const t = sensor.targets;
-  $('lbBreath').textContent = t.breathRate.toFixed(1) + ' / min';
+  $('lbBreath').textContent = t.breathRate.toFixed(1) + ' ' + COPY[language].rateUnit;
   $('lbDepth').textContent = t.breathDepth.toFixed(2);
   $('lbEda').textContent = t.eda.toFixed(2);
   $('lbHrv').textContent = t.hrvCapacity.toFixed(2);
-  $('lbHr').textContent = Math.round(t.hr) + ' bpm';
+  $('lbHr').textContent = Math.round(t.hr) + ' ' + COPY[language].bpmUnit;
 }
 
 for (const el of Object.values(S)) {
@@ -85,7 +183,7 @@ for (const el of Object.values(S)) {
 
 $('sWin').addEventListener('input', (e) => {
   sensor.rmssdBeats = +e.target.value;
-  $('lbWin').textContent = e.target.value + ' beats';
+  $('lbWin').textContent = e.target.value + ' ' + t('beatsUnit');
 });
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -140,15 +238,13 @@ $('tgAudio').addEventListener('click', () => {
 });
 
 // ─────────────────────────────────────────────────────────────────────────
-// Bluetooth chest strap
+// Consumer wearables — standard Bluetooth + companion Health bridge
 // ─────────────────────────────────────────────────────────────────────────
 
 /**
- * Which calibration sliders the hardware takes over. Breath rate, depth, HRV
- * capacity and resting HR all become measurements once a strap is on, so
- * they are disabled rather than left looking live. EDA stays editable — no
- * standard GATT service carries it, so unless a GSR rig is attached it
- * genuinely is a manual value.
+ * Which calibration sliders a live wearable takes over. EDA stays editable
+ * unless an attached bridge actually supplies it; consumer health protocols
+ * do not expose a universal EDA stream.
  */
 const LIVE_OVERRIDES = ['breath', 'depth', 'hrv', 'hr'];
 
@@ -159,30 +255,43 @@ function setSliderLock(locked) {
   }
 }
 
-function showBleStatus(state, detail) {
-  const el = $('bleStatus');
-  const live = state === 'live';
-  const label = {
-    idle: 'SIMULATED', connecting: 'CONNECTING', live: 'LIVE',
-    lost: 'RECONNECTING', error: 'UNAVAILABLE',
-  }[state] || state.toUpperCase();
+const escapeHtml = (value) => String(value).replace(/[&<>'"]/g, (char) => ({
+  '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;',
+}[char]));
 
-  const bits = [`SOURCE <span>${label}</span>`];
-  if (detail) bits.push(detail.toUpperCase());
-  if (live && ble.battery != null) bits.push(`BATTERY <span>${ble.battery}%</span>`);
-  if (live && !ble.rrSupported) bits.push('<span>NO RR — HRV UNAVAILABLE</span>');
-  if (SensorData.stale) bits.push('<span>SIGNAL LOST</span>');
+function showWearableStatus(state, detail = wearables.detail, detailCode = wearables.detailCode) {
+  const el = $('wearableStatus');
+  const live = state === 'live';
+  const labelKey = {
+    idle: 'simulated', connecting: 'connecting', waiting: 'waiting', live: 'live',
+    lost: 'reconnecting', error: 'unavailable',
+  }[state] || 'unavailable';
+
+  const bits = [`${t('source')} <span>${t(labelKey)}</span>`];
+  if (live && detail) bits.push(escapeHtml(detail));
+  if (wearables.transport) {
+    bits.push(`<span>${t(wearables.transport === TRANSPORT.BLUETOOTH ? 'transportBluetooth' : 'transportCompanion')}</span>`);
+  }
+  if (live && wearables.battery != null) bits.push(`${t('battery')} <span>${Math.round(wearables.battery)}%</span>`);
+  if (live && !wearables.hrvSupported) bits.push(`<span>${t('hrvUnavailable')}</span>`);
+  if (live && !wearables.respSupported && !wearables.rrSupported) bits.push(`<span>${t('respirationUnavailable')}</span>`);
+  if (!live && detailCode && t(`detail_${detailCode}`) !== `detail_${detailCode}`) {
+    bits.push(escapeHtml(t(`detail_${detailCode}`)));
+  }
+  if (SensorData.stale) bits.push(`<span>${t('signalLost')}</span>`);
   el.innerHTML = bits.join('<br>');
 
-  $('tgBle').classList.toggle('on', live);
-  $('tgBle').textContent = live || state === 'lost'
-    ? '断开 · Disconnect'
-    : '连接心率带 · Connect';
+  $('wearablePair').classList.toggle('live', live);
+  $('wearablePair').textContent = live ? t('wearableConnected') : t('pairWearables');
+  $('wearableDisconnect').classList.toggle('visible', live || state === 'lost' || state === 'waiting');
 }
 
-ble.onBeat = (rrMs, atMs) => sensor.pushBeat(rrMs, atMs);
-ble.onEda = (v) => sensor.pushEda(v);
-ble.onStatus = (state, detail) => {
+wearables.onBeat = (rrMs, atMs) => sensor.pushBeat(rrMs, atMs);
+wearables.onHeartRate = (bpm, atMs) => sensor.pushHeartRate(bpm, atMs);
+wearables.onHrv = (rmssd, atMs) => sensor.pushHrv(rmssd, atMs);
+wearables.onRespiration = (sample, atMs) => sensor.pushRespiration(sample, atMs);
+wearables.onEda = (value, atMs) => sensor.pushEda(value, atMs);
+wearables.onStatus = (state, detail, detailCode) => {
   if (state === 'live') {
     setGuided(false);          // a real body overrides the scripted arc
     sensor.setSource(SOURCE.LIVE);
@@ -191,27 +300,49 @@ ble.onStatus = (state, detail) => {
     sensor.setSource(SOURCE.MOCK);
     setSliderLock(false);
   }
-  showBleStatus(state, detail);
+  showWearableStatus(state, detail, detailCode);
 };
 
-$('tgBle').addEventListener('click', async () => {
-  if (ble.state === 'live' || ble.state === 'lost') { ble.disconnect(); return; }
+$('wearablePair').addEventListener('click', () => {
+  $('pairSheet').classList.add('open');
+  $('pairSheet').setAttribute('aria-hidden', 'false');
+});
+
+function closePairSheet() {
+  $('pairSheet').classList.remove('open');
+  $('pairSheet').setAttribute('aria-hidden', 'true');
+}
+
+$('pairClose').addEventListener('click', closePairSheet);
+$('pairSheet').addEventListener('click', (event) => {
+  if (event.target === $('pairSheet')) closePairSheet();
+});
+
+$('pairBluetooth').addEventListener('click', async () => {
+  closePairSheet();
   try {
-    await ble.connect();
+    await wearables.pairBluetooth();
   } catch (err) {
-    // connect() already pushed a status; nothing to add but the console trail.
-    console.warn('[ble]', err?.message || err);
+    if (err?.name !== 'NotFoundError') console.warn('[wearables]', err?.message || err);
   }
 });
 
-// Surface the "unsupported browser" case up front rather than on click.
-if (BleSensor.blockedReason) {
-  showBleStatus('error', BleSensor.blockedReason);
-  $('tgBle').disabled = true;
-  $('tgBle').style.opacity = 0.4;
-} else {
-  showBleStatus('idle');
+$('pairCompanion').addEventListener('click', async () => {
+  closePairSheet();
+  const socketUrl = new URLSearchParams(location.search).get('wearableBridge') || undefined;
+  try { await wearables.pairCompanion({ socketUrl }); }
+  catch (err) { console.warn('[wearables]', err?.message || err); }
+});
+
+$('wearableDisconnect').addEventListener('click', () => wearables.disconnect());
+
+// Bluetooth can be absent while the companion path still works, so only the
+// Bluetooth option is disabled — never the prominent general entry point.
+if (WearableHub.bluetoothBlockedCode) {
+  $('pairBluetooth').disabled = true;
+  $('pairBluetooth').style.opacity = 0.38;
 }
+showWearableStatus('idle', '', 'disconnected');
 
 // ─────────────────────────────────────────────────────────────────────────
 // Debug graphs
@@ -271,11 +402,11 @@ function drawGraphs() {
 
 /** Reading of the sand's condition, driven by the two drive metrics. */
 function stateName(cohesion, gold) {
-  if (cohesion > 0.82 && gold > 0.78) return ['寂 照', 'Samadhi'];
-  if (cohesion > 0.78) return ['鎏 金', 'Gilding'];
-  if (cohesion > 0.58) return ['成 塔', 'Rising'];
-  if (cohesion > 0.36) return ['凝 聚', 'Gathering'];
-  return ['风 沙', 'Scattered'];
+  if (cohesion > 0.82 && gold > 0.78) return 'stateSamadhi';
+  if (cohesion > 0.78) return 'stateGilding';
+  if (cohesion > 0.58) return 'stateRising';
+  if (cohesion > 0.36) return 'stateGathering';
+  return 'stateScattered';
 }
 
 let fps = 60;
@@ -289,11 +420,8 @@ function updateHud(dt) {
   $('valCohesion').textContent = d.cohesion.toFixed(2);
   $('valGold').textContent = d.goldIndex.toFixed(2);
 
-  const [cn, en] = stateName(d.cohesion, d.goldIndex);
-  if ($('stateCn').textContent !== cn) {
-    $('stateCn').textContent = cn;
-    $('stateEn').textContent = en;
-  }
+  const state = t(stateName(d.cohesion, d.goldIndex));
+  if ($('stateName').textContent !== state) $('stateName').textContent = state;
 
   // Breath guide ring — scales with the actual respiration wave.
   const s = 0.62 + (d.respWave * 0.5 + 0.5) * 0.72;
@@ -306,25 +434,25 @@ function updateHud(dt) {
   // "Erratic" would be a lie while a live strap is still learning the breath,
   // and "signal lost" is not the same statement as "your breathing is ragged".
   $('breathTxt').textContent =
-    d.stale ? '失 联 · Signal lost'
-    : d.warmup ? '校 准 · Calibrating'
-    : d.respPhase === 1 ? '入 息 · Inhale'
-    : d.respPhase === -1 ? '出 息 · Exhale'
-    : '散 · Erratic';
+    d.stale ? t('signalLost')
+    : d.warmup ? t('calibrating')
+    : d.respPhase === 1 ? t('inhale')
+    : d.respPhase === -1 ? t('exhale')
+    : t('erratic');
 
   // Panel readouts at 6 Hz — cheap, but no reason to hammer the DOM.
   hudT += dt;
   if (hudT > 1 / 6) {
     hudT = 0;
-    $('gvHr').textContent = d.hr.toFixed(1) + ' bpm';
-    $('gvHrv').textContent = d.rmssd.toFixed(1) + ' ms';
-    $('gvResp').textContent = d.respRate.toFixed(1) + ' / min';
+    $('gvHr').textContent = d.hr.toFixed(1) + ' ' + t('bpmUnit');
+    $('gvHrv').textContent = d.rmssd.toFixed(1) + ' ' + t('msUnit');
+    $('gvResp').textContent = d.respRate.toFixed(1) + ' ' + t('rateUnit');
     $('roFps').textContent = fps.toFixed(0);
-    $('roPhase').textContent = d.respPhase === 1 ? 'INHALE' : d.respPhase === -1 ? 'EXHALE' : 'ERRATIC';
+    $('roPhase').textContent = d.respPhase === 1 ? t('phaseInhale') : d.respPhase === -1 ? t('phaseExhale') : t('phaseErratic');
     $('roScore').textContent = d.respDepthScore.toFixed(3);
     $('roBeats').textContent = d.beats;
     // Staleness and battery drift without a status event, so refresh here.
-    if (d.source === SOURCE.LIVE) showBleStatus(ble.state, ble.device?.name);
+    if (d.source === SOURCE.LIVE) showWearableStatus(wearables.state, wearables.device?.name, wearables.detailCode);
     drawGraphs();
   }
 }
@@ -394,10 +522,18 @@ $('begin').addEventListener('click', () => {
 });
 
 $('panelBtn').addEventListener('click', () => $('panel').classList.toggle('open'));
+$('langBtn').addEventListener('click', () => {
+  applyLanguage(language === 'zh' ? 'en' : 'zh');
+  pushSliders();
+  showWearableStatus(wearables.state, wearables.device?.name, wearables.detailCode);
+  hudT = 1;
+  updateHud(0);
+});
 
 addEventListener('keydown', (e) => {
   if (e.key === 'd' || e.key === 'D') $('panel').classList.toggle('open');
   if (e.key === 'g' || e.key === 'G') setGuided(!guided);
+  if (e.key === 'Escape') closePairSheet();
 });
 
 function relayout() { visuals.resize(); sizeGraphs(); }
@@ -418,14 +554,22 @@ addEventListener('visibilitychange', () => {
   audio.setMuted(document.hidden || !$('tgAudio').classList.contains('on'));
 });
 
+applyLanguage(language);
+showWearableStatus(wearables.state, wearables.device?.name, wearables.detailCode);
 sizeGraphs();
 pushSliders();
 $('roCount').textContent = visuals.particleCount.toLocaleString();
+hudT = 1;
+updateHud(0);
 requestAnimationFrame(frame);
 
 // Dev hook.
-window.__sadhana = {
-  sensor, visuals, audio, ble, SensorData,
+window.__sandToStupa = {
+  sensor, visuals, audio, wearables, SensorData,
+  language: (next) => {
+    if (next) applyLanguage(next);
+    return language;
+  },
   guided: setGuided,
   /** Force the drive metrics directly, bypassing the model. */
   force(cohesion, gold) {
