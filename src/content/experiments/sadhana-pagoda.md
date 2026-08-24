@@ -7,13 +7,13 @@ titleZh: '一个环境，是否能够帮助人感知那些原本不可见的内�
 date: 2026-08-11
 lenses: [embodied-interaction, contemplative-traditions, computational-media]
 evidence: built
-status: 'Built. Simulated by default; wearable integrations implemented. Not evaluated.'
+status: 'Built. Simulated by default; direct standard-Bluetooth path implemented. Companion app not yet shipped. Not evaluated.'
 statusZh: '已造。默认使用模拟生理信号；已实现可穿戴设备接入。未做评估。'
 video: /video/exp-06-sadhana.mp4
 poster: /image/exp-06-sadhana.jpg
 demo: /demos/sadhana/
-demoNote: 'Runs with simulated biosignals by default. Pair standards-compliant wearables through Web Bluetooth, or use a companion Health integration for Apple Watch and closed consumer ecosystems. Nothing is uploaded or stored.'
-demoNoteZh: '默认使用模拟生理信号。支持通过标准蓝牙接入兼容设备；Apple Watch 与封闭消费级生态可通过伴侣应用 / 健康协议转接。所有数据均不上传、不存储。'
+demoNote: 'Runs with simulated biosignals by default. The public build can directly pair devices that expose the standard Bluetooth Heart Rate Service in a supported browser. Apple Watch and closed ecosystems require a companion app that is not yet shipped. Nothing is uploaded or stored.'
+demoNoteZh: '默认使用模拟生理信号。公开版可在兼容浏览器中直接配对开放标准蓝牙 Heart Rate Service 的设备。Apple Watch 与封闭生态所需的伴侣应用尚未提供。所有数据均不上传、不存储。'
 stack: [Three.js, Tone.js, Web Bluetooth, Health integration, GLSL]
 summary: 'Fifty thousand grains of sand gather into a Thai chedi and gild from the spire down as the sitter settles. The sitter, for now, is a model.'
 summaryZh: '五万粒沙聚成一座泰式金塔，随打坐者安定下来，自塔尖向下鎏金。而目前，那位打坐者是一个模型。'
@@ -36,7 +36,7 @@ fromAtlas: [lanna-temple-thresholds, tea-as-timing]
 followsFrom: [cosmic-pottery]
 process:
   - version: V01
-    note: 'Cohesion and gold remain independent drives. A scripted 205-second arc keeps the work demonstrable without hardware. Consumer wearables enter through standards-compliant Bluetooth or a companion Health bridge; both paths are protocol-tested, not yet evaluated with participants.'
+    note: 'Cohesion and gold remain independent drives. A scripted 205-second arc keeps the work demonstrable without hardware. The direct standard-Bluetooth path is implemented; the companion Health adapter is an integration contract and still requires a host app. Neither has been evaluated with participants.'
 study:
   subtitle:
     en: 'Responsive biofeedback environment for embodied awareness'
@@ -204,8 +204,8 @@ study:
       items: { en: 'respiration · heart rate', zh: '呼吸 · 心率' }
     - stage: { en: 'Sensing', zh: '感知' }
       items:
-        en: 'standard Bluetooth wearables · companion app / Health integration · simulated signals'
-        zh: '标准蓝牙可穿戴设备 · 伴侣应用 / 健康数据集成 · 模拟信号'
+        en: 'standard Bluetooth wearables · host-provided companion bridge · simulated signals'
+        zh: '标准蓝牙可穿戴设备 · 由宿主提供的伴侣应用桥 · 模拟信号'
     - stage: { en: 'Processing', zh: '处理' }
       items:
         en: 'signal extraction · feature calculation'
@@ -271,8 +271,8 @@ study:
         zh: '视听反馈——空间低频、颂钵、寺院钟磬'
       - en: 'Breath-guided interaction — a scripted 205-second arc that runs without a sensor attached'
         zh: '呼吸引导交互——一段 205 秒的脚本弧线，不接传感器也能运行'
-      - en: 'Consumer wearable input through the standard Bluetooth Heart Rate Service or a companion Health-integration bridge — protocol-tested, not yet evaluated in a participant session'
-        zh: '通过标准蓝牙 Heart Rate Service 或伴侣应用健康数据桥接入消费级可穿戴设备——已完成协议测试，尚未在参与者会话中评估'
+      - en: 'Direct standard-Bluetooth heart-rate input, plus a companion-bridge protocol that still requires a host app — test-harness verified, not yet evaluated in a participant session'
+        zh: '支持直接标准蓝牙心率输入，并提供仍需宿主应用的伴侣桥协议——已通过测试框架验证，尚未在参与者会话中评估'
     limitation:
       en: 'This prototype currently explores experiential possibilities. The physiology driving the running piece is a model, not a measurement: sliders set a simulated sitter’s capacity and a simulated breath decides how much of it is expressed. Further controlled studies are needed to evaluate measurable effects.'
       zh: '这个原型目前探索的是体验上的可能性。驱动运行中作品的生理是一个模型，而不是测量：滑杆设定被模拟者的容量，模拟的呼吸决定其中有多少被表达出来。要评估可测量的效果，还需要进一步的对照研究。'
@@ -339,7 +339,8 @@ reaches the audio, no audio node ever reaches the visuals.
 There are three ways to drive it. A **standards-compliant consumer wearable**
 can connect directly over Web Bluetooth when it exposes the Heart Rate Service.
 A **companion app / Health integration** can relay data from devices such as
-Apple Watch that do not expose those readings directly to the browser. Or the
+Apple Watch that do not expose those readings directly to the browser, but that
+host app has not yet shipped with the public demo. Or the
 **guided arc** can run a scripted 205-second descent from agitation to stillness,
 which is what runs on entry, and what you see in the recording above.
 
@@ -386,10 +387,12 @@ non-responsive recording of the same thing — is exactly what I have not run.
   relationship is something I have read, not something I have measured.** The
   numbers on screen are outputs of my model of a body. They are not readings
   from one.
-- **The wearable paths are tested against protocols, not against participants.**
-  The code reads the standard Heart Rate Service and accepts normalized health
-  samples from a companion bridge. Behaviour across different watches, bands,
-  rings and heart-rate monitors over a full session remains untested.
+- **The wearable paths are test-harness verified, not hardware-validated.**
+  The code exercises the standard Heart Rate Service through a faithful mock
+  chooser/GATT/notification chain and accepts normalized companion samples.
+  The public companion app is not shipped, and behaviour across physical
+  watches, bands, rings and heart-rate monitors over a full session remains
+  untested.
 - **Direct Web Bluetooth remains browser-dependent.** Chromium browsers can use
   the direct path; Safari, Apple Watch and devices that keep health data inside
   their native ecosystems require the companion-app bridge. That bridge must be

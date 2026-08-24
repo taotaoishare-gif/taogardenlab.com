@@ -32,6 +32,25 @@ export const TRANSPORT = Object.freeze({
   COMPANION: 'companion',
 });
 
+/** Convert browser-specific Bluetooth failures into stable UI messages. */
+export function bluetoothErrorCode(error) {
+  if (error?.code) return error.code;
+  switch (error?.name) {
+    case 'NotFoundError': return 'cancelled';
+    case 'NotAllowedError':
+    case 'SecurityError': return 'bluetooth_permission_denied';
+    case 'NetworkError': return 'bluetooth_connection_failed';
+    case 'InvalidStateError': return 'bluetooth_busy';
+    default: return 'pair_failed';
+  }
+}
+
+const codedError = (code) => {
+  const error = new Error(code);
+  error.code = code;
+  return error;
+};
+
 /** Decode the Bluetooth SIG Heart Rate Measurement characteristic. */
 export function parseHeartRate(dv) {
   const flags = dv.getUint8(0);
@@ -150,13 +169,25 @@ export class WearableHub {
   }
 
   static get bluetoothAvailable() {
-    return typeof navigator !== 'undefined' && !!navigator.bluetooth && !!globalThis.isSecureContext;
+    return typeof navigator !== 'undefined' &&
+      typeof navigator.bluetooth?.requestDevice === 'function' &&
+      !!globalThis.isSecureContext;
   }
 
   static get bluetoothBlockedCode() {
-    if (typeof navigator === 'undefined' || !navigator.bluetooth) return 'bluetooth_unavailable';
+    if (typeof navigator === 'undefined' ||
+        typeof navigator.bluetooth?.requestDevice !== 'function') return 'bluetooth_unavailable';
     if (!globalThis.isSecureContext) return 'secure_context_required';
     return null;
+  }
+
+  static get companionAvailable() {
+    if (typeof window === 'undefined') return false;
+    return !!(
+      window.webkit?.messageHandlers?.sandToStupaWearables?.postMessage ||
+      window.AndroidWearables?.pair ||
+      window.SandToStupaCompanionReady === true
+    );
   }
 
   get connected() { return this.state === 'live' || this.state === 'lost'; }
@@ -173,7 +204,7 @@ export class WearableHub {
     const blocked = WearableHub.bluetoothBlockedCode;
     if (blocked) {
       this._status('error', '', blocked);
-      throw new Error(blocked);
+      throw codedError(blocked);
     }
 
     this.transport = TRANSPORT.BLUETOOTH;
@@ -183,15 +214,23 @@ export class WearableHub {
         filters: [{ services: [HR_SERVICE] }],
         optionalServices: [BATTERY_SERVICE, NUS_SERVICE],
       });
+      if (!this.device?.gatt) throw codedError('gatt_unavailable');
+      this.device.addEventListener('gattserverdisconnected', () => this._onDropped());
+      await this._openGatt();
+      return this.device;
     } catch (err) {
-      const cancelled = err?.name === 'NotFoundError';
-      this._status('idle', '', cancelled ? 'cancelled' : 'pair_failed');
+      const code = bluetoothErrorCode(err);
+      const cancelled = code === 'cancelled';
       if (!cancelled) this.lastError = err;
+      try { this.device?.gatt?.disconnect(); } catch { /* connection never opened */ }
+      this.server = null;
+      if (cancelled) {
+        this.device = null;
+        this.transport = null;
+      }
+      this._status(cancelled ? 'idle' : 'error', '', code);
       throw err;
     }
-
-    this.device.addEventListener('gattserverdisconnected', () => this._onDropped());
-    await this._openGatt();
   }
 
   /**
@@ -200,11 +239,17 @@ export class WearableHub {
    * bridge rather than pretending Apple Watch is a generic BLE peripheral.
    */
   async pairCompanion({ socketUrl } = {}) {
+    if (!socketUrl && !WearableHub.companionAvailable) {
+      this.device = null;
+      this._status('error', '', 'companion_unavailable');
+      throw codedError('companion_unavailable');
+    }
+
     this.transport = TRANSPORT.COMPANION;
+    if (socketUrl) return this.connectBridgeSocket(socketUrl);
+
     this.device = { name: 'Companion App' };
     this._status('waiting', '', 'waiting_companion');
-
-    if (socketUrl) return this.connectBridgeSocket(socketUrl);
 
     const request = { type: 'sand-to-stupa:pair', protocol: 'sand-to-stupa/1' };
     try {

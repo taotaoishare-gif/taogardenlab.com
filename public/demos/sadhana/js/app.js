@@ -14,7 +14,7 @@
 import { SensorEngine, SensorData, SOURCE, clamp, lerp, calibrateTo } from './sensor.js';
 import { VisualEngine } from './visuals.js';
 import { AudioEngine } from './audio.js';
-import { WearableHub, TRANSPORT } from './wearables.js';
+import { WearableHub, TRANSPORT } from './wearables.js?v=20260825-pairing2';
 
 // Personal baseline from the existing installation calibration. Set to null
 // for an anonymous public kiosk, or provide a session baseline dynamically.
@@ -49,6 +49,7 @@ const COPY = {
     wearableEyebrow: '实时生物反馈', pairWearables: '接入可穿戴设备',
     wearableConnected: '可穿戴设备已接入', disconnect: '断开设备',
     recommendedDevices: '💡 推荐设备：支持心率带、智能手环、智能戒指、Apple Watch等支持标准蓝牙/健康协议的穿戴设备。',
+    publicAvailability: '当前公开版：标准蓝牙心率设备可直接配对；Apple Watch/健康平台伴侣应用尚未公开。',
     signals: '生理信号', heartRate: '心率', hrv: '心率变异性 · RMSSD', respiration: '呼吸',
     calibration: '模拟与校准', breathRate: '呼吸频率', breathDepth: '呼吸深度',
     stressEda: '压力 · EDA', hrvCapacity: 'HRV 潜能', restingHr: '静息心率', rmssdWindow: 'RMSSD 窗口',
@@ -56,10 +57,12 @@ const COPY = {
     fps: '帧率', particles: '粒子数', respPhase: '呼吸相位', respScore: '呼吸评分', beats: '心搏数',
     pairTitle: '选择接入方式', pairCopy: '选择你的设备能够使用的健康数据通道。',
     standardBluetooth: '标准蓝牙',
-    standardBluetoothDesc: '适用于广播标准心率服务的心率带、手环与戒指；需要 Chrome 或 Edge。',
+    standardBluetoothDesc: '适用于广播标准心率服务的心率带、手环与戒指；请使用 Android/Windows/macOS 上的 Chrome 或 Edge。',
     companionApp: '伴侣应用 / 健康协议',
-    companionAppDesc: '适用于 Apple Watch、HealthKit、Health Connect 及不开放网页蓝牙数据的消费级设备。',
-    pairTruth: 'Apple Watch 不允许网页直接读取健康数据，需要通过伴侣应用转接。',
+    companionAppDesc: '适用于 Apple Watch、HealthKit、Health Connect 及厂商封闭设备；当前公开版未提供伴侣应用。',
+    pairTruth: '真实可用范围：公开网页现在只能直连广播标准 Heart Rate Service 的蓝牙设备。',
+    bluetoothReadyBadge: '可直接配对', bluetoothUnavailableBadge: '当前不可用',
+    companionReadyBadge: '桥接可用', companionUnavailableBadge: '尚未开放',
     veilSub: '呼吸生物反馈冥想', poem: '息 深 则 沙 聚<br>脉 和 则 塔 金',
     begin: '开始静心', beginHint: '点击后开启声音',
     veilNote: '建议佩戴耳机 · 点击后开启声音<br><span class="only-touch">拖动旋转 · 双指捏合靠近<br></span>默认使用模拟生理信号 · 不调用摄像头或麦克风',
@@ -71,9 +74,17 @@ const COPY = {
     respirationUnavailable: '无连续呼吸数据', transportBluetooth: '标准蓝牙', transportCompanion: '伴侣应用',
     rateUnit: '次/分', bpmUnit: '次/分', msUnit: '毫秒', beatsUnit: '拍',
     langAria: 'Switch to English', close: '关闭',
-    detail_select_device: '请在系统窗口选择设备', detail_cancelled: '已取消', detail_pair_failed: '配对失败',
-    detail_bluetooth_unavailable: '此浏览器不支持蓝牙，请使用 Chrome 或 Edge',
+    detail_bluetooth_ready: '此浏览器支持直连。请先佩戴并唤醒心率带，关闭其他占用设备的 App，再点击进入系统选择器。',
+    detail_select_device: '正在打开系统蓝牙设备选择器…',
+    detail_cancelled: '未选择设备。请确认胸带已佩戴、电极已湿润且未被其他 App 占用。',
+    detail_pair_failed: '配对失败，请重新唤醒设备后再试。',
+    detail_bluetooth_unavailable: '当前浏览器没有 Web Bluetooth。请复制本页地址，用 Android/Windows/macOS 上的 Chrome 或 Edge 打开；iPhone/iPad 无法网页直连。',
     detail_secure_context_required: '蓝牙需要 HTTPS 或 localhost', detail_waiting_companion: '等待伴侣应用发送健康数据',
+    detail_bluetooth_permission_denied: '蓝牙权限被拒绝。请在浏览器或系统设置中允许蓝牙访问后重试。',
+    detail_bluetooth_connection_failed: '已选中设备，但无法打开心率数据。请关闭厂商 App/其他手机连接，然后重启胸带。',
+    detail_bluetooth_busy: '浏览器正在处理另一个蓝牙请求，请关闭其它配对窗口后重试。',
+    detail_gatt_unavailable: '该设备未向网页提供可连接的 GATT 心率服务。',
+    detail_companion_unavailable: '伴侣应用/健康桥尚未在公开版提供；此按钮不再伪装成已连接。',
     detail_opening_bridge: '正在打开健康数据桥', detail_waiting_data: '健康桥已连接，等待数据',
     detail_bridge_url_invalid: '健康桥地址无效', detail_bridge_failed: '健康桥连接失败', detail_bridge_closed: '健康桥已断开',
     detail_opening_bluetooth: '正在连接蓝牙设备', detail_contact_lost: '请确认设备已正确佩戴',
@@ -88,6 +99,7 @@ const COPY = {
     wearableEyebrow: 'Live Biofeedback', pairWearables: 'Pair Wearables',
     wearableConnected: 'Wearable Connected', disconnect: 'Disconnect Device',
     recommendedDevices: '💡 Recommended Devices: Supports smart bands, heart rate monitors, smart rings, and Apple Watch (via companion app) compatible with standard Bluetooth or Health integration protocols.',
+    publicAvailability: 'Public build today: standard Bluetooth heart-rate devices can pair directly; the Apple Watch / Health companion app is not yet released.',
     signals: 'Physiological Signals', heartRate: 'Heart Rate', hrv: 'Heart Rate Variability · RMSSD', respiration: 'Respiration',
     calibration: 'Simulation & Calibration', breathRate: 'Breath Rate', breathDepth: 'Breath Depth',
     stressEda: 'Stress · EDA', hrvCapacity: 'HRV Capacity', restingHr: 'Resting Heart Rate', rmssdWindow: 'RMSSD Window',
@@ -95,10 +107,12 @@ const COPY = {
     fps: 'FPS', particles: 'Particles', respPhase: 'Respiration Phase', respScore: 'Respiration Score', beats: 'Beats',
     pairTitle: 'Choose a Connection', pairCopy: 'Select the health-data path available to your device.',
     standardBluetooth: 'Standard Bluetooth',
-    standardBluetoothDesc: 'For heart rate monitors, bands, and rings that broadcast the standard Heart Rate Service. Chrome or Edge required.',
+    standardBluetoothDesc: 'For devices broadcasting the standard Heart Rate Service. Use Chrome or Edge on Android, Windows, or macOS.',
     companionApp: 'Companion App / Health Integration',
-    companionAppDesc: 'For Apple Watch, HealthKit, Health Connect, and consumer devices that do not expose health data to web Bluetooth.',
-    pairTruth: 'Apple Watch does not allow a webpage to read Health data directly; it connects through a companion app.',
+    companionAppDesc: 'For Apple Watch, HealthKit, Health Connect, and vendor-locked devices. The public companion app is not yet available.',
+    pairTruth: 'Actual availability: this public webpage currently connects only to Bluetooth devices that advertise the standard Heart Rate Service.',
+    bluetoothReadyBadge: 'Direct pairing ready', bluetoothUnavailableBadge: 'Unavailable here',
+    companionReadyBadge: 'Bridge detected', companionUnavailableBadge: 'Not released',
     veilSub: 'A Biofeedback Meditation',
     poem: 'With each deep breath, sand gathers<br>With each steady pulse, the stupa turns gold',
     begin: 'Begin Meditation', beginHint: 'Sound begins after this gesture',
@@ -111,9 +125,17 @@ const COPY = {
     respirationUnavailable: 'Continuous respiration unavailable', transportBluetooth: 'Standard Bluetooth', transportCompanion: 'Companion App',
     rateUnit: '/ min', bpmUnit: 'bpm', msUnit: 'ms', beatsUnit: 'beats',
     langAria: '切换至中文', close: 'Close',
-    detail_select_device: 'Choose a device in the system dialog', detail_cancelled: 'Cancelled', detail_pair_failed: 'Pairing failed',
-    detail_bluetooth_unavailable: 'Web Bluetooth is unavailable; use Chrome or Edge',
+    detail_bluetooth_ready: 'Direct pairing is supported here. Wear and wake the monitor, close any app already using it, then open the system device chooser.',
+    detail_select_device: 'Opening the system Bluetooth device chooser…',
+    detail_cancelled: 'No device was selected. Ensure the monitor is worn, its electrodes are moist, and no other app is using it.',
+    detail_pair_failed: 'Pairing failed. Wake the device and try again.',
+    detail_bluetooth_unavailable: 'This browser has no Web Bluetooth. Open this URL in Chrome or Edge on Android, Windows, or macOS. iPhone and iPad cannot pair directly from a webpage.',
     detail_secure_context_required: 'Bluetooth requires HTTPS or localhost', detail_waiting_companion: 'Waiting for health data from the companion app',
+    detail_bluetooth_permission_denied: 'Bluetooth permission was denied. Allow Bluetooth for the browser in browser or system settings, then retry.',
+    detail_bluetooth_connection_failed: 'The device was selected, but its heart-rate stream could not be opened. Disconnect vendor apps or other phones, then restart the monitor.',
+    detail_bluetooth_busy: 'Another Bluetooth request is active. Close the other chooser and retry.',
+    detail_gatt_unavailable: 'This device did not expose a connectable GATT heart-rate service to the webpage.',
+    detail_companion_unavailable: 'The companion Health bridge is not shipped in this public build; this option no longer pretends to be connected.',
     detail_opening_bridge: 'Opening the health-data bridge', detail_waiting_data: 'Health bridge connected; waiting for data',
     detail_bridge_url_invalid: 'Invalid health bridge URL', detail_bridge_failed: 'Health bridge connection failed', detail_bridge_closed: 'Health bridge disconnected',
     detail_opening_bluetooth: 'Opening the Bluetooth connection', detail_contact_lost: 'Check that the device is being worn correctly',
@@ -145,6 +167,10 @@ function applyLanguage(next) {
   $('langBtn').setAttribute('aria-label', t('langAria'));
   $('pairClose').setAttribute('aria-label', t('close'));
   if ($('sWin')) $('lbWin').textContent = $('sWin').value + ' ' + t('beatsUnit');
+  if ($('bluetoothBadge')) updatePairingSupport();
+  if ($('pairFeedback')?.classList.contains('visible') && pairFeedbackCode) {
+    setPairFeedback(pairFeedbackCode, pairFeedbackTone);
+  }
   try { localStorage.setItem('sand-to-stupa-language', language); } catch { /* kiosk storage may be disabled */ }
 }
 
@@ -247,6 +273,9 @@ $('tgAudio').addEventListener('click', () => {
  * do not expose a universal EDA stream.
  */
 const LIVE_OVERRIDES = ['breath', 'depth', 'hrv', 'hr'];
+const companionSocketUrl = new URLSearchParams(location.search).get('wearableBridge') || undefined;
+let pairFeedbackCode = '';
+let pairFeedbackTone = 'info';
 
 function setSliderLock(locked) {
   for (const key of LIVE_OVERRIDES) {
@@ -258,6 +287,32 @@ function setSliderLock(locked) {
 const escapeHtml = (value) => String(value).replace(/[&<>'"]/g, (char) => ({
   '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;',
 }[char]));
+
+function setPairFeedback(code, tone = 'info') {
+  pairFeedbackCode = code;
+  pairFeedbackTone = tone;
+  const el = $('pairFeedback');
+  const key = `detail_${code}`;
+  el.textContent = t(key) === key ? t('detail_pair_failed') : t(key);
+  el.dataset.tone = tone;
+  el.classList.add('visible');
+}
+
+function updatePairingSupport() {
+  const blocked = WearableHub.bluetoothBlockedCode;
+  $('pairBluetooth').classList.toggle('unavailable', !!blocked);
+  $('bluetoothBadge').textContent = t(blocked ? 'bluetoothUnavailableBadge' : 'bluetoothReadyBadge');
+
+  const companionReady = !!companionSocketUrl || WearableHub.companionAvailable;
+  $('pairCompanion').classList.toggle('unavailable', !companionReady);
+  $('companionBadge').textContent = t(companionReady ? 'companionReadyBadge' : 'companionUnavailableBadge');
+}
+
+function setPairBusy(busy) {
+  $('pairBluetooth').disabled = busy;
+  $('pairCompanion').disabled = busy;
+  $('pairClose').disabled = busy;
+}
 
 function showWearableStatus(state, detail = wearables.detail, detailCode = wearables.detailCode) {
   const el = $('wearableStatus');
@@ -301,9 +356,16 @@ wearables.onStatus = (state, detail, detailCode) => {
     setSliderLock(false);
   }
   showWearableStatus(state, detail, detailCode);
+  if ($('pairSheet').classList.contains('open') && detailCode) {
+    const tone = state === 'error' ? 'error' : state === 'live' ? 'success' : 'info';
+    setPairFeedback(detailCode, tone);
+  }
 };
 
 $('wearablePair').addEventListener('click', () => {
+  updatePairingSupport();
+  const blocked = WearableHub.bluetoothBlockedCode;
+  setPairFeedback(blocked || 'bluetooth_ready', blocked ? 'error' : 'info');
   $('pairSheet').classList.add('open');
   $('pairSheet').setAttribute('aria-hidden', 'false');
 });
@@ -319,29 +381,34 @@ $('pairSheet').addEventListener('click', (event) => {
 });
 
 $('pairBluetooth').addEventListener('click', async () => {
-  closePairSheet();
+  setPairBusy(true);
   try {
     await wearables.pairBluetooth();
+    closePairSheet();
   } catch (err) {
-    if (err?.name !== 'NotFoundError') console.warn('[wearables]', err?.message || err);
+    if (wearables.detailCode === 'pair_failed') console.warn('[wearables]', err?.message || err);
+  } finally {
+    setPairBusy(false);
   }
 });
 
 $('pairCompanion').addEventListener('click', async () => {
-  closePairSheet();
-  const socketUrl = new URLSearchParams(location.search).get('wearableBridge') || undefined;
-  try { await wearables.pairCompanion({ socketUrl }); }
-  catch (err) { console.warn('[wearables]', err?.message || err); }
+  setPairBusy(true);
+  try {
+    await wearables.pairCompanion({ socketUrl: companionSocketUrl });
+    closePairSheet();
+  } catch (err) {
+    if (wearables.detailCode !== 'companion_unavailable') console.warn('[wearables]', err?.message || err);
+  } finally {
+    setPairBusy(false);
+  }
 });
 
 $('wearableDisconnect').addEventListener('click', () => wearables.disconnect());
 
-// Bluetooth can be absent while the companion path still works, so only the
-// Bluetooth option is disabled — never the prominent general entry point.
-if (WearableHub.bluetoothBlockedCode) {
-  $('pairBluetooth').disabled = true;
-  $('pairBluetooth').style.opacity = 0.38;
-}
+// Never turn unsupported paths into dead buttons. A click now produces an
+// explicit, actionable explanation in the pairing sheet.
+updatePairingSupport();
 showWearableStatus('idle', '', 'disconnected');
 
 // ─────────────────────────────────────────────────────────────────────────

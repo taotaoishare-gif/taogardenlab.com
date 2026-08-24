@@ -312,6 +312,12 @@
     font-size:8px; line-height:1.8; letter-spacing:.035em;
   }
   html[lang="en"] .wearable-note{ font-family:var(--en); line-height:1.65; letter-spacing:.02em; }
+  .wearable-availability{
+    margin-top:9px; padding-top:9px; border-top:1px solid rgba(112,214,189,.13);
+    color:rgba(255,208,136,.62); font-family:var(--cn); font-size:8px;
+    line-height:1.75; letter-spacing:.025em;
+  }
+  html[lang="en"] .wearable-availability{ font-family:var(--en); }
   #wearableStatus{ margin-top:12px; color:rgba(112,214,189,.65); }
   #wearableStatus span{ color:var(--wear); }
   #wearableDisconnect{
@@ -337,14 +343,31 @@
   html[lang="en"] .pair-title{ font-family:var(--display); font-size:27px; letter-spacing:.04em; }
   .pair-copy{ margin:10px 0 22px; color:var(--fog-dim); font-size:9px; line-height:1.8; letter-spacing:.04em; }
   .pair-option{
-    width:100%; display:block; margin-top:10px; padding:17px 18px;
+    position:relative; width:100%; display:block; margin-top:10px; padding:17px 118px 17px 18px;
     border:1px solid rgba(232,220,198,.14); background:rgba(232,220,198,.025);
     color:var(--fog); text-align:left; cursor:pointer; transition:border-color .3s,background .3s;
   }
   .pair-option:hover{ border-color:var(--wear); background:rgba(112,214,189,.07); }
+  .pair-option.unavailable{ border-color:rgba(255,174,112,.20); }
   .pair-option strong{ display:block; font:400 12px var(--cn); letter-spacing:.15em; }
   html[lang="en"] .pair-option strong{ font:500 9px var(--en); letter-spacing:.16em; text-transform:uppercase; }
   .pair-option small{ display:block; margin-top:7px; color:var(--fog-dim); font:8px var(--en); line-height:1.6; letter-spacing:.02em; }
+  .pair-badge{
+    position:absolute; top:17px; right:16px; max-width:92px; color:var(--wear);
+    font:7px var(--en); line-height:1.35; letter-spacing:.12em; text-align:right;
+    text-transform:uppercase;
+  }
+  .pair-option.unavailable .pair-badge{ color:#e2a36f; }
+  .pair-feedback{
+    display:none; margin-top:14px; padding:12px 14px; border-left:2px solid var(--wear);
+    background:rgba(112,214,189,.055); color:rgba(210,235,226,.72);
+    font:8px var(--en); line-height:1.75; letter-spacing:.025em;
+  }
+  .pair-feedback.visible{ display:block; }
+  .pair-feedback[data-tone="error"]{
+    border-left-color:#d58c62; background:rgba(213,140,98,.06); color:#e2b394;
+  }
+  .pair-feedback[data-tone="success"]{ color:#b9f0df; }
   .pair-close{
     position:absolute; top:14px; right:14px; width:34px; height:34px;
     border:0; background:none; color:var(--fog-dim); cursor:pointer; font-size:19px;
@@ -388,6 +411,8 @@
     #topActions{ top:calc(10px + var(--sa-t)); right:calc(10px + var(--sa-r)); gap:6px; }
     #panel{ padding-left:22px; padding-right:22px; }
     .pair-dialog{ padding:28px 22px 24px; }
+    .pair-option{ padding:17px 18px; }
+    .pair-badge{ position:static; display:block; max-width:none; margin-top:10px; text-align:left; }
   }
 
   /* Landscape phone: almost no vertical room, so the veil has to compress
@@ -453,6 +478,7 @@
     <div class="wearable-eyebrow" data-i18n="wearableEyebrow">实时生物反馈</div>
     <button id="wearablePair" data-i18n="pairWearables">接入可穿戴设备</button>
     <p class="wearable-note" data-i18n="recommendedDevices">💡 推荐设备：支持心率带、智能手环、智能戒指、Apple Watch等支持标准蓝牙/健康协议的穿戴设备。</p>
+    <p class="wearable-availability" data-i18n="publicAvailability">当前公开版：标准蓝牙心率设备可直接配对；Apple Watch/健康平台伴侣应用尚未公开。</p>
     <div class="readout" id="wearableStatus">数据源 <span>模拟</span></div>
     <button id="wearableDisconnect" data-i18n="disconnect">断开设备</button>
   </div>
@@ -558,11 +584,14 @@
     <button class="pair-option" id="pairBluetooth">
       <strong data-i18n="standardBluetooth">标准蓝牙</strong>
       <small data-i18n="standardBluetoothDesc">适用于广播标准心率服务的心率带、手环与戒指；需要 Chrome 或 Edge。</small>
+      <span class="pair-badge" id="bluetoothBadge">正在检测</span>
     </button>
     <button class="pair-option" id="pairCompanion">
       <strong data-i18n="companionApp">伴侣应用 / 健康协议</strong>
       <small data-i18n="companionAppDesc">适用于 Apple Watch、HealthKit、Health Connect 及不开放网页蓝牙数据的消费级设备。</small>
+      <span class="pair-badge" id="companionBadge">需要伴侣应用</span>
     </button>
+    <div class="pair-feedback" id="pairFeedback" role="status" aria-live="polite"></div>
     <div class="pair-truth" data-i18n="pairTruth">Apple Watch 不允许网页直接读取健康数据，需要通过伴侣应用转接。</div>
   </div>
 </div>
@@ -588,7 +617,7 @@
   }
 }
 </script>
-<script type="module" src="./js/app.js"></script>
+<script type="module" src="./js/app.js?v=20260825-pairing2"></script>
 
 </body>
 </html>
