@@ -115,6 +115,25 @@ export function selectSoundState({ cohesion, goldIndex, edaNorm, respPhase }) {
   };
 }
 
+/**
+ * Continuous breath guide derived from the -1..1 respiration wave.
+ * Inhale rises from dark/close to bright/focused; exhale returns to a wider,
+ * softer room. The smoothstep curve makes both turning points unhurried.
+ */
+export function breathGuideTargets(respWave, respPhase, cohesion) {
+  if (respPhase === 0) {
+    return { filter: 340, gain: 0.32, chorusWet: 0.36, width: 0.58 };
+  }
+  const x = clamp(respWave * 0.5 + 0.5);
+  const open = x * x * (3 - 2 * x);
+  return {
+    filter: lerp(240, lerp(1120, 1480, cohesion), open),
+    gain: lerp(0.4, lerp(0.62, 0.7, cohesion), open),
+    chorusWet: lerp(0.58, 0.18, open),
+    width: lerp(0.9, 0.34, open),
+  };
+}
+
 // ─────────────────────────────────────────────────────────────────────────
 // One singing-bowl voice: four sines, four envelopes, four LFOs
 // ─────────────────────────────────────────────────────────────────────────
@@ -252,23 +271,25 @@ export class AudioEngine {
 
   // ── 1. THE MANTRA DRONE (梵音) ───────────────────────────────────────
   /**
-   * Deep monastic chant. Built from detuned triangles at A1 plus a fifth,
+   * Deep monastic chant. Built from clean, band-limited additive voices at
+   * A1 plus a fifth. Their richer but finite overtone set restores the clear
+   * inhale/exhale bloom of version one without restoring broadband saw edges,
    * with a softly modulated FM voice for the edge of throat singing, then coloured
    * by a parallel formant bank so it reads as a human "Om" rather than a
    * synth bass.
    */
   _buildDrone() {
-    this.droneSum = new Tone.Gain(0.19);
+    this.droneSum = new Tone.Gain(0.21);
 
     // A1 = 55 Hz fundamental, one voice detuned ±7 cents for chorus beating,
     // plus E2 (55 × 1.5) — the open fifth that Gyuto chant sits on.
+    const chantPartials = [1, 0.42, 0.24, 0.15, 0.1, 0.065, 0.04, 0.025];
     this.droneOscs = [
-      // Triangle waves retain the odd harmonics needed by the formant bank,
-      // without the broadband edge of sawtooths that read as mains/static
-      // noise on laptop speakers and consumer earbuds.
-      new Tone.Oscillator({ frequency: 55.0, type: 'triangle', detune: -7 }),
-      new Tone.Oscillator({ frequency: 55.0, type: 'triangle', detune: +7 }),
-      new Tone.Oscillator({ frequency: 82.5, type: 'triangle', detune: +3 }),
+      // A finite additive spectrum gives the low-pass filter audible colour
+      // to open and close, while remaining free of sawtooth broadband fizz.
+      new Tone.Oscillator({ frequency: 55.0, type: 'custom', partials: chantPartials, detune: -7 }),
+      new Tone.Oscillator({ frequency: 55.0, type: 'custom', partials: chantPartials, detune: +7 }),
+      new Tone.Oscillator({ frequency: 82.5, type: 'custom', partials: chantPartials.slice(0, 6), detune: +3 }),
       new Tone.Oscillator({ frequency: 110.0, type: 'sine' }), // octave, steadies the pitch
     ];
     this.droneOscs.forEach((o) => { o.connect(this.droneSum); o.start(); });
@@ -402,44 +423,28 @@ export class AudioEngine {
    * @param {object} m
    *   cohesion, goldIndex, edaNorm — 0..1
    *   respPhase                    — 1 inhale / -1 exhale / 0 erratic
+   *   respWave                     — continuous -1..1 breath guide curve
    *   dt                           — seconds since last frame
    */
   update(m) {
     if (!this.ready || this.muted) return;
-    const { cohesion, goldIndex, edaNorm, respPhase, dt } = m;
+    const { cohesion, goldIndex, edaNorm, respPhase, respWave = 0, dt } = m;
     const soundState = selectSoundState({ cohesion, goldIndex, edaNorm, respPhase });
-
-    // ── Breath → drone. Only re-ramp on an actual phase CHANGE. ────────
-    if (respPhase !== this._lastPhase) {
-      this._lastPhase = respPhase;
-      if (respPhase === 1) {
-        // INHALE — open the valve, let the overtones bloom, narrow the image.
-        this._smooth('drone-filter', this.droneFilter.frequency, lerp(520, 1500, cohesion), 2.2, 18);
-        this._smooth('chorus-wet', this.chorus.wet, 0.18, 2.2);
-        this._smooth('stereo-width', this.widener.width, 0.34, 2.2);
-        this._smooth('drone-out', this.droneOut.gain, lerp(0.42, 0.64, cohesion), 2.2);
-      } else if (respPhase === -1) {
-        // EXHALE — close the valve, but widen and deepen: the sound stops
-        // getting brighter and starts getting *bigger*. Reads as release.
-        this._smooth('drone-filter', this.droneFilter.frequency, lerp(180, 320, cohesion), 3.0, 18);
-        // Chorus depth is fixed because changing it directly introduces a
-        // discontinuity. Ramping the wet path gives the same expansion cleanly.
-        this._smooth('chorus-wet', this.chorus.wet, 0.58, 3.0);
-        this._smooth('stereo-width', this.widener.width, 0.9, 3.0);
-        this._smooth('drone-out', this.droneOut.gain, lerp(0.38, 0.56, cohesion), 3.0);
-      } else {
-        // ERRATIC — the drone loses its centre.
-        this._smooth('drone-filter', this.droneFilter.frequency, 340, 1.5, 18);
-        this._smooth('chorus-wet', this.chorus.wet, 0.36, 1.5);
-        this._smooth('stereo-width', this.widener.width, 0.58, 1.5);
-        this._smooth('drone-out', this.droneOut.gain, 0.3, 1.5);
-      }
-    }
 
     // ── Throttled continuous params ───────────────────────────────────
     this._paramT += dt;
     if (this._paramT > 1 / 4) {
       this._paramT = 0;
+
+      // Version-one breathing behaviour, now driven by the full waveform
+      // instead of only changing at phase boundaries. This makes the sound
+      // itself a regular practice cue: brighten and gather on inhale, darken
+      // and widen on the longer exhale.
+      const guide = breathGuideTargets(respWave, respPhase, cohesion);
+      this._smooth('drone-filter', this.droneFilter.frequency, guide.filter, 0.42, 24);
+      this._smooth('chorus-wet', this.chorus.wet, guide.chorusWet, 0.48, 0.025);
+      this._smooth('stereo-width', this.widener.width, guide.width, 0.48, 0.025);
+      this._smooth('drone-out', this.droneOut.gain, guide.gain, 0.42, 0.018);
 
       // Chaos crossfade. `edaNorm > 0.6` per spec — normalised, i.e. EDA 6/10.
       const chaosWanted = soundState.turbulence;

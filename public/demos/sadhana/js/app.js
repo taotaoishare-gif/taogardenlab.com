@@ -13,7 +13,8 @@
 
 import { SensorEngine, SensorData, SOURCE, clamp, lerp, calibrateTo } from './sensor.js';
 import { VisualEngine } from './visuals.js';
-import { AudioEngine } from './audio.js?v=20260825-audio2';
+import { AudioEngine } from './audio.js?v=20260825-audio3';
+import { BreathGuide } from './breath-guide.js?v=20260825-audio3';
 import { WearableHub, TRANSPORT } from './wearables.js?v=20260825-pairing2';
 
 // Personal baseline from the existing installation calibration. Set to null
@@ -30,11 +31,13 @@ const sensor = new SensorEngine();
 const visuals = new VisualEngine($('stage'));
 const audio = new AudioEngine();
 const wearables = new WearableHub();
+const breathGuide = new BreathGuide(4, 6); // 6 breaths/min; longer exhale
 
 let running = false;
 let last = performance.now();
 let guided = false;
 let guidedT = 0;
+let breathCue = breathGuide.state;
 
 // ─────────────────────────────────────────────────────────────────────────
 // Language — one language at a time, never mixed labels
@@ -253,6 +256,7 @@ function runGuided(dt) {
 function setGuided(on) {
   guided = on;
   guidedT = 0;
+  if (on) breathCue = breathGuide.reset();
   $('tgGuided').classList.toggle('on', on);
 }
 
@@ -490,18 +494,22 @@ function updateHud(dt) {
   const state = t(stateName(d.cohesion, d.goldIndex));
   if ($('stateName').textContent !== state) $('stateName').textContent = state;
 
-  // Breath guide ring — scales with the actual respiration wave.
-  const s = 0.62 + (d.respWave * 0.5 + 0.5) * 0.72;
+  // In guided mode this is the regular 4 s inhale / 6 s exhale cue. Outside
+  // guided mode it returns to mirroring the participant's measured breath.
+  const cueWave = guided ? breathCue.wave : d.respWave;
+  const cuePhase = guided ? breathCue.phase : d.respPhase;
+  const s = 0.62 + (cueWave * 0.5 + 0.5) * 0.72;
   const ring = $('breathRing');
   ring.style.transform = `scale(${s.toFixed(3)})`;
   ring.style.borderColor =
-    d.respPhase === 1 ? 'rgba(216,177,105,.75)'
-    : d.respPhase === -1 ? 'rgba(127,201,168,.55)'
+    cuePhase === 1 ? 'rgba(216,177,105,.75)'
+    : cuePhase === -1 ? 'rgba(127,201,168,.55)'
     : 'rgba(232,220,198,.18)';
   // "Erratic" would be a lie while a live strap is still learning the breath,
   // and "signal lost" is not the same statement as "your breathing is ragged".
   $('breathTxt').textContent =
-    d.stale ? t('signalLost')
+    guided ? (cuePhase === 1 ? t('inhale') : t('exhale'))
+    : d.stale ? t('signalLost')
     : d.warmup ? t('calibrating')
     : d.respPhase === 1 ? t('inhale')
     : d.respPhase === -1 ? t('exhale')
@@ -541,6 +549,12 @@ function frame(now) {
   // 1 ── physiology
   const d = sensor.update(dt);
 
+  // A practice cue must not inherit an agitated sensor phase. Guided mode
+  // supplies its own stable 4:6 cycle; manual/live modes follow the body.
+  breathCue = guided
+    ? breathGuide.update(dt)
+    : { phase: d.respPhase, wave: d.respWave };
+
   // 2 ── graphics: cohesion and goldIndex become shader uniforms
   visuals.update(dt, {
     cohesion: d.cohesion,
@@ -554,7 +568,8 @@ function frame(now) {
     cohesion: d.cohesion,
     goldIndex: d.goldIndex,
     edaNorm: d.edaNorm,
-    respPhase: d.respPhase,
+    respPhase: breathCue.phase,
+    respWave: breathCue.wave,
     dt,
   });
 
