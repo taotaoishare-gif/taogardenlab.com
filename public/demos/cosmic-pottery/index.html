@@ -16,11 +16,11 @@
 <script src="/vendor/mediapipe/hands/hands.js"></script>
 <style>
   :root{
-    --jade:#9fc8b4;
-    --jade-hi:#cfead9;
-    --jade-dim:rgba(159,200,180,.55);
-    --ink:#dbe7e0;
-    --line:rgba(159,200,180,.34);
+    --jade:#c8a45f;
+    --jade-hi:#f1d99a;
+    --jade-dim:rgba(200,164,95,.55);
+    --ink:#eee7d7;
+    --line:rgba(200,164,95,.34);
     --sans:"Futura","Century Gothic","Avenir Next","Helvetica Neue",sans-serif;
     --serif:Georgia,"Times New Roman",serif;
     --cn:"Songti SC","STSong","Noto Serif SC","SimSun",serif;
@@ -35,11 +35,11 @@
   video#cam{ position:fixed; left:22px; bottom:86px; width:128px; height:72px;
     object-fit:cover; transform:scaleX(-1); opacity:.28; border-radius:2px;
     border:1px solid var(--line); filter:grayscale(.6) hue-rotate(70deg);
-    display:none; pointer-events:none; z-index:6; }
+    display:none !important; visibility:hidden !important; pointer-events:none; z-index:6; }
 
   /* ———— HUD ———— */
   .hud{ position:fixed; z-index:8; color:var(--ink); pointer-events:none; }
-  #title{ top:40px; right:40px; text-align:right; }
+  #title{ top:40px; left:40px; text-align:left; }
   #title .wm{ font-family:var(--sans); font-size:12px; letter-spacing:.5em;
     text-indent:.5em; color:var(--jade); opacity:.9; }
   #title .cn{ font-family:var(--cn); font-size:15px; letter-spacing:.34em;
@@ -63,6 +63,7 @@
   #ctrl .privacy{ font-size:9px; letter-spacing:.14em; opacity:.34; margin-bottom:10px;
     font-family:var(--sans); }
   #ctrl .btns{ display:flex; gap:9px; justify-content:flex-end; }
+  #btnMirror,#btnMode,#btnMute,#ctrl .privacy{ display:none !important; }
   .cbtn{ pointer-events:auto; cursor:pointer; background:rgba(12,20,17,.4);
     border:1px solid var(--line); color:var(--ink);
     font-family:var(--sans); font-size:10.5px; letter-spacing:.24em; text-indent:.24em;
@@ -71,23 +72,23 @@
   .cbtn:hover{ border-color:var(--jade-hi); color:var(--jade-hi); }
   .cbtn.off{ opacity:.4; }
 
-  #ver{ left:40px; top:40px; font-size:9px; letter-spacing:.36em; opacity:.32;
+  #ver{ display:none; left:40px; top:40px; font-size:9px; letter-spacing:.36em; opacity:.32;
     font-family:var(--sans); }
 
   /* ———— 语言切换 ———— */
   .lang{ position:fixed; z-index:22; pointer-events:auto; display:flex; gap:2px;
     align-items:center; font-family:var(--sans); font-size:11px; letter-spacing:.2em; }
-  #langHud{ top:38px; left:50%; transform:translateX(-50%); }
+  #langHud{ top:36px; right:34px; }
   .lang span{ cursor:pointer; color:var(--ink); opacity:.4; padding:3px 7px;
     transition:opacity .25s,color .25s; }
-  .lang span.on{ opacity:1; color:var(--jade-hi); }
+  .lang span.on{ opacity:1; color:var(--jade-hi); border-bottom:1px solid currentColor; }
   .lang .sep{ opacity:.25; cursor:default; padding:0; }
 
   /* ———— 入场帷幕 ———— */
   #veil{ position:fixed; inset:0; z-index:20; display:flex; flex-direction:column;
     align-items:center; justify-content:center; cursor:default;
     background:
-      radial-gradient(70% 55% at 50% 42%, rgba(60,110,92,.14), rgba(60,110,92,0) 62%),
+      radial-gradient(70% 55% at 50% 42%, rgba(128,94,38,.16), rgba(128,94,38,0) 62%),
       linear-gradient(180deg,#060b09 0%, #040706 56%, #050908 100%);
     transition:opacity 1.5s ease; }
   #veil.gone{ opacity:0; pointer-events:none; }
@@ -96,23 +97,24 @@
   #veil .vinner{ position:relative; display:flex; flex-direction:column;
     align-items:center; z-index:2; }
   #veil .vlogo{ width:78px; height:78px; margin-bottom:40px; }
-  #veil h1{ font-family:var(--cn); font-size:clamp(34px,5vw,52px); font-weight:400;
+  #veil h1{ font-family:var(--sans); font-size:clamp(28px,4vw,46px); font-weight:400;
     color:var(--jade-hi); letter-spacing:.42em; text-indent:.42em;
-    text-shadow:0 0 30px rgba(159,200,180,.35); }
-  #veil .vword{ font-family:var(--sans); font-size:14px; letter-spacing:.62em;
+    text-shadow:0 0 30px rgba(200,164,95,.35); }
+  #veil .vword{ font-family:var(--cn); font-size:14px; letter-spacing:.62em;
     text-indent:.62em; color:var(--jade); opacity:.85; margin-top:24px; }
   #veil .vtag{ font-family:var(--serif); font-style:italic; font-size:15px;
     letter-spacing:.06em; color:var(--ink); opacity:.72; margin-top:40px;
     line-height:2; text-align:center; max-width:30em; }
-  #veil .vtag2{ font-family:var(--cn); font-size:12.5px; letter-spacing:.24em;
-    color:var(--ink); opacity:.5; margin-top:12px; text-align:center; }
+  #veil .vtag2{ font-family:var(--serif); font-size:11.5px; letter-spacing:.08em;
+    color:var(--ink); opacity:.5; margin-top:12px; text-align:center;
+    line-height:1.8; max-width:44em; }
   #veil .vbtns{ display:flex; gap:20px; margin-top:52px; }
   .vbtn{ cursor:pointer; background:transparent; border:1px solid var(--jade-dim);
     color:var(--ink); font-family:var(--sans); font-size:12px;
     letter-spacing:.34em; text-indent:.34em; padding:16px 38px; border-radius:1px;
     transition:all .3s; }
   .vbtn:hover{ border-color:var(--jade-hi); color:var(--jade-hi);
-    box-shadow:0 0 26px rgba(159,200,180,.18); }
+    box-shadow:0 0 26px rgba(200,164,95,.18); }
   .vbtn small{ display:block; font-family:var(--cn); font-size:10px; letter-spacing:.18em;
     text-indent:.18em; opacity:.5; margin-top:8px; }
   #veil .vpriv{ font-family:var(--sans); font-size:9px; letter-spacing:.16em;
@@ -132,14 +134,14 @@
     background:rgba(4,7,6,.9); backdrop-filter:blur(9px); cursor:default; }
   #posterWrap.on{ display:flex; }
   #posterCvs{ max-height:78vh; max-width:88vw; border:1px solid var(--line);
-    box-shadow:0 8px 70px rgba(0,0,0,.85), 0 0 46px rgba(159,200,180,.06); }
+    box-shadow:0 8px 70px rgba(0,0,0,.85), 0 0 46px rgba(200,164,95,.06); }
   #posterWrap .pbtns{ display:flex; gap:16px; }
   .pbtn{ cursor:pointer; background:rgba(12,20,17,.5);
     border:1px solid var(--jade-dim); color:var(--ink);
     font-family:var(--sans); font-size:11px; letter-spacing:.3em; text-indent:.3em;
     padding:12px 28px; border-radius:1px; transition:all .3s; }
   .pbtn:hover{ border-color:var(--jade-hi); color:var(--jade-hi);
-    box-shadow:0 0 20px rgba(159,200,180,.18); }
+    box-shadow:0 0 20px rgba(200,164,95,.18); }
   #posterWrap .pcap{ font-family:var(--serif); font-style:italic; font-size:11px;
     letter-spacing:.14em; color:var(--ink); opacity:.42; }
 </style>
@@ -181,7 +183,7 @@
 </div>
 
 <div id="veil">
-  <svg class="vframe" viewBox="0 0 100 100" fill="none" stroke="#6fae95" stroke-linejoin="round">
+  <svg class="vframe" viewBox="0 0 100 100" fill="none" stroke="#c8a45f" stroke-linejoin="round">
     <path d="M96,68.6 L68.6,96 L31.4,96 L4,68.6 L4,31.4 L31.4,4 L68.6,4 L96,31.4 Z" stroke-width="0.5" opacity="0.4"/>
     <path d="M84,62 L62,84 L38,84 L16,62 L16,38 L38,16 L62,16 L84,38 Z" stroke-width="0.4" opacity="0.26"/>
     <line x1="50" y1="4" x2="50" y2="96" stroke-width="0.35" opacity="0.18"/>
@@ -197,13 +199,13 @@
   <div class="vinner">
     <svg class="vlogo" viewBox="0 0 100 100" fill="none">
       <path d="M92.5,67.6 L67.6,92.5 L32.4,92.5 L7.5,67.6 L7.5,32.4 L32.4,7.5 L67.6,7.5 L92.5,32.4 Z"
-        stroke="#9fc8b4" stroke-width="1.1" stroke-linejoin="round" opacity="0.75"/>
-      <ellipse cx="50" cy="50" rx="30" ry="11" stroke="#9fc8b4" stroke-width="1" opacity="0.5"/>
-      <circle cx="50" cy="50" r="4.4" fill="#cfead9"/>
-      <circle cx="80" cy="50" r="2.5" fill="#9fc8b4"/>
+        stroke="#c8a45f" stroke-width="1.1" stroke-linejoin="round" opacity="0.75"/>
+      <ellipse cx="50" cy="50" rx="30" ry="11" stroke="#c8a45f" stroke-width="1" opacity="0.5"/>
+      <circle cx="50" cy="50" r="4.4" fill="#f1d99a"/>
+      <circle cx="80" cy="50" r="2.5" fill="#c8a45f"/>
     </svg>
-    <h1>星河拉坯</h1>
-    <div class="vword">COSMIC POTTERY</div>
+    <h1 id="vTitle">COSMIC POTTERY</h1>
+    <div class="vword" id="vTitleSub">星河拉坯</div>
     <div class="vtag" id="vTag"></div>
     <div class="vtag2" id="vTag2"></div>
     <div class="vbtns">
@@ -257,16 +259,16 @@ let lang = 'en';
 const L = (zh, en) => lang === 'zh' ? zh : en;
 const UI = {
   en:{
-    tag:'A wheel of stars, and two quiet hands —<br>gather a world, and give it form.',
-    tag2:'掬一颗星 · 静手成器',
-    cam:'WITH CAMERA', camSub:'手势 gesture',
-    demo:'DEMO', demoSub:'鼠标 mouse',
-    priv:'All processing is local · nothing stored, nothing uploaded',
-    privShort:'Processed locally',
+    tag:'Molding clay into form, spinning wheels among the stars.',
+    tag2:'Gather a planet as clay; mold a world with quiet hands.<br>The cosmic wheel spins, waiting for your stillness.',
+    cam:'SUMMON WITH GESTURE', camSub:'手势入画',
+    demo:'SPIN WITH CURSOR', demoSub:'鼠标代手',
+    priv:'Born in the local soil. No data leaves the garden.',
+    privShort:'Born locally · no data leaves the garden',
     finish:'FINISH', mode:'CAMERA', modeDemo:'DEMO',
     sound:'SOUND', soundOff:'MUTED', mirror:'MIRROR',
-    save:'SAVE', again:'ONCE MORE',
-    cap:'Shaped by your own hands · one of a kind',
+    save:'COLLECT · 收藏此器', again:'RE-CENTER THE WHEEL · 重开星轮',
+    cap:'Shaped by your hands, unique under the stars.',
     tCamOn:'Raise your hands into view', tDemoOn:'Rest the cursor on a world to gather it',
     tCamFail:'Camera unavailable — demo mode on',
     tThrowCam:'Cup your hands; open and close them slowly',
@@ -275,16 +277,16 @@ const UI = {
     tDemo:'Demo mode', tMode:'Camera mode',
   },
   zh:{
-    tag:'一轮星，一双静手——<br>自星河掬起一个世界，赋它以形。',
-    tag2:'GATHER A STAR · SHAPE IT STILL',
-    cam:'以手抟星', camSub:'开启摄像头',
-    demo:'观器演示', demoSub:'无需摄像头',
-    priv:'影像仅在本机运算 · 不存储 · 不上传',
+    tag:'埏埴以为器，转轮择星辰。',
+    tag2:'择星为土，静手成器。<br>旋转的星轮，等待一双合十的双手。',
+    cam:'手势入画', camSub:'SUMMON WITH GESTURE',
+    demo:'鼠标代手', demoSub:'SPIN WITH CURSOR',
+    priv:'生于本地之土，所有数据皆不离园。',
     privShort:'本机运算',
     finish:'成器', mode:'摄像', modeDemo:'演示',
     sound:'声', soundOff:'静', mirror:'镜',
-    save:'保存', again:'再抟一件',
-    cap:'此器由你亲手抟成 · 独一无二',
+    save:'收藏此器 · COLLECT', again:'重开星轮 · RE-CENTER THE WHEEL',
+    cap:'心手造物，世间无双。',
     tCamOn:'双手入镜', tDemoOn:'移动鼠标至星球上停驻',
     tCamFail:'摄像头不可用，已切换演示模式',
     tThrowCam:'双手虚捧，缓缓开合', tThrowDemo:'按住鼠标，缓缓塑形',
@@ -637,7 +639,7 @@ function renderPlanets(now, alpha, hoverKey){
       ltext(ctx, L(pl.cfg.cn+' · '+pl.cfg.alias, pl.cfg.en),
         pl.x, pl.y + pl.r + 28, lang==='zh'?15:13, lang==='zh'?4:5,
         lang==='zh'?'"Songti SC","STSong",serif':'"Futura","Century Gothic","Avenir Next",sans-serif', 'center');
-      ctx.fillStyle = 'rgba(159,200,180,.5)';
+      ctx.fillStyle = 'rgba(200,164,95,.5)';
       ctx.font = lang==='zh'?'10px Georgia,serif':'10.5px "Songti SC","STSong",serif';
       ctx.fillText(L(pl.cfg.colorEn, pl.cfg.cn+' · '+pl.cfg.colorCn), pl.x, pl.y + pl.r + 44);
     }
@@ -690,10 +692,10 @@ function renderDwell(){
   const rr = tg.rr != null ? tg.rr + 10 : Math.min(tg.x1-tg.x0, tg.y1-tg.y0)*.2 + 26;
   const u = clamp(dwell.t/DWELL_NEED, 0, 1);
   ctx.save();
-  ctx.strokeStyle = 'rgba(159,200,180,.26)'; ctx.lineWidth = 1.4;
+  ctx.strokeStyle = 'rgba(200,164,95,.26)'; ctx.lineWidth = 1.4;
   ctx.beginPath(); ctx.arc(cx, cy, rr, 0, TAU); ctx.stroke();
-  ctx.strokeStyle = 'rgba(190,228,208,.9)'; ctx.lineWidth = 2.2;
-  ctx.shadowColor = 'rgba(159,200,180,.7)'; ctx.shadowBlur = 8;
+  ctx.strokeStyle = 'rgba(232,199,126,.9)'; ctx.lineWidth = 2.2;
+  ctx.shadowColor = 'rgba(200,164,95,.7)'; ctx.shadowBlur = 8;
   ctx.beginPath(); ctx.arc(cx, cy, rr, -Math.PI/2, -Math.PI/2 + u*TAU); ctx.stroke();
   ctx.restore();
 }
@@ -954,9 +956,9 @@ function renderWheel(now){
   ctx.save();
   ctx.fillStyle = 'rgba(10,16,13,.9)';
   ctx.beginPath(); ctx.ellipse(vCx, wy, wr, wr*EY, 0, 0, TAU); ctx.fill();
-  ctx.strokeStyle = 'rgba(159,200,180,.38)'; ctx.lineWidth = 1.4;
+  ctx.strokeStyle = 'rgba(200,164,95,.38)'; ctx.lineWidth = 1.4;
   ctx.beginPath(); ctx.ellipse(vCx, wy, wr, wr*EY, 0, 0, TAU); ctx.stroke();
-  ctx.strokeStyle = 'rgba(159,200,180,.15)'; ctx.lineWidth = 1;
+  ctx.strokeStyle = 'rgba(200,164,95,.15)'; ctx.lineWidth = 1;
   ctx.beginPath(); ctx.ellipse(vCx, wy, wr*.7, wr*EY*.7, 0, 0, TAU); ctx.stroke();
   /* 轮上流转的星点 —— 转速可视 */
   ctx.globalCompositeOperation = 'lighter';
@@ -979,7 +981,7 @@ function renderVesselLive(now){
   });
   /* 轮制弦纹（前半圈） */
   ctx.save();
-  ctx.strokeStyle = 'rgba(206,230,218,.09)'; ctx.lineWidth = 1;
+  ctx.strokeStyle = 'rgba(229,210,170,.09)'; ctx.lineWidth = 1;
   for(let i=3;i<SEG-3;i+=5){
     const y = vTop + (i/(SEG-1))*(vBot-vTop);
     const r = prof[i]*maxR;
@@ -1036,7 +1038,7 @@ function renderFx(){
   ctx.globalCompositeOperation = 'lighter';
   for(const r of rings){
     ctx.globalAlpha = Math.max(0, r.a);
-    ctx.strokeStyle = 'rgba(190,228,208,.9)'; ctx.lineWidth = 1.2;
+    ctx.strokeStyle = 'rgba(232,199,126,.9)'; ctx.lineWidth = 1.2;
     ctx.beginPath(); ctx.arc(r.x, r.y, r.r, 0, TAU); ctx.stroke();
   }
   for(const p of sparks){
@@ -1108,9 +1110,9 @@ function buildDurCards(){
   const total = cw*3 + gap*2;
   const x0 = W/2 - total/2, y0 = H*.5 - ch/2;
   const opts = [
-    {min:1, cn:'一炷香', sub:'静心一分钟', en:'1 MIN'},
-    {min:3, cn:'三炷香', sub:'静心三分钟', en:'3 MIN'},
-    {min:5, cn:'五炷香', sub:'静心五分钟', en:'5 MIN'},
+    {min:1, cn:'一炷香', en:'FIRST SPARK'},
+    {min:3, cn:'三炷香', en:'DEEP QUIET'},
+    {min:5, cn:'五炷香', en:'ETERNAL MIND'},
   ];
   durCards = opts.map((o,i) => ({
     ...o, key:'dur'+o.min,
@@ -1121,31 +1123,32 @@ function renderDurCards(now){
   ctx.save();
   ctx.textAlign = 'center';
   const cx0 = W/2;
-  ctx.fillStyle = 'rgba(207,234,217,.8)';
-  ltext(ctx, L('静 心 几 何', 'A SPAN OF STILLNESS'), cx0, durCards[0].y0 - 56,
+  ctx.fillStyle = 'rgba(241,217,154,.8)';
+  ltext(ctx, L('坐 定，燃 香', 'LIGHT THE INCENSE'), cx0, durCards[0].y0 - 62,
         lang==='zh'?17:13, lang==='zh'?8:6,
         lang==='zh'?'"Songti SC","STSong",serif':'"Futura","Century Gothic","Avenir Next",sans-serif', 'center');
-  ctx.fillStyle = 'rgba(219,231,224,.34)';
+  ctx.fillStyle = 'rgba(238,231,215,.34)';
   ctx.font = 'italic 11px Georgia,serif';
-  ctx.fillText(L('燃一炷心香，燃尽即成器', 'Light one incense — when it burns down, the vessel is done'),
+  ctx.fillText(L('香燃一炷，器成一世。', 'As the incense burns, a vessel is born.'),
     cx0, durCards[0].y0 - 34);
   for(const cd of durCards){
     const hov = dwell.key === cd.key;
     const cx = (cd.x0+cd.x1)/2;
     ctx.fillStyle = 'rgba(10,16,13,.5)';
-    ctx.strokeStyle = hov ? 'rgba(190,228,208,.85)' : 'rgba(159,200,180,.38)';
+    ctx.strokeStyle = hov ? 'rgba(232,199,126,.85)' : 'rgba(200,164,95,.38)';
     ctx.lineWidth = 1.2;
     ctx.beginPath(); ctx.roundRect(cd.x0, cd.y0, cd.x1-cd.x0, cd.y1-cd.y0, 2);
     ctx.fill(); ctx.stroke();
-    ctx.fillStyle = hov ? 'rgba(207,234,217,.98)' : 'rgba(219,231,224,.85)';
-    ctx.font = '38px "Futura","Century Gothic","Avenir Next",sans-serif';
-    ctx.fillText(String(cd.min), cx, cd.y0 + 64);
-    ctx.fillStyle = hov ? 'rgba(190,228,208,.8)' : 'rgba(219,231,224,.5)';
-    ltext(ctx, cd.min>1?'MINUTES':'MINUTE', cx, cd.y0 + 86, 9, 3,
-      '"Futura","Century Gothic","Avenir Next",sans-serif', 'center');
+    ctx.fillStyle = hov ? 'rgba(241,217,154,.98)' : 'rgba(238,231,215,.85)';
+    ctx.font = '12px "Futura","Century Gothic","Avenir Next",sans-serif';
+    ltext(ctx, lang==='en'?cd.en:cd.cn, cx, cd.y0 + 58, 11, 2.2,
+      lang==='en'?'"Futura","Century Gothic","Avenir Next",sans-serif':'"Songti SC","STSong",serif', 'center');
+    ctx.fillStyle = hov ? 'rgba(232,199,126,.8)' : 'rgba(238,231,215,.5)';
+    ctx.font = lang==='en' ? '11px "Songti SC","STSong",serif' : '9px "Futura","Century Gothic",sans-serif';
+    ctx.fillText(lang==='en'?cd.cn:cd.en, cx, cd.y0 + 82);
     /* 香一支 */
     const iy0 = cd.y0 + 104, iy1 = cd.y1 - 48;
-    ctx.strokeStyle = 'rgba(206,230,218,.5)'; ctx.lineWidth = 2;
+    ctx.strokeStyle = 'rgba(229,210,170,.5)'; ctx.lineWidth = 2;
     ctx.beginPath(); ctx.moveTo(cx, iy0+8); ctx.lineTo(cx, iy1); ctx.stroke();
     ctx.save();
     ctx.globalCompositeOperation = 'lighter';
@@ -1154,9 +1157,9 @@ function renderDurCards(now){
     ctx.beginPath(); ctx.arc(cx, iy0+8, 2.1, 0, TAU); ctx.fill();
     ctx.drawImage(GLOW_JADE, cx-9, iy0-1, 18, 18);
     ctx.restore();
-    ctx.fillStyle = 'rgba(219,231,224,.5)';
+    ctx.fillStyle = 'rgba(238,231,215,.5)';
     ctx.font = '12px "Songti SC","STSong",serif';
-    ctx.fillText(cd.cn, cx, cd.y1 - 24);
+    ctx.fillText(`${cd.min} MIN`, cx, cd.y1 - 24);
   }
   ctx.restore();
 }
@@ -1168,7 +1171,7 @@ function renderIncense(now, dt){
   ctx.save();
   ctx.strokeStyle = 'rgba(96,104,98,.5)'; ctx.lineWidth = 2.4;
   ctx.beginPath(); ctx.moveTo(x, y0); ctx.lineTo(x, yE); ctx.stroke();
-  ctx.strokeStyle = 'rgba(206,230,218,.6)'; ctx.lineWidth = 2.4;
+  ctx.strokeStyle = 'rgba(229,210,170,.6)'; ctx.lineWidth = 2.4;
   ctx.beginPath(); ctx.moveTo(x, yE); ctx.lineTo(x, y0+L); ctx.stroke();
   if(!finishing){
     ctx.save();
@@ -1199,16 +1202,9 @@ function renderIncense(now, dt){
     ctx.stroke();
   }
   ctx.globalAlpha = 1;
-  const mm = Math.floor(Math.max(0,remainT)/60);
-  const ss = Math.floor(Math.max(0,remainT)%60);
-  ctx.fillStyle = 'rgba(219,231,224,.5)';
-  ctx.font = '11px "Futura","Century Gothic",sans-serif'; ctx.textAlign = 'center';
-  ctx.fillText(`${mm}:${String(ss).padStart(2,'0')}`, x, y0+L+22);
-  ctx.fillStyle = 'rgba(219,231,224,.3)';
-  ctx.font = '10px "Songti SC","STSong",serif';
-  ctx.fillText(L('一炷心香', 'INCENSE'), x, y0+L+38);
+  /* 不显示数字倒计时：只保留缓缓缩短的香线，解除时间焦虑 */
   if(chosen){
-    ctx.fillStyle = 'rgba(219,231,224,.55)';
+    ctx.fillStyle = 'rgba(238,231,215,.55)';
     ctx.font = '12px "Futura","Century Gothic",sans-serif';
     ctx.fillText(L(`${chosen.cn} · ${chosen.alias}`, chosen.en), x, y0-26);
   }
@@ -1643,16 +1639,16 @@ function makePoster(){
   c.restore();
 
   /* ——— 双线细框 ——— */
-  c.strokeStyle = 'rgba(159,200,180,.42)'; c.lineWidth = 1.4;
+  c.strokeStyle = 'rgba(200,164,95,.42)'; c.lineWidth = 1.4;
   c.strokeRect(46,46,PW-92,PH-92);
-  c.strokeStyle = 'rgba(159,200,180,.18)'; c.lineWidth = 1;
+  c.strokeStyle = 'rgba(200,164,95,.18)'; c.lineWidth = 1;
   c.strokeRect(60,60,PW-120,PH-120);
 
   /* ——— 顶部：极简标记 + 品牌字 ——— */
-  drawMark(c, PW/2, 150, 33, '#9fc8b4');
-  c.fillStyle = 'rgba(207,234,217,.9)';
+  drawMark(c, PW/2, 150, 33, '#c8a45f');
+  c.fillStyle = 'rgba(241,217,154,.9)';
   ltext(c, 'COSMIC POTTERY', PW/2, 232, 17, 9, SANS, 'center');
-  c.fillStyle = 'rgba(159,200,180,.5)';
+  c.fillStyle = 'rgba(200,164,95,.5)';
   ltext(c, '星 河 拉 坯 · TAO GARDEN', PW/2, 258, 11.5,
     en?3:2, '"Songti SC","STSong",serif', 'center');
 
@@ -1672,7 +1668,7 @@ function makePoster(){
   c.restore();
   c.drawImage(sp.cvs, PW/2 - sp.cx*psc, starY - sp.cy*psc,
     sp.cvs.width*psc, sp.cvs.height*psc);
-  c.strokeStyle = 'rgba(159,200,180,.2)'; c.lineWidth = 1;
+  c.strokeStyle = 'rgba(200,164,95,.2)'; c.lineWidth = 1;
   c.beginPath(); c.arc(PW/2, starY, 80, Math.PI*1.16, Math.PI*1.84); c.stroke();
 
   paintVessel(c, {
@@ -1680,7 +1676,7 @@ function makePoster(){
     pal, tex:strips.get(pal.id), scratch:{}, sf:1, luster:1
   });
   c.save();
-  c.strokeStyle = 'rgba(206,230,218,.09)'; c.lineWidth = 1;
+  c.strokeStyle = 'rgba(229,210,170,.09)'; c.lineWidth = 1;
   for(let i=4;i<SEG-4;i+=6){
     const y = vyT + (i/(SEG-1))*(vyB-vyT);
     const r = prof[i]*vMaxR;
@@ -1693,28 +1689,28 @@ function makePoster(){
   c.fillStyle = 'rgba(223,242,232,.96)';
   if(en) ltext(c, pal.en, PW/2, 1128, 32, 10, SANS, 'center');
   else { c.font = '36px "Songti SC","STSong",serif'; c.fillText(`${pal.cn} · ${pal.alias}`, PW/2, 1132); }
-  c.fillStyle = 'rgba(159,200,180,.55)';
+  c.fillStyle = 'rgba(200,164,95,.55)';
   if(en){ c.font = '16px "Songti SC","STSong",serif'; c.fillText(`${pal.cn} · ${pal.alias}`, PW/2, 1158); }
   else ltext(c, pal.en, PW/2, 1160, 12.5, 6, SANS, 'center');
 
-  c.fillStyle = 'rgba(207,234,217,.6)';
+  c.fillStyle = 'rgba(241,217,154,.6)';
   ltext(c, en ? `${copy.colorEn}  ·  ${copy.shapeEn}` : `釉 ${copy.colorCn}　·　形 ${copy.shapeCn}`,
     PW/2, 1194, en?11.5:14, en?4:2,
     en?SANS:'"Songti SC","STSong",serif', 'center');
 
-  c.strokeStyle = 'rgba(159,200,180,.38)'; c.lineWidth = 1;
+  c.strokeStyle = 'rgba(200,164,95,.38)'; c.lineWidth = 1;
   c.beginPath(); c.moveTo(PW/2-54, 1232); c.lineTo(PW/2+54, 1232); c.stroke();
 
   /* 一语（依静心 × 形生成，克制留白）*/
   c.fillStyle = 'rgba(223,242,232,.92)';
   if(en){ c.font = 'italic 27px Georgia,serif'; c.fillText(copy.essenceEn, PW/2, 1290); }
   else { c.font = '28px "Kaiti SC","STKaiti","KaiTi",serif'; c.fillText(copy.essenceCn, PW/2, 1292); }
-  c.fillStyle = 'rgba(159,200,180,.5)';
+  c.fillStyle = 'rgba(200,164,95,.5)';
   if(en){ c.font = '17px "Kaiti SC","STKaiti",serif'; c.fillText(copy.essenceCn, PW/2, 1322); }
   else { c.font = 'italic 15px Georgia,serif'; c.fillText(copy.essenceEn, PW/2, 1324); }
 
   /* ——— 落款：心境 · 日期 · 时长 ——— */
-  c.fillStyle = 'rgba(207,234,217,.5)';
+  c.fillStyle = 'rgba(241,217,154,.5)';
   const meta = en
     ? `${mood.en}   ·   ${dateStr()}   ·   ${sessionMin} MIN`
     : `心境 ${mood.cn}   ·   ${dateStr()}   ·   静心 ${sessionMin} 分钟`;
@@ -1722,7 +1718,7 @@ function makePoster(){
     en?SANS:'"Songti SC","STSong",serif', 'center');
 
   /* 页脚 */
-  c.fillStyle = 'rgba(159,200,180,.3)';
+  c.fillStyle = 'rgba(200,164,95,.3)';
   c.textAlign = 'left';
   ltext(c, 'SOMATIC GARDEN', 82, PH-70, 10.5, 5, SANS);
   c.textAlign = 'right';
@@ -1998,10 +1994,15 @@ function applyLang(){
   document.querySelectorAll('.lang span[data-l]').forEach(s =>
     s.classList.toggle('on', s.dataset.l === lang));
   document.documentElement.lang = lang==='zh' ? 'zh-Hant' : 'en';
+  $('vTitle').textContent = lang==='en' ? 'COSMIC POTTERY' : '星河拉坯';
+  $('vTitleSub').textContent = lang==='en' ? '星河拉坯' : 'COSMIC POTTERY';
+  $('vTitle').style.fontFamily = lang==='en' ? 'var(--sans)' : 'var(--cn)';
+  $('vTitleSub').style.fontFamily = lang==='en' ? 'var(--cn)' : 'var(--sans)';
   $('vTag').innerHTML = T('tag');
   $('vTag').style.fontFamily = lang==='zh' ? 'var(--cn)' : 'var(--serif)';
   $('vTag').style.fontStyle = lang==='zh' ? 'normal' : 'italic';
-  $('vTag2').textContent = T('tag2');
+  $('vTag2').innerHTML = T('tag2');
+  $('vTag2').style.fontFamily = lang==='zh' ? 'var(--cn)' : 'var(--serif)';
   $('btnCamMain').textContent = T('cam'); $('btnCamSub').textContent = T('camSub');
   $('btnDemoMain').textContent = T('demo'); $('btnDemoSub').textContent = T('demoSub');
   $('vPriv').textContent = T('priv');
@@ -2018,14 +2019,14 @@ function applyLang(){
         ps = document.querySelector('#poem .sub'),
         pr = document.querySelector('#poem .src');
   if(lang === 'en'){
-    pm.textContent = 'Clay is thrown into a vessel — the emptiness within gives it use.';
+    pm.textContent = 'Clay is thrown into a vessel —';
     pm.style.fontFamily = 'var(--serif)'; pm.style.fontStyle = 'italic';
-    ps.textContent = '埏埴以为器，当其无，有器之用。';
+    ps.textContent = 'the emptiness within gives it use.';
     pr.textContent = 'TAO TE CHING · XI';
   } else {
-    pm.textContent = '埏埴以为器，当其无，有器之用。';
+    pm.textContent = '埏埴以为器，';
     pm.style.fontFamily = 'var(--cn)'; pm.style.fontStyle = 'normal';
-    ps.textContent = 'The emptiness within gives the vessel its use.';
+    ps.textContent = '当其无，有器之用。';
     pr.textContent = '《道德经》第十一章';
   }
   renderHint();
