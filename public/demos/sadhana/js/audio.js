@@ -6,7 +6,7 @@
  *
  *   1. MANTRA DRONE (梵音)  — monastic throat-chant; breathes with respPhase
  *   2. SINGING BOWL (颂钵)  — additive, non-harmonic; struck on deep calm
- *   3. TEMPLE CHIMES (风铃) — Thai-tuned brass; scattered on high HRV
+ *   3. TEMPLE CHIMES (风铃) — reference voice, intentionally disabled
  *   + CHAOS TEXTURE        — hollow, ungrounded wind when stress takes over
  *
  * This module receives ONLY scalars from app.js. It never sees a matrix, a
@@ -18,6 +18,7 @@
  */
 
 const Tone = window.Tone;
+const TEMPLE_CHIMES_ENABLED = false;
 
 const clamp = (v, lo = 0, hi = 1) => (v < lo ? lo : v > hi ? hi : v);
 const lerp = (a, b, t) => a + (b - a) * t;
@@ -213,7 +214,7 @@ export class AudioEngine {
 
     this._buildDrone();
     this._buildBowls();
-    this._buildChimes();
+    if (TEMPLE_CHIMES_ENABLED) this._buildChimes();
     this._buildChaos();
 
     // Fade the room up over 4 s rather than snapping on.
@@ -431,7 +432,9 @@ export class AudioEngine {
 
       // The drone thins out as the mind scatters.
       this._smooth('droneFM', this.droneFMGain.gain, lerp(0.05, 0.16, cohesion), 2, 0.004);
-      this._smooth('chimes', this.chimeBus.gain, lerp(0.25, 0.85, goldIndex), 2, 0.01);
+      if (TEMPLE_CHIMES_ENABLED) {
+        this._smooth('chimes', this.chimeBus.gain, lerp(0.25, 0.85, goldIndex), 2, 0.01);
+      }
     }
 
     // ── Singing bowl: struck on entering deep calm ────────────────────
@@ -454,7 +457,7 @@ export class AudioEngine {
     }
 
     // ── Chimes: sparse, organic, only at high HRV ──────────────────────
-    if (goldIndex > 0.8) {
+    if (TEMPLE_CHIMES_ENABLED && goldIndex > 0.8) {
       // Rate rises steeply across the last fifth of the gold index.
       const intensity = clamp((goldIndex - 0.8) / 0.2);
       this._chimeTimer -= dt;
