@@ -197,12 +197,18 @@ export class AudioEngine {
     // this buffer prevents that visual hitch from becoming an audible click.
     // It changes scheduling resilience only, never pitch, rhythm or timbre.
     const context = Tone.getContext();
-    context.lookAhead = Math.max(context.lookAhead || 0, 0.16);
+    context.lookAhead = Math.max(context.lookAhead || 0, 0.25);
     context.updateInterval = 0.05;
 
     // ── master ────────────────────────────────────────────────────────
     this.limiter = new Tone.Limiter(-1).toDestination();
-    this.master = new Tone.Gain(0.0).connect(this.limiter);
+    // The limiter's 10 ms release is shorter than one cycle of the 55 Hz
+    // drone. Letting the full mix hit it hard can chop the bass waveform into
+    // audible ticks. This slow compressor catches overlapping peaks first.
+    this.safetyCompressor = new Tone.Compressor({
+      threshold: -12, ratio: 3, attack: 0.03, release: 0.35, knee: 14,
+    }).connect(this.limiter);
+    this.master = new Tone.Gain(0.0).connect(this.safetyCompressor);
 
     // ── temple reverb send ────────────────────────────────────────────
     // Long, dark tail: a stone-and-gold hall, not a plate.
@@ -218,7 +224,7 @@ export class AudioEngine {
     this._buildChaos();
 
     // Fade the room up over 4 s rather than snapping on.
-    this.master.gain.rampTo(0.9, 4);
+    this.master.gain.rampTo(0.78, 4);
     this.ready = true;
   }
 
@@ -273,6 +279,9 @@ export class AudioEngine {
     this.chorus = new Tone.Chorus({
       frequency: 0.32, delayTime: 6.5, depth: 0.4, spread: 180,
     }).start();
+    // Depth stays fixed: Tone.Chorus changes it through a plain setter, so
+    // jumping it at each breath boundary creates a discontinuity and pop.
+    // The smoothly ramped StereoWidener still carries inhale/exhale space.
     this.widener = new Tone.StereoWidener(0.35);
 
     this.droneOut = new Tone.Gain(0.0);
@@ -394,20 +403,17 @@ export class AudioEngine {
       if (respPhase === 1) {
         // INHALE — open the valve, let the overtones bloom, narrow the image.
         this.droneFilter.frequency.rampTo(lerp(520, 1500, cohesion), 2.2);
-        this.chorus.depth = 0.22;
         this.widener.width.rampTo(0.34, 2.2);
         this.droneOut.gain.rampTo(lerp(0.45, 0.72, cohesion), 2.2);
       } else if (respPhase === -1) {
         // EXHALE — close the valve, but widen and deepen: the sound stops
         // getting brighter and starts getting *bigger*. Reads as release.
         this.droneFilter.frequency.rampTo(lerp(180, 320, cohesion), 3.0);
-        this.chorus.depth = 0.85;
         this.widener.width.rampTo(0.95, 3.0);
         this.droneOut.gain.rampTo(lerp(0.40, 0.62, cohesion), 3.0);
       } else {
         // ERRATIC — the drone loses its centre.
         this.droneFilter.frequency.rampTo(340, 1.2);
-        this.chorus.depth = 0.6;
         this.widener.width.rampTo(0.6, 1.2);
         this.droneOut.gain.rampTo(0.34, 1.2);
       }
@@ -415,7 +421,7 @@ export class AudioEngine {
 
     // ── Throttled continuous params ───────────────────────────────────
     this._paramT += dt;
-    if (this._paramT > 1 / 12) {
+    if (this._paramT > 1 / 4) {
       this._paramT = 0;
 
       // Chaos crossfade. `edaNorm > 0.6` per spec — normalised, i.e. EDA 6/10.
@@ -496,6 +502,6 @@ export class AudioEngine {
 
   setMuted(v) {
     this.muted = v;
-    if (this.ready) this.master.gain.rampTo(v ? 0 : 0.9, 0.6);
+    if (this.ready) this.master.gain.rampTo(v ? 0 : 0.78, 0.6);
   }
 }
