@@ -16,6 +16,8 @@ import { VisualEngine } from './visuals.js';
 import { AudioEngine } from './audio.js?v=20260825-popguard';
 import { BreathGuide } from './breath-guide.js?v=20260825-audio3';
 import { WearableHub, TRANSPORT } from './wearables.js?v=20260825-pairing2';
+import { MeditationSession, formatClock } from './session.js?v=20260825-reflection1';
+import { renderMeditationPoster, downloadPoster } from './poster.js?v=20260825-reflection1';
 
 // The public demo uses sensor.js's shared 0–100 ms RMSSD scale. Personal
 // calibration must only be applied after measuring the current participant;
@@ -28,12 +30,16 @@ const visuals = new VisualEngine($('stage'));
 const audio = new AudioEngine();
 const wearables = new WearableHub();
 const breathGuide = new BreathGuide(4, 6); // 6 breaths/min; longer exhale
+const session = new MeditationSession(2);
 
 let running = false;
 let last = performance.now();
 let guided = false;
 let guidedT = 0;
 let breathCue = breathGuide.state;
+let selectedDurationSeconds = 10 * 60;
+let lastAnalysis = null;
+let progressRevealTimer = 0;
 
 // ─────────────────────────────────────────────────────────────────────────
 // Language — one language at a time, never mixed labels
@@ -44,7 +50,8 @@ const COPY = {
     documentTitle: '聚沙成塔',
     title: '聚沙成塔', hudKicker: '呼吸 · 脉动 · 成塔',
     cohesion: '聚合度', goldIndex: '金色指数',
-    interactionHint: '拖动旋转 · 滚轮靠近<br>D — 打开仪表面板', panel: '面板',
+    interactionHint: '拖动旋转 · 滚轮靠近<br>D — 打开身体数据', panel: '面板', dataPanel: '身体数据',
+    dockSimulated: '模拟信号', dockLive: '设备已连接', dockWaiting: '等待数据', dockUnavailable: '信号未连接',
     wearableEyebrow: '实时生物反馈', pairWearables: '接入可穿戴设备',
     wearableConnected: '可穿戴设备已接入', disconnect: '断开设备',
     recommendedDevices: '💡 推荐设备：支持心率带、智能手环、智能戒指、Apple Watch等支持标准蓝牙/健康协议的穿戴设备。',
@@ -52,7 +59,7 @@ const COPY = {
     signals: '生理信号', heartRate: '心率', hrv: '心率变异性 · RMSSD', respiration: '呼吸',
     calibration: '模拟与校准', breathRate: '呼吸频率', breathDepth: '呼吸深度',
     stressEda: '压力 · EDA', hrvCapacity: 'HRV 潜能', restingHr: '静息心率', rmssdWindow: 'RMSSD 窗口',
-    mode: '模式', guided: '引导演示', audio: '声音', diagnostics: '诊断信息',
+    mode: '模式', guided: '引导演示', audio: '声音', diagnostics: '诊断信息', experimentalMapping: '实验映射 · 推导值',
     fps: '帧率', particles: '粒子数', respPhase: '呼吸相位', respScore: '呼吸评分', beats: '心搏数',
     pairTitle: '选择接入方式', pairCopy: '选择你的设备能够使用的健康数据通道。',
     standardBluetooth: '标准蓝牙',
@@ -64,6 +71,9 @@ const COPY = {
     companionReadyBadge: '桥接可用', companionUnavailableBadge: '尚未开放',
     veilSub: '呼吸生物反馈冥想', poem: '息 深 则 沙 聚<br>脉 和 则 塔 金',
     begin: '开始静心', beginHint: '点击后开启声音',
+    chooseDuration: '选择静心时长', minutesShort: '分钟', durationBrief: '短暂静心', durationDaily: '日常练习',
+    durationDeep: '深度静心', customDuration: '自定义', durationCustomHint: '1–120 分钟', customMinutes: '时长',
+    endSession: '结束', progressAria: '查看剩余时间',
     veilNote: '建议佩戴耳机 · 点击后开启声音<br><span class="only-touch">拖动旋转 · 双指捏合靠近<br></span>默认使用模拟生理信号 · 不调用摄像头或麦克风',
     stateSamadhi: '寂 照', stateGilding: '鎏 金', stateRising: '成 塔', stateGathering: '凝 聚', stateScattered: '风 沙',
     signalLost: '失 联', calibrating: '校 准', inhale: '入 息', exhale: '出 息', erratic: '散 乱',
@@ -73,6 +83,20 @@ const COPY = {
     respirationUnavailable: '无连续呼吸数据', transportBluetooth: '标准蓝牙', transportCompanion: '伴侣应用',
     rateUnit: '次/分', bpmUnit: '次/分', msUnit: '毫秒', beatsUnit: '拍',
     langAria: 'Switch to English', close: '关闭',
+    reflectionKicker: '身体回响 · SESSION REFLECTION', reflectionTitle: '静心回顾',
+    durationLabel: '时长', dataConfidence: '数据置信度', breathStability: '呼吸稳定度', hrvRecovery: 'HRV 恢复趋势',
+    hrSettling: '心率平缓度', edaSettling: 'EDA 回落趋势', downloadPoster: '下载静心海报', meditateAgain: '再次静心',
+    reflectionDisclaimer: '本回顾仅比较本次静心前后变化，不构成医疗评估；原始健康数据不会上传。',
+    confidenceSimulated: '演示数据', confidenceComplete: '完整', confidenceGood: '良好', confidenceLimited: '有限',
+    notMeasured: '未测量', comparedWithArrival: '相较开始', regularityLabel: '周期规律度', scoreUnit: '分',
+    levelSettling: '正在安顿', levelRhythm: '呼吸渐稳', levelGathered: '身心凝聚', levelLuminous: '澄明安住',
+    summarySettling: '身体仍在寻找自己的节律。这不是失败，而是安顿开始发生的位置。',
+    summaryRhythm: '呼吸逐渐找到可返回的节律，身体的波动比刚开始更有连续性。',
+    summaryGathered: '呼吸、心率与自主神经的变化开始同向，沙粒在一次次回返中凝聚。',
+    summaryLuminous: '你没有强迫呼吸安静下来，只是在一次次回返中，让它找到了自己的节律。',
+    posterTitle: 'SAND TO STUPA · 聚沙成塔', posterDuration: '静心时长', posterBreaths: '稳定呼吸',
+    posterQuoteSettling: '安住，从允许波动开始。', posterQuoteRhythm: '一息一返，渐成节律。',
+    posterQuoteGathered: '沙随息聚，塔由心成。', posterQuoteLuminous: '不必追逐安静，只需一次次回返。',
     detail_bluetooth_ready: '此浏览器支持直连。请先佩戴并唤醒心率带，关闭其他占用设备的 App，再点击进入系统选择器。',
     detail_select_device: '正在打开系统蓝牙设备选择器…',
     detail_cancelled: '未选择设备。请确认胸带已佩戴、电极已湿润且未被其他 App 占用。',
@@ -94,7 +118,8 @@ const COPY = {
     documentTitle: 'Sand to Stupa',
     title: 'Sand to Stupa', hudKicker: 'BREATH · PULSE · FORM',
     cohesion: 'Cohesion', goldIndex: 'Gold Index',
-    interactionHint: 'Drag to orbit · Scroll to approach<br>D — open instrument panel', panel: 'Panel',
+    interactionHint: 'Drag to orbit · Scroll to approach<br>D — open body data', panel: 'Panel', dataPanel: 'Body Data',
+    dockSimulated: 'Simulated signal', dockLive: 'Wearable connected', dockWaiting: 'Waiting for data', dockUnavailable: 'Signal not connected',
     wearableEyebrow: 'Live Biofeedback', pairWearables: 'Pair Wearables',
     wearableConnected: 'Wearable Connected', disconnect: 'Disconnect Device',
     recommendedDevices: '💡 Recommended Devices: Supports smart bands, heart rate monitors, smart rings, and Apple Watch (via companion app) compatible with standard Bluetooth or Health integration protocols.',
@@ -102,7 +127,7 @@ const COPY = {
     signals: 'Physiological Signals', heartRate: 'Heart Rate', hrv: 'Heart Rate Variability · RMSSD', respiration: 'Respiration',
     calibration: 'Simulation & Calibration', breathRate: 'Breath Rate', breathDepth: 'Breath Depth',
     stressEda: 'Stress · EDA', hrvCapacity: 'HRV Capacity', restingHr: 'Resting Heart Rate', rmssdWindow: 'RMSSD Window',
-    mode: 'Mode', guided: 'Guided', audio: 'Audio', diagnostics: 'Diagnostics',
+    mode: 'Mode', guided: 'Guided', audio: 'Audio', diagnostics: 'Diagnostics', experimentalMapping: 'Experimental Mapping · Derived',
     fps: 'FPS', particles: 'Particles', respPhase: 'Respiration Phase', respScore: 'Respiration Score', beats: 'Beats',
     pairTitle: 'Choose a Connection', pairCopy: 'Select the health-data path available to your device.',
     standardBluetooth: 'Standard Bluetooth',
@@ -115,6 +140,9 @@ const COPY = {
     veilSub: 'A Biofeedback Meditation',
     poem: 'With each deep breath, sand gathers<br>With each steady pulse, the stupa turns gold',
     begin: 'Begin Meditation', beginHint: 'Sound begins after this gesture',
+    chooseDuration: 'Choose a duration', minutesShort: 'min', durationBrief: 'Brief pause', durationDaily: 'Daily practice',
+    durationDeep: 'Deep meditation', customDuration: 'Custom', durationCustomHint: '1–120 minutes', customMinutes: 'Duration',
+    endSession: 'End', progressAria: 'Show remaining meditation time',
     veilNote: 'Headphones recommended · Sound begins on entry<br><span class="only-touch">Drag to orbit · Pinch to approach<br></span>Simulated biosignals by default · No camera or microphone',
     stateSamadhi: 'Stillness', stateGilding: 'Gilding', stateRising: 'Stupa Rising', stateGathering: 'Gathering', stateScattered: 'Scattered',
     signalLost: 'Signal Lost', calibrating: 'Calibrating', inhale: 'Inhale', exhale: 'Exhale', erratic: 'Erratic',
@@ -124,6 +152,20 @@ const COPY = {
     respirationUnavailable: 'Continuous respiration unavailable', transportBluetooth: 'Standard Bluetooth', transportCompanion: 'Companion App',
     rateUnit: '/ min', bpmUnit: 'bpm', msUnit: 'ms', beatsUnit: 'beats',
     langAria: '切换至中文', close: 'Close',
+    reflectionKicker: 'BODY ECHO · SESSION REFLECTION', reflectionTitle: 'Meditation Reflection',
+    durationLabel: 'Duration', dataConfidence: 'Data confidence', breathStability: 'Breath Stability', hrvRecovery: 'HRV Recovery',
+    hrSettling: 'Heart-rate Settling', edaSettling: 'EDA Settling', downloadPoster: 'Download Poster', meditateAgain: 'Meditate Again',
+    reflectionDisclaimer: 'This reflection compares changes within this session only. It is not a medical assessment, and raw health data is not uploaded.',
+    confidenceSimulated: 'Demo data', confidenceComplete: 'Complete', confidenceGood: 'Good', confidenceLimited: 'Limited',
+    notMeasured: 'Not measured', comparedWithArrival: 'vs. arrival', regularityLabel: 'Cycle regularity', scoreUnit: 'pts',
+    levelSettling: 'Settling In', levelRhythm: 'Finding Rhythm', levelGathered: 'Gathering Within', levelLuminous: 'Luminous Stillness',
+    summarySettling: 'The body is still finding its rhythm. This is not failure; it is simply where settling begins.',
+    summaryRhythm: 'The breath found a rhythm it could return to, and the body’s waves became more continuous than at arrival.',
+    summaryGathered: 'Breath, heart rhythm, and autonomic change began to move together; the sand gathered with each return.',
+    summaryLuminous: 'You did not force the breath into stillness. You returned until it found its own rhythm.',
+    posterTitle: 'SAND TO STUPA · 聚沙成塔', posterDuration: 'MEDITATION', posterBreaths: 'STEADY BREATHS',
+    posterQuoteSettling: 'Stillness begins by allowing movement.', posterQuoteRhythm: 'Breath by breath, a rhythm appears.',
+    posterQuoteGathered: 'With each return, the sand gathers.', posterQuoteLuminous: 'Do not chase stillness. Simply return.',
     detail_bluetooth_ready: 'Direct pairing is supported here. Wear and wake the monitor, close any app already using it, then open the system device chooser.',
     detail_select_device: 'Opening the system Bluetooth device chooser…',
     detail_cancelled: 'No device was selected. Ensure the monitor is worn, its electrodes are moist, and no other app is using it.',
@@ -162,14 +204,21 @@ function applyLanguage(next) {
     const copy = t(el.dataset.i18nHtml);
     if (copy !== undefined) el.innerHTML = copy;
   });
-  $('langBtn').textContent = language === 'zh' ? 'EN' : '中文';
-  $('langBtn').setAttribute('aria-label', t('langAria'));
+  document.querySelectorAll('.lang-choice').forEach((button) => {
+    const active = button.dataset.lang === language;
+    button.classList.toggle('active', active);
+    button.setAttribute('aria-pressed', String(active));
+  });
   $('pairClose').setAttribute('aria-label', t('close'));
+  $('panelClose').setAttribute('aria-label', t('close'));
+  $('progressToggle').setAttribute('aria-label', t('progressAria'));
   if ($('sWin')) $('lbWin').textContent = $('sWin').value + ' ' + t('beatsUnit');
   if ($('bluetoothBadge')) updatePairingSupport();
   if ($('pairFeedback')?.classList.contains('visible') && pairFeedbackCode) {
     setPairFeedback(pairFeedbackCode, pairFeedbackTone);
   }
+  updatePanelDock();
+  if (lastAnalysis && $('reflection').classList.contains('open')) renderReflection(lastAnalysis);
   try { localStorage.setItem('sand-to-stupa-language', language); } catch { /* kiosk storage may be disabled */ }
 }
 
@@ -211,6 +260,28 @@ $('sWin').addEventListener('input', (e) => {
   $('lbWin').textContent = e.target.value + ' ' + t('beatsUnit');
 });
 
+// ─── Session duration ────────────────────────────────────
+
+function chooseDuration(button) {
+  document.querySelectorAll('.duration-option').forEach((option) => option.classList.toggle('active', option === button));
+  const custom = button.dataset.custom === 'true';
+  $('durationPicker').classList.toggle('custom', custom);
+  selectedDurationSeconds = custom
+    ? clamp(+$('customMinutes').value || 15, 1, 120) * 60
+    : (+button.dataset.minutes || 10) * 60;
+}
+
+document.querySelectorAll('.duration-option').forEach((button) => {
+  button.addEventListener('click', () => chooseDuration(button));
+});
+
+$('customMinutes').addEventListener('input', () => {
+  $('customMinutes').value = clamp(+$('customMinutes').value || 1, 1, 120);
+  if ($('durationPicker').classList.contains('custom')) {
+    selectedDurationSeconds = +$('customMinutes').value * 60;
+  }
+});
+
 // ─────────────────────────────────────────────────────────────────────────
 // Guided arc — the demo path
 // ─────────────────────────────────────────────────────────────────────────
@@ -235,7 +306,10 @@ const ARC = [
 
 function runGuided(dt) {
   guidedT += dt;
-  const T = Math.min(guidedT, ARC[ARC.length - 1].t);
+  // Short sessions reach the settled state quickly; longer sessions spend
+  // more time being guided, then leave a generous unscored free-practice arc.
+  const arcDuration = Math.min(600, Math.max(180, session.durationSeconds * 0.7));
+  const T = Math.min(guidedT / arcDuration * ARC[ARC.length - 1].t, ARC[ARC.length - 1].t);
 
   let i = 0;
   while (i < ARC.length - 2 && T > ARC[i + 1].t) i++;
@@ -314,6 +388,18 @@ function setPairBusy(busy) {
   $('pairClose').disabled = busy;
 }
 
+function updatePanelDock(state = wearables.state) {
+  const live = state === 'live';
+  $('panelBtn').classList.toggle('live', live);
+  $('panelDockStatus').textContent = live
+    ? t('dockLive')
+    : ['connecting', 'waiting', 'lost'].includes(state)
+      ? t('dockWaiting')
+      : state === 'error'
+        ? t('dockUnavailable')
+        : t('dockSimulated');
+}
+
 function showWearableStatus(state, detail = wearables.detail, detailCode = wearables.detailCode) {
   const el = $('wearableStatus');
   const live = state === 'live';
@@ -339,6 +425,7 @@ function showWearableStatus(state, detail = wearables.detail, detailCode = weara
   $('wearablePair').classList.toggle('live', live);
   $('wearablePair').textContent = live ? t('wearableConnected') : t('pairWearables');
   $('wearableDisconnect').classList.toggle('visible', live || state === 'lost' || state === 'waiting');
+  updatePanelDock(state);
 }
 
 wearables.onBeat = (rrMs, atMs) => sensor.pushBeat(rrMs, atMs);
@@ -464,6 +551,123 @@ function drawGraphs() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────
+// Session reflection
+
+const LEVEL_KEY = {
+  settling: 'Settling', rhythm: 'Rhythm', gathered: 'Gathered', luminous: 'Luminous',
+};
+
+function currentCapabilities() {
+  if (SensorData.source !== SOURCE.LIVE) return { hr: true, hrv: true, breath: true, eda: true };
+  const edaFresh = sensor.live.edaAt > 0 && performance.now() - sensor.live.edaAt < 15000;
+  return {
+    hr: wearables.state === 'live' && !SensorData.stale,
+    hrv: wearables.hrvSupported,
+    breath: wearables.respSupported || wearables.rrSupported,
+    eda: edaFresh,
+  };
+}
+
+function durationWords(seconds, lang = language) {
+  const minutes = Math.max(1, Math.round(seconds / 60));
+  return lang === 'zh' ? `${minutes} 分钟` : `${minutes} min`;
+}
+
+function confidenceName(value) {
+  return t(`confidence${value[0].toUpperCase()}${value.slice(1)}`);
+}
+
+function renderMetric(metric, element) {
+  const value = element.querySelector('strong');
+  const detail = element.querySelector('em');
+  if (!metric?.available) {
+    value.textContent = t('notMeasured');
+    detail.textContent = '—';
+    return;
+  }
+  value.textContent = `${metric.score} ${t('scoreUnit')}`;
+  if (metric.key === 'breath') {
+    detail.textContent = `${t('regularityLabel')} ${Math.round(metric.regularity * 100)}%`;
+    return;
+  }
+  const percent = metric.delta * 100;
+  const sign = percent > 0.05 ? '+' : '';
+  const unit = metric.key === 'hrv' ? t('msUnit') : metric.key === 'hr' ? t('bpmUnit') : '';
+  const start = metric.start.toFixed(metric.key === 'hr' ? 0 : 1);
+  const end = metric.end.toFixed(metric.key === 'hr' ? 0 : 1);
+  detail.textContent = `${t('comparedWithArrival')} ${sign}${percent.toFixed(1)}% · ${start}→${end}${unit ? ` ${unit}` : ''}`;
+}
+
+function posterQuoteKey(level) {
+  return `posterQuote${LEVEL_KEY[level]}`;
+}
+
+function renderReflection(analysis) {
+  if (!analysis) return;
+  const suffix = LEVEL_KEY[analysis.level];
+  const levelKey = `level${suffix}`;
+  const summaryKey = `summary${suffix}`;
+  $('reflectionState').textContent = `${t(levelKey)} · ${analysis.score}/100`;
+  $('reflectionSummary').textContent = t(summaryKey);
+  $('reflectionDuration').textContent = durationWords(analysis.durationSeconds);
+  $('reflectionConfidence').textContent = confidenceName(analysis.confidence);
+  document.querySelectorAll('.reflection-metric').forEach((element) => {
+    renderMetric(analysis.metrics[element.dataset.metric], element);
+  });
+
+  const secondaryLanguage = language === 'zh' ? 'en' : 'zh';
+  const locale = language === 'zh' ? 'zh-CN' : 'en-GB';
+  const posterCopy = {
+    primaryLanguage: language,
+    title: t('posterTitle'),
+    date: new Intl.DateTimeFormat(locale, { year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(analysis.endedAt)),
+    statePrimary: COPY[language][levelKey],
+    stateSecondary: COPY[secondaryLanguage][levelKey],
+    quotePrimary: COPY[language][posterQuoteKey(analysis.level)],
+    quoteSecondary: COPY[secondaryLanguage][posterQuoteKey(analysis.level)],
+    durationLabel: t('posterDuration'),
+    duration: durationWords(analysis.durationSeconds),
+    breathLabel: t('posterBreaths'),
+  };
+  const draw = () => renderMeditationPoster($('posterCanvas'), analysis, posterCopy);
+  document.fonts?.ready ? document.fonts.ready.then(draw) : draw();
+}
+
+function finishMeditation() {
+  if (!session.active) return;
+  lastAnalysis = session.finish();
+  running = false;
+  audio.setMuted(true);
+  $('sessionProgress').classList.remove('visible', 'expanded');
+  $('sessionProgress').setAttribute('aria-hidden', 'true');
+  $('panel').classList.remove('open');
+  $('panelBtn').setAttribute('aria-expanded', 'false');
+  if (!lastAnalysis) return;
+  renderReflection(lastAnalysis);
+  $('reflection').classList.add('open');
+  $('reflection').setAttribute('aria-hidden', 'false');
+}
+
+function updateSessionProgress() {
+  if (!session.active) return;
+  $('progressFill').style.width = `${(session.progress * 100).toFixed(2)}%`;
+  $('sessionTime').textContent = formatClock(session.remaining);
+}
+
+$('progressToggle').addEventListener('click', () => {
+  $('sessionProgress').classList.toggle('expanded');
+  clearTimeout(progressRevealTimer);
+  if ($('sessionProgress').classList.contains('expanded')) {
+    progressRevealTimer = setTimeout(() => $('sessionProgress').classList.remove('expanded'), 5000);
+  }
+});
+$('endSession').addEventListener('click', finishMeditation);
+$('downloadPoster').addEventListener('click', () => {
+  const stamp = new Date(lastAnalysis?.endedAt || Date.now()).toISOString().slice(0, 10);
+  downloadPoster($('posterCanvas'), `sand-to-stupa-${stamp}.png`);
+});
+$('restartSession').addEventListener('click', () => location.reload());
+
 // HUD
 // ─────────────────────────────────────────────────────────────────────────
 
@@ -544,6 +748,7 @@ function frame(now) {
 
   // 1 ── physiology
   const d = sensor.update(dt);
+  const sessionComplete = session.update(dt, d, currentCapabilities());
 
   // A practice cue must not inherit an agitated sensor phase. Guided mode
   // supplies its own stable 4:6 cycle; manual/live modes follow the body.
@@ -570,6 +775,8 @@ function frame(now) {
 
   // 4 ── interface
   updateHud(dt);
+  updateSessionProgress();
+  if (sessionComplete) finishMeditation();
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -587,6 +794,12 @@ $('begin').addEventListener('click', () => {
   // behind a black screen in a gallery.
   $('veil').classList.add('gone');
   setGuided(true);   // arrive already breathing; the sitter can take over
+  session.start(selectedDurationSeconds);
+  lastAnalysis = null;
+  $('sessionProgress').classList.add('visible');
+  $('sessionProgress').setAttribute('aria-hidden', 'false');
+  $('progressFill').style.width = '0%';
+  $('sessionTime').textContent = formatClock(selectedDurationSeconds);
   running = true;
   last = performance.now();
 
@@ -598,19 +811,28 @@ $('begin').addEventListener('click', () => {
   });
 });
 
-$('panelBtn').addEventListener('click', () => $('panel').classList.toggle('open'));
-$('langBtn').addEventListener('click', () => {
-  applyLanguage(language === 'zh' ? 'en' : 'zh');
-  pushSliders();
-  showWearableStatus(wearables.state, wearables.device?.name, wearables.detailCode);
-  hudT = 1;
-  updateHud(0);
+function setPanelOpen(open) {
+  $('panel').classList.toggle('open', open);
+  $('panelBtn').setAttribute('aria-expanded', String(open));
+  if (open) requestAnimationFrame(sizeGraphs);
+}
+
+$('panelBtn').addEventListener('click', () => setPanelOpen(!$('panel').classList.contains('open')));
+$('panelClose').addEventListener('click', () => setPanelOpen(false));
+document.querySelectorAll('.lang-choice').forEach((button) => {
+  button.addEventListener('click', () => {
+    applyLanguage(button.dataset.lang);
+    pushSliders();
+    showWearableStatus(wearables.state, wearables.device?.name, wearables.detailCode);
+    hudT = 1;
+    updateHud(0);
+  });
 });
 
 addEventListener('keydown', (e) => {
-  if (e.key === 'd' || e.key === 'D') $('panel').classList.toggle('open');
+  if (e.key === 'd' || e.key === 'D') setPanelOpen(!$('panel').classList.contains('open'));
   if (e.key === 'g' || e.key === 'G') setGuided(!guided);
-  if (e.key === 'Escape') closePairSheet();
+  if (e.key === 'Escape') { closePairSheet(); setPanelOpen(false); }
 });
 
 function relayout() { visuals.resize(); sizeGraphs(); }
@@ -642,7 +864,7 @@ requestAnimationFrame(frame);
 
 // Dev hook.
 window.__sandToStupa = {
-  sensor, visuals, audio, wearables, SensorData,
+  sensor, visuals, audio, wearables, session, SensorData,
   language: (next) => {
     if (next) applyLanguage(next);
     return language;
@@ -653,6 +875,7 @@ window.__sandToStupa = {
     sensor._cohesion = cohesion;
     sensor._goldIndex = gold;
   },
+  finish: finishMeditation,
   /**
    * Repaint HUD and graphs once. rAF is suspended whenever the tab is
    * hidden, which is exactly when an automated check wants to look at the

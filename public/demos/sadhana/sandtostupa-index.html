@@ -374,6 +374,96 @@
   }
   .pair-truth{ margin-top:18px; color:rgba(232,220,198,.30); font-size:7.5px; line-height:1.7; }
 
+  /* ─────── Session structure: enter → immerse → reflect ─────── */
+  #topActions{ right:calc(22px + var(--sa-r)); gap:0; }
+  .lang-switch{
+    display:flex; align-items:center; gap:8px; min-height:34px; padding:0 12px;
+    border:1px solid rgba(232,220,198,.12); background:rgba(5,4,3,.34);
+    backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);
+  }
+  .lang-choice{
+    border:0; background:none; color:rgba(232,220,198,.28); cursor:pointer;
+    font:500 9px var(--en); letter-spacing:.12em; padding:6px 2px;
+    transition:color .3s,text-shadow .3s;
+  }
+  .lang-choice.active{ color:var(--gold); text-shadow:0 0 12px rgba(216,177,105,.3); }
+  .lang-divider{ color:rgba(232,220,198,.16); font-size:10px; }
+
+  #panelDock{
+    position:fixed; z-index:35; left:calc(18px + var(--sa-l));
+    bottom:calc(18px + var(--sa-b)); pointer-events:auto;
+  }
+  #panelBtn{
+    display:grid; grid-template-columns:10px auto; column-gap:11px; align-items:center;
+    min-width:164px; min-height:52px; padding:10px 16px;
+    border:1px solid rgba(112,214,189,.25); background:rgba(5,4,3,.58);
+    color:var(--fog); cursor:pointer; text-align:left;
+    backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
+    transition:border-color .35s,background .35s,transform .35s;
+  }
+  #panelBtn:hover{ border-color:rgba(112,214,189,.58); background:rgba(12,13,10,.72); transform:translateY(-1px); }
+  .panel-dot{ grid-row:1 / span 2; width:8px; height:8px; border-radius:50%; border:1px solid var(--wear); box-shadow:0 0 0 4px rgba(112,214,189,.06); }
+  #panelBtn.live .panel-dot{ background:var(--wear); box-shadow:0 0 12px rgba(112,214,189,.7); }
+  .panel-label{ font:400 10px var(--cn); letter-spacing:.16em; color:rgba(232,220,198,.72); }
+  html[lang="en"] .panel-label{ font:500 8px var(--en); letter-spacing:.14em; text-transform:uppercase; }
+  #panelDockStatus{ font:400 7px var(--en); letter-spacing:.12em; color:rgba(112,214,189,.58); text-transform:uppercase; }
+  .bl{ bottom:64px; }
+
+  #panel{ z-index:34; left:0; right:auto; border-left:0; border-right:1px solid rgba(216,177,105,.14); padding:calc(38px + var(--sa-t)) 30px calc(92px + var(--sa-b)) calc(30px + var(--sa-l)); transform:translateX(-100%); }
+  #panel.open{ transform:none; }
+  .panel-heading{ display:flex; justify-content:space-between; align-items:center; margin-bottom:26px; color:var(--fog); font:400 15px var(--cn); letter-spacing:.18em; }
+  html[lang="en"] .panel-heading{ font:500 22px var(--display); letter-spacing:.03em; }
+  #panelClose{ width:34px; height:34px; border:0; background:none; color:var(--fog-dim); font-size:19px; cursor:pointer; }
+
+  .duration-picker{ margin-top:2.4em; width:min(520px,calc(100vw - 36px)); }
+  .duration-label{ margin-bottom:13px; color:rgba(232,220,198,.35); font:400 8px var(--en); letter-spacing:.26em; text-transform:uppercase; }
+  .duration-options{ display:grid; grid-template-columns:repeat(4,1fr); gap:8px; }
+  .duration-option{ min-height:54px; border:1px solid rgba(232,220,198,.13); background:rgba(232,220,198,.018); color:var(--fog-dim); cursor:pointer; font:400 11px var(--en); letter-spacing:.08em; transition:all .3s; }
+  .duration-option small{ display:block; margin-top:5px; font-size:7px; color:rgba(232,220,198,.24); text-transform:uppercase; }
+  .duration-option.active{ border-color:var(--gold); color:var(--gold); background:rgba(216,177,105,.08); }
+  .custom-duration{ display:none; align-items:center; justify-content:center; gap:10px; margin-top:10px; color:var(--fog-dim); font:8px var(--en); letter-spacing:.16em; text-transform:uppercase; }
+  .duration-picker.custom .custom-duration{ display:flex; }
+  #customMinutes{ width:72px; height:34px; border:1px solid rgba(216,177,105,.28); background:rgba(5,4,3,.55); color:var(--gold); text-align:center; font:400 12px var(--en); outline:none; }
+
+  #sessionProgress{ position:fixed; z-index:4; top:calc(22px + var(--sa-t)); left:50%; transform:translateX(-50%); display:flex; align-items:center; gap:8px; pointer-events:auto; opacity:0; transition:opacity .8s; }
+  #sessionProgress.visible{ opacity:1; }
+  #progressToggle{ min-width:78px; height:34px; padding:0 12px; border:0; background:rgba(5,4,3,.22); color:var(--fog-dim); cursor:pointer; backdrop-filter:blur(7px); }
+  .progress-track{ display:block; width:54px; height:1px; margin:auto; background:rgba(232,220,198,.13); }
+  #progressFill{ display:block; width:0; height:1px; background:var(--gold); transition:width .5s linear; }
+  #sessionTime{ display:none; font:400 8px var(--en); letter-spacing:.16em; font-variant-numeric:tabular-nums; }
+  #sessionProgress.expanded .progress-track{ display:none; }
+  #sessionProgress.expanded #sessionTime{ display:block; }
+  #endSession{ width:0; opacity:0; overflow:hidden; height:34px; padding:0; border:0; background:rgba(5,4,3,.3); color:var(--fog-dim); cursor:pointer; font:400 8px var(--cn); letter-spacing:.18em; white-space:nowrap; transition:width .35s,opacity .35s,padding .35s; }
+  html[lang="en"] #endSession{ font-family:var(--en); text-transform:uppercase; }
+  #sessionProgress.expanded #endSession{ width:60px; opacity:1; padding:0 10px; }
+
+  #reflection{ position:fixed; inset:0; z-index:60; display:flex; align-items:center; justify-content:center; padding:clamp(22px,4vw,58px); overflow:auto; background:rgba(3,3,2,.92); opacity:0; visibility:hidden; transition:opacity .9s,visibility .9s; backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px); }
+  #reflection.open{ opacity:1; visibility:visible; }
+  .reflection-shell{ width:min(1040px,100%); display:grid; grid-template-columns:minmax(0,1fr) minmax(250px,360px); gap:clamp(30px,6vw,82px); align-items:center; }
+  .reflection-kicker{ color:var(--gold-dim); font:500 8px var(--en); letter-spacing:.28em; text-transform:uppercase; }
+  .reflection-title{ margin-top:14px; color:var(--fog); font:400 clamp(27px,4vw,46px) var(--cn); letter-spacing:.18em; }
+  html[lang="en"] .reflection-title{ font-family:var(--display); letter-spacing:.02em; font-size:clamp(38px,5vw,62px); }
+  .reflection-state{ margin-top:24px; color:var(--gold); font:400 18px var(--cn); letter-spacing:.24em; }
+  html[lang="en"] .reflection-state{ font:500 21px var(--display); letter-spacing:.03em; }
+  .reflection-summary{ margin-top:15px; max-width:560px; color:var(--fog-dim); font:300 11px var(--cn); letter-spacing:.06em; line-height:2; }
+  html[lang="en"] .reflection-summary{ font-family:var(--en); line-height:1.8; letter-spacing:.02em; }
+  .reflection-meta{ display:flex; gap:20px; margin-top:22px; color:rgba(232,220,198,.34); font:8px var(--en); letter-spacing:.12em; text-transform:uppercase; }
+  .reflection-meta b{ color:var(--fog); font-weight:400; }
+  .reflection-metrics{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:9px; margin-top:28px; }
+  .reflection-metric{ min-height:86px; padding:14px; border:1px solid rgba(232,220,198,.1); background:rgba(232,220,198,.018); }
+  .reflection-metric small{ display:block; color:var(--fog-dim); font:7px var(--en); letter-spacing:.16em; text-transform:uppercase; }
+  .reflection-metric strong{ display:block; margin-top:12px; color:var(--fog); font:400 15px var(--en); }
+  .reflection-metric em{ display:block; margin-top:6px; color:rgba(127,201,168,.7); font:normal 8px var(--cn); }
+  html[lang="en"] .reflection-metric em{ font-family:var(--en); }
+  .reflection-actions{ display:flex; flex-wrap:wrap; gap:9px; margin-top:28px; }
+  .reflection-actions button{ min-height:44px; padding:0 20px; border:1px solid rgba(216,177,105,.32); background:rgba(216,177,105,.06); color:var(--gold); cursor:pointer; font:400 9px var(--cn); letter-spacing:.18em; }
+  html[lang="en"] .reflection-actions button{ font-family:var(--en); text-transform:uppercase; letter-spacing:.12em; }
+  #restartSession{ border-color:rgba(232,220,198,.13); color:var(--fog-dim); background:none; }
+  .poster-frame{ position:relative; }
+  #posterCanvas{ display:block; width:100%; height:auto; box-shadow:0 30px 90px rgba(0,0,0,.48); border:1px solid rgba(216,177,105,.14); }
+  .reflection-disclaimer{ margin-top:12px; color:rgba(232,220,198,.25); font:7px var(--cn); line-height:1.7; }
+  html[lang="en"] .reflection-disclaimer{ font-family:var(--en); }
+
   /* ───────── Touch / small screens ───────── */
 
   /* Finger-sized controls. A 9px thumb is fine for a cursor and useless for
@@ -387,12 +477,11 @@
     input[type=range]::-webkit-slider-thumb{ width:17px; height:17px; margin-top:-8px; }
     input[type=range]::-moz-range-thumb{ width:17px; height:17px; }
     .tg{ padding:15px 8px; }
-    #panelBtn,#langBtn{ font-size:9px; min-height:42px; }
+    #panelBtn{ min-height:52px; }
     .graph canvas{ height:52px; }
   }
 
   @media (max-width:620px){
-    .metric{ width:min(148px, 40vw); margin-bottom:13px; }
     #panel{ width:100%; }
     .title-main{ letter-spacing:.3em; text-indent:.3em; }
     /* The keyboard hint is meaningless on a phone. The veil carries the touch
@@ -409,10 +498,17 @@
     #begin{ margin-top:3em; }
     #veil .note{ letter-spacing:.16em; line-height:2.2; }
     #topActions{ top:calc(10px + var(--sa-t)); right:calc(10px + var(--sa-r)); gap:6px; }
+    #sessionProgress{ top:calc(62px + var(--sa-t)); }
+    #panelDock{ left:calc(10px + var(--sa-l)); bottom:calc(10px + var(--sa-b)); }
+    #panelBtn{ min-width:148px; }
     #panel{ padding-left:22px; padding-right:22px; }
     .pair-dialog{ padding:28px 22px 24px; }
     .pair-option{ padding:17px 18px; }
     .pair-badge{ position:static; display:block; max-width:none; margin-top:10px; text-align:left; }
+    .duration-options{ grid-template-columns:repeat(2,1fr); }
+    .reflection-shell{ grid-template-columns:1fr; padding-top:24px; }
+    .poster-frame{ width:min(330px,100%); margin:0 auto; }
+    .reflection-metrics{ grid-template-columns:1fr 1fr; }
   }
 
   /* Landscape phone: almost no vertical room, so the veil has to compress
@@ -425,6 +521,9 @@
     #veil .note{ display:none; }
     .bl .state{ display:none; }
     #topActions{ top:calc(7px + var(--sa-t)); }
+    .duration-picker{ margin-top:1em; }
+    .duration-option{ min-height:40px; }
+    #reflection{ align-items:flex-start; }
   }
 </style>
 </head>
@@ -441,20 +540,6 @@
   </div>
 
   <div class="corner bl">
-    <div class="metric">
-      <div class="metric-row">
-        <span class="metric-name" data-i18n="cohesion">聚合度</span>
-        <span class="metric-val" id="valCohesion">0.00</span>
-      </div>
-      <div class="bar" id="barCohesion"><i></i></div>
-    </div>
-    <div class="metric">
-      <div class="metric-row">
-        <span class="metric-name" data-i18n="goldIndex">金色指数</span>
-        <span class="metric-val" id="valGold">0.00</span>
-      </div>
-      <div class="bar" id="barGold"><i></i></div>
-    </div>
     <div class="state" id="stateName">风 沙</div>
   </div>
 
@@ -466,14 +551,33 @@
     <div id="breathRing"></div>
     <div id="breathTxt">—</div>
   </div>
+
+  <div id="sessionProgress" aria-hidden="true">
+    <button id="progressToggle" aria-label="查看剩余时间">
+      <span class="progress-track"><i id="progressFill"></i></span>
+      <span id="sessionTime">10:00</span>
+    </button>
+    <button id="endSession" data-i18n="endSession">结束</button>
+  </div>
 </div>
 
 <!-- ───────── Instrument panel ───────── -->
 <div id="topActions">
-  <button id="langBtn" aria-label="Switch to English">EN</button>
-  <button id="panelBtn" data-i18n="panel">面板</button>
+  <div class="lang-switch" role="group" aria-label="Language">
+    <button class="lang-choice" data-lang="en" aria-label="English">EN</button>
+    <span class="lang-divider">/</span>
+    <button class="lang-choice" data-lang="zh" aria-label="中文">中</button>
+  </div>
+</div>
+<div id="panelDock">
+  <button id="panelBtn" aria-expanded="false" aria-controls="panel">
+    <span class="panel-dot"></span>
+    <span class="panel-label" data-i18n="dataPanel">身体数据</span>
+    <small id="panelDockStatus">模拟信号</small>
+  </button>
 </div>
 <div id="panel">
+  <div class="panel-heading"><span data-i18n="dataPanel">身体数据</span><button id="panelClose" aria-label="关闭">×</button></div>
   <div class="wearable-card">
     <div class="wearable-eyebrow" data-i18n="wearableEyebrow">实时生物反馈</div>
     <button id="wearablePair" data-i18n="pairWearables">接入可穿戴设备</button>
@@ -565,6 +669,22 @@
     <button class="tg on" id="tgAudio" data-i18n="audio">声音</button>
   </div>
 
+  <div class="sec" data-i18n="experimentalMapping">实验映射</div>
+  <div class="metric">
+    <div class="metric-row">
+      <span class="metric-name" data-i18n="cohesion">聚合度</span>
+      <span class="metric-val" id="valCohesion">0.00</span>
+    </div>
+    <div class="bar" id="barCohesion"><i></i></div>
+  </div>
+  <div class="metric">
+    <div class="metric-row">
+      <span class="metric-name" data-i18n="goldIndex">金色指数</span>
+      <span class="metric-val" id="valGold">0.00</span>
+    </div>
+    <div class="bar" id="barGold"><i></i></div>
+  </div>
+
   <div class="sec" data-i18n="diagnostics">诊断信息</div>
   <div class="readout">
     <span class="readout-label" data-i18n="fps">帧率</span> <span id="roFps">—</span><br>
@@ -602,11 +722,49 @@
   <h1 data-i18n="title">聚沙成塔</h1>
   <div class="sub" data-i18n="veilSub">呼吸生物反馈冥想</div>
   <div class="poem" data-i18n-html="poem">息 深 则 沙 聚<br>脉 和 则 塔 金</div>
+  <div class="duration-picker" id="durationPicker">
+    <div class="duration-label" data-i18n="chooseDuration">选择静心时长</div>
+    <div class="duration-options">
+      <button class="duration-option" data-minutes="5">5 <span data-i18n="minutesShort">分钟</span><small data-i18n="durationBrief">短暂静心</small></button>
+      <button class="duration-option active" data-minutes="10">10 <span data-i18n="minutesShort">分钟</span><small data-i18n="durationDaily">日常练习</small></button>
+      <button class="duration-option" data-minutes="30">30 <span data-i18n="minutesShort">分钟</span><small data-i18n="durationDeep">深度静心</small></button>
+      <button class="duration-option" data-custom="true"><span data-i18n="customDuration">自定义</span><small data-i18n="durationCustomHint">1–120 分钟</small></button>
+    </div>
+    <label class="custom-duration"><span data-i18n="customMinutes">时长</span><input id="customMinutes" type="number" min="1" max="120" value="15"><span data-i18n="minutesShort">分钟</span></label>
+  </div>
   <button id="begin">
     <span data-i18n="begin">开始静心</span>
     <small data-i18n="beginHint">点击后开启声音</small>
   </button>
   <div class="note" data-i18n-html="veilNote">建议佩戴耳机 · 点击后开启声音<br><span class="only-touch">拖动旋转 · 双指捏合靠近<br></span>默认使用模拟生理信号 · 不调用摄像头或麦克风</div>
+</div>
+
+<!-- ───────── End-of-session reflection ───────── -->
+<div id="reflection" aria-hidden="true">
+  <div class="reflection-shell">
+    <section>
+      <div class="reflection-kicker" data-i18n="reflectionKicker">SESSION REFLECTION</div>
+      <h2 class="reflection-title" data-i18n="reflectionTitle">静心回顾</h2>
+      <div class="reflection-state" id="reflectionState">—</div>
+      <p class="reflection-summary" id="reflectionSummary"></p>
+      <div class="reflection-meta">
+        <span><span data-i18n="durationLabel">时长</span> <b id="reflectionDuration">—</b></span>
+        <span><span data-i18n="dataConfidence">数据置信度</span> <b id="reflectionConfidence">—</b></span>
+      </div>
+      <div class="reflection-metrics">
+        <div class="reflection-metric" data-metric="breath"><small data-i18n="breathStability">呼吸稳定度</small><strong>—</strong><em>—</em></div>
+        <div class="reflection-metric" data-metric="hrv"><small data-i18n="hrvRecovery">HRV 恢复趋势</small><strong>—</strong><em>—</em></div>
+        <div class="reflection-metric" data-metric="hr"><small data-i18n="hrSettling">心率平缓度</small><strong>—</strong><em>—</em></div>
+        <div class="reflection-metric" data-metric="eda"><small data-i18n="edaSettling">EDA 回落趋势</small><strong>—</strong><em>—</em></div>
+      </div>
+      <div class="reflection-actions">
+        <button id="downloadPoster" data-i18n="downloadPoster">下载静心海报</button>
+        <button id="restartSession" data-i18n="meditateAgain">再次静心</button>
+      </div>
+      <p class="reflection-disclaimer" data-i18n="reflectionDisclaimer">本回顾仅比较本次静心前后变化，不构成医疗评估；原始健康数据不会上传。</p>
+    </section>
+    <div class="poster-frame"><canvas id="posterCanvas" width="1080" height="1350"></canvas></div>
+  </div>
 </div>
 
 <script src="/vendor/tone/Tone.js"></script>
@@ -617,7 +775,7 @@
   }
 }
 </script>
-<script type="module" src="./js/app.js?v=20260825-popguard"></script>
+<script type="module" src="./js/app.js?v=20260825-session-reflection"></script>
 
 </body>
 </html>
