@@ -13,7 +13,7 @@
 
 import { SensorEngine, SensorData, SOURCE, clamp, lerp } from './sensor.js';
 import { VisualEngine } from './visuals.js';
-import { AudioEngine } from './audio.js?v=20260825-original-audio';
+import { AudioEngine } from './audio.js?v=20260825-original-clean';
 import { BreathGuide } from './breath-guide.js?v=20260825-audio3';
 import { WearableHub, TRANSPORT } from './wearables.js?v=20260825-pairing2';
 

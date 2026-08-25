@@ -183,12 +183,21 @@ export class AudioEngine {
     this._paramT = 0;
     this._lastPhase = 999;
     this._chaosOn = false;
+    this._paramTargets = Object.create(null);
   }
 
   /** Must be called from inside a real user gesture. */
   async start() {
     if (this.ready) return;
     await Tone.start();
+
+    // Keep a little more audio queued ahead of the graphics loop. The 50k
+    // particle render can occasionally occupy the main thread for a frame;
+    // this buffer prevents that visual hitch from becoming an audible click.
+    // It changes scheduling resilience only, never pitch, rhythm or timbre.
+    const context = Tone.getContext();
+    context.lookAhead = Math.max(context.lookAhead || 0, 0.16);
+    context.updateInterval = 0.05;
 
     // ── master ────────────────────────────────────────────────────────
     this.limiter = new Tone.Limiter(-1).toDestination();
@@ -333,24 +342,16 @@ export class AudioEngine {
 
   // ── 4. CHAOS TEXTURE ────────────────────────────────────────────────
   /**
-   * The sound of a mind that will not settle: brown noise through a slowly
-   * swept resonant band (breath you cannot control), over two sines a
-   * tritone apart. The tritone is deliberate — it is the one interval with
-   * no root, so the ear can never decide where the floor is.
+   * The sound of a mind that will not settle: two very low sines a tritone
+   * apart. The tritone is deliberate — it is the one interval with no root,
+   * so the ear can never decide where the floor is. The original broadband
+   * noise branch was removed because it read as intermittent electrical
+   * static on consumer speakers; the tonal first-version texture remains.
    */
   _buildChaos() {
     this.chaosBus = new Tone.Gain(0).connect(this.master);
     this.chaosSend = new Tone.Gain(0.5).connect(this.send);
     this.chaosBus.connect(this.chaosSend);
-
-    this.windBP = new Tone.Filter({ type: 'bandpass', frequency: 0, Q: 2.4 });
-    this.windLFO = new Tone.LFO({ frequency: 0.055, min: 180, max: 900 }).start();
-    this.windLFO.connect(this.windBP.frequency);
-
-    this.windPan = new Tone.AutoPanner({ frequency: 0.07, depth: 0.85 }).start();
-    this.noise = new Tone.Noise('brown').start();
-    this.noiseGain = new Tone.Gain(0.9);
-    this.noise.chain(this.windBP, this.noiseGain, this.windPan, this.chaosBus);
 
     // 58.0 and 82.1 Hz — a ratio of 1.4155, ~594 cents. Rootless.
     this.hollowA = new Tone.Oscillator({ frequency: 58.0, type: 'sine' }).start();
@@ -358,6 +359,18 @@ export class AudioEngine {
     this.hollowGain = new Tone.Gain(0.16).connect(this.chaosBus);
     this.hollowA.connect(this.hollowGain);
     this.hollowB.connect(this.hollowGain);
+  }
+
+  /**
+   * Avoid replacing a long Web Audio automation ramp with an almost identical
+   * one twelve times a second. This keeps the original target values and ramp
+   * times while substantially reducing main-thread/audio-thread contention.
+   */
+  _smooth(key, param, target, seconds, epsilon) {
+    const previous = this._paramTargets[key];
+    if (previous !== undefined && Math.abs(previous - target) < epsilon) return;
+    this._paramTargets[key] = target;
+    param.rampTo(target, seconds);
   }
 
   // ─────────────────────────────────────────────────────────────────────
@@ -407,8 +420,7 @@ export class AudioEngine {
       // Chaos crossfade. `edaNorm > 0.6` per spec — normalised, i.e. EDA 6/10.
       const chaosWanted = edaNorm > 0.6;
       const chaosAmt = clamp((edaNorm - 0.55) / 0.45);
-      this.chaosBus.gain.rampTo(chaosAmt * 0.5, 2.5);
-      this.windLFO.frequency.rampTo(lerp(0.04, 0.14, edaNorm), 3);
+      this._smooth('chaos', this.chaosBus.gain, chaosAmt * 0.5, 2.5, 0.008);
 
       if (chaosWanted !== this._chaosOn) {
         this._chaosOn = chaosWanted;
@@ -418,8 +430,8 @@ export class AudioEngine {
       }
 
       // The drone thins out as the mind scatters.
-      this.droneFMGain.gain.rampTo(lerp(0.05, 0.16, cohesion), 2);
-      this.chimeBus.gain.rampTo(lerp(0.25, 0.85, goldIndex), 2);
+      this._smooth('droneFM', this.droneFMGain.gain, lerp(0.05, 0.16, cohesion), 2, 0.004);
+      this._smooth('chimes', this.chimeBus.gain, lerp(0.25, 0.85, goldIndex), 2, 0.01);
     }
 
     // ── Singing bowl: struck on entering deep calm ────────────────────
