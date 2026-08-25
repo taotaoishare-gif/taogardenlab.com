@@ -11,19 +11,15 @@
  *                                                 └→ AudioEngine  (params)
  */
 
-import { SensorEngine, SensorData, SOURCE, clamp, lerp, calibrateTo } from './sensor.js';
+import { SensorEngine, SensorData, SOURCE, clamp, lerp } from './sensor.js';
 import { VisualEngine } from './visuals.js';
 import { AudioEngine } from './audio.js?v=20260825-audio3';
 import { BreathGuide } from './breath-guide.js?v=20260825-audio3';
 import { WearableHub, TRANSPORT } from './wearables.js?v=20260825-pairing2';
 
-// Personal baseline from the existing installation calibration. Set to null
-// for an anonymous public kiosk, or provide a session baseline dynamically.
-const RESTING_RMSSD_MS = 45.3;
-if (RESTING_RMSSD_MS) {
-  const ceiling = calibrateTo(RESTING_RMSSD_MS);
-  console.info(`[sand-to-stupa] gold ceiling ${ceiling} ms (resting ${RESTING_RMSSD_MS} ms)`);
-}
+// The public demo uses sensor.js's shared 0–100 ms RMSSD scale. Personal
+// calibration must only be applied after measuring the current participant;
+// an earlier build incorrectly imposed one person's baseline on everyone.
 
 const $ = (id) => document.getElementById(id);
 
