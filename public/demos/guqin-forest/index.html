@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
-<title>TAO Garden · Somatic Guqin (v8)</title>
+<title>Somatic Guqin 身若鸣弦 · TAO GARDEN</title>
 <style>
   :root{ --ink:#04100a; --jade:#7fae6f; --gold:#e8c873; --mist:#dfe8e0; }
   *{margin:0;padding:0;box-sizing:border-box;}
@@ -22,10 +22,17 @@
     transition:opacity 1.4s ease, visibility 1.4s ease;
   }
   #overlay.hidden{opacity:0;visibility:hidden;pointer-events:none;}
-  .overlay-inner{ text-align:center;padding:40px;max-width:600px; }
+  .overlay-inner{ text-align:center;padding:40px;max-width:760px; }
   .glyph{ font-size:13px;letter-spacing:0.6em;color:var(--jade);opacity:0.65;margin-bottom:18px;text-transform:uppercase; }
-  .overlay-inner h1{ font-weight:300;font-size:clamp(28px,5vw,46px);letter-spacing:0.28em;color:var(--mist);margin-bottom:22px;text-transform:uppercase; }
-  .overlay-inner .sub{ font-size:14px;line-height:1.9;letter-spacing:0.04em;color:rgba(223,232,224,0.55);font-family:Georgia,serif;font-style:italic;margin-bottom:38px; }
+  .overlay-inner h1{ font-weight:300;font-size:clamp(30px,5vw,48px);letter-spacing:.22em;color:var(--mist);margin-bottom:11px;text-transform:uppercase; }
+  html[lang="zh-CN"] .overlay-inner h1{letter-spacing:.3em;text-indent:.3em;text-transform:none;}
+  .work-subtitle{ font-size:clamp(12px,1.6vw,16px);line-height:1.9;letter-spacing:.13em;color:rgba(127,174,111,.72);margin:0 auto 28px; }
+  html[lang="en"] .work-subtitle{font-style:italic;letter-spacing:.08em;}
+  html[lang="zh-CN"] .work-subtitle{letter-spacing:.24em;}
+  .overlay-inner .sub{ font-size:14px;line-height:2.15;letter-spacing:.08em;color:rgba(223,232,224,0.55);font-family:Georgia,"Noto Serif SC","Songti SC",serif;font-style:normal;margin:0 auto 34px;max-width:720px; }
+  html[lang="en"] .overlay-inner .sub{line-height:2.35;letter-spacing:.075em;font-style:italic;}
+  html[lang="zh-CN"] .overlay-inner .sub{letter-spacing:.12em;}
+  .overlay-inner .sub .guide-line{ display:block; }
   #beginBtn{
     background:transparent;border:1px solid rgba(232,200,115,0.45);color:var(--gold);
     font-family:inherit;font-size:13px;letter-spacing:0.32em;text-transform:uppercase;
@@ -35,11 +42,21 @@
   #beginBtn:disabled{opacity:0.4;cursor:wait;}
   #demoBtn{
     display:block;margin:20px auto 0;background:none;border:none;cursor:pointer;
-    color:rgba(223,232,224,0.4);font-family:Georgia,serif;font-size:12px;letter-spacing:0.12em;
-    text-decoration:underline dotted rgba(223,232,224,0.3);transition:color .4s ease;
+    color:rgba(223,232,224,0.9);opacity:.34;font-family:Georgia,"Noto Serif SC",serif;font-size:12px;letter-spacing:.14em;
+    text-decoration:none;transition:opacity .5s ease,color .5s ease;
   }
-  #demoBtn:hover{ color:rgba(223,232,224,0.75); }
+  #demoBtn:hover{ color:rgba(223,232,224,0.9);opacity:.62; }
   .status{ margin-top:20px;min-height:18px;font-size:12px;letter-spacing:0.08em;color:rgba(223,232,224,0.5);font-family:Georgia,serif; }
+
+  /* ---------- bilingual language switch ---------- */
+  #languageSwitch{
+    position:fixed;right:22px;top:18px;z-index:80;display:flex;align-items:center;gap:8px;
+    min-height:34px;padding:0 12px;border:1px solid rgba(223,232,224,.12);
+    background:rgba(4,16,10,.42);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+  }
+  .lang-choice{ border:0;background:none;color:rgba(223,232,224,.28);cursor:pointer;font:500 10px Georgia,serif;letter-spacing:.12em;padding:6px 2px;transition:color .3s,text-shadow .3s; }
+  .lang-choice.active{ color:var(--gold);text-shadow:0 0 12px rgba(232,200,115,.42); }
+  .lang-divider{ color:rgba(223,232,224,.16);font-size:10px; }
 
   /* ---------- hud ---------- */
   #hud{
@@ -48,12 +65,20 @@
     pointer-events:none;user-select:none;
   }
   #hud span{display:flex;align-items:center;gap:6px;}
+  #hud b{font:inherit;font-weight:400;}
   .dot{ width:6px;height:6px;border-radius:50%;background:rgba(223,232,224,0.18);transition:background .3s ease, box-shadow .3s ease; }
   .dot.on{background:var(--jade);box-shadow:0 0 8px var(--jade);}
   .dot.on.vib{background:var(--gold);box-shadow:0 0 8px var(--gold);}
   #titleMark{
-    position:fixed;left:22px;top:18px;z-index:20;font-size:12px;letter-spacing:0.42em;
-    color:rgba(223,232,224,0.34);pointer-events:none;user-select:none;text-transform:uppercase;
+    position:fixed;left:22px;top:18px;z-index:20;pointer-events:none;user-select:none;
+    color:rgba(223,232,224,0.34);
+  }
+  #titleMark .main{font-size:11px;letter-spacing:.25em;text-transform:uppercase;}
+  #titleMark .kicker{margin-top:4px;font-size:7.5px;letter-spacing:.1em;color:rgba(127,174,111,.42);}
+  html[lang="en"] #titleMark .main{font-size:9px;letter-spacing:.2em;}
+  html[lang="en"] #titleMark .kicker{
+    max-width:360px;font:italic 7.5px/1.55 Georgia,serif;letter-spacing:.055em;
+    text-transform:none;white-space:nowrap;
   }
 
   /* ---------- session bar ---------- */
@@ -93,19 +118,34 @@
   .export-grid button{
     flex:1;min-width:150px;padding:18px 14px;
     background:rgba(127,174,111,0.06);border:1px solid rgba(127,174,111,0.30);border-radius:4px;
-    color:var(--mist);font-family:inherit;font-size:14px;letter-spacing:0.1em;cursor:pointer;
+    color:var(--mist);font-family:inherit;font-size:12.5px;letter-spacing:.065em;cursor:pointer;
     transition:all .4s ease;line-height:1.5;
   }
-  .export-grid button span{ display:block;margin-top:6px;font-size:10px;letter-spacing:0.15em;color:rgba(223,232,224,0.45); }
+  .export-grid button span{ display:block;margin-top:7px;font-size:9px;letter-spacing:.14em;color:rgba(223,232,224,0.45);white-space:nowrap; }
+  .export-grid button b{ display:block;font:inherit;font-weight:400;white-space:nowrap; }
   .export-grid button:hover:not(:disabled){ background:rgba(127,174,111,0.14);box-shadow:0 0 24px rgba(127,174,111,0.15); }
   .export-grid button:disabled{ opacity:0.35;cursor:not-allowed; }
-  .enote{ font-size:11px;letter-spacing:0.08em;color:rgba(223,232,224,0.35);margin-bottom:26px;font-family:Georgia,serif; }
+  .enote{ font-size:11px;line-height:1.8;letter-spacing:.11em;color:rgba(223,232,224,.9);opacity:.35;margin-bottom:26px;font-family:Georgia,"Noto Serif SC",serif; }
   #encoreBtn{
     background:transparent;border:1px solid rgba(232,200,115,0.45);color:var(--gold);
     font-family:inherit;font-size:12px;letter-spacing:0.28em;text-transform:uppercase;
     padding:12px 32px;cursor:pointer;transition:all .5s ease;border-radius:2px;
   }
   #encoreBtn:hover{ background:rgba(232,200,115,0.08);letter-spacing:0.36em; }
+
+  @media (max-width:700px){
+    #languageSwitch{right:12px;top:12px;}
+    #titleMark{left:14px;top:14px;max-width:58vw;}
+    #titleMark .main{font-size:9px;letter-spacing:.16em;}
+    #titleMark .kicker{font-size:6.5px;letter-spacing:.08em;}
+    html[lang="en"] #titleMark .main{font-size:8px;letter-spacing:.14em;}
+    html[lang="en"] #titleMark .kicker{font-size:6.5px;letter-spacing:.04em;max-width:300px;}
+    .overlay-inner{padding:74px 22px 30px;}
+    .overlay-inner h1{font-size:clamp(27px,8vw,40px);}
+    .overlay-inner .sub{font-size:12px;line-height:2.05;}
+    .export-inner{padding:38px 22px;max-height:92vh;overflow:auto;}
+    #hud{right:12px;bottom:12px;flex-direction:column;gap:7px;align-items:flex-end;}
+  }
 </style>
 </head>
 <body>
@@ -113,41 +153,50 @@
   <canvas id="scene"></canvas>
   <video id="inputVideo" playsinline></video>
 
-  <div id="titleMark">TAO GARDEN</div>
+  <div id="titleMark">
+    <div class="main" data-i18n="title">身若鸣弦</div>
+    <div class="kicker" data-i18n="hudSlogan">独坐幽篁，山水清音</div>
+  </div>
+  <div id="languageSwitch" role="group" aria-label="Language">
+    <button class="lang-choice" data-lang="en" aria-label="English">EN</button>
+    <span class="lang-divider">/</span>
+    <button class="lang-choice" data-lang="zh" aria-label="中文">中</button>
+  </div>
   <div id="hud">
-    <span><i class="dot" id="dotMelody"></i> left / melody</span>
-    <span><i class="dot vib" id="dotVibration"></i> right / vibration</span>
+    <span><i class="dot" id="dotMelody"></i><b data-i18n="leftMelody">左手 / 旋律</b></span>
+    <span><i class="dot vib" id="dotVibration"></i><b data-i18n="rightVibration">右手 / 共振</b></span>
   </div>
 
   <div id="sessionBar" class="hidden">
     <i id="recDot"></i>
     <span id="sessTime">00:00 / 01:00</span>
-    <button id="finishBtn">完成演奏 · Finish</button>
+    <button id="finishBtn" data-i18n="finish">完成演奏</button>
   </div>
 
   <div id="overlay">
     <div class="overlay-inner">
       <div class="glyph">tao garden</div>
-      <h1>Somatic Guqin</h1>
-      <p class="sub">远山入湖，竹影摇风。你将坐于石畔琴前，以身入画 —— 挥动左手，五声琴音自成旋律：手越高音越高，动越快节奏越急。右手轻颤，山谷共鸣。一分钟后，收获属于你的独一无二的氛围包。</p>
-      <button id="beginBtn">Begin Somatic Ritual</button>
-      <button id="demoBtn">无摄像头 · 演示模式（鼠标即琴手）</button>
+      <h1 data-i18n="title">身若鸣弦</h1>
+      <p class="work-subtitle" data-i18n="slogan">独坐幽篁，山水清音</p>
+      <p class="sub" data-i18n-html="introGuide"></p>
+      <button id="beginBtn" data-i18n="begin">开始身心琴仪</button>
+      <button id="demoBtn" data-i18n="demo">无摄像头 · 演示模式（鼠标即琴手）</button>
       <p class="status" id="overlayStatus"></p>
     </div>
   </div>
 
   <div id="exportOverlay" class="hidden">
     <div class="export-inner">
-      <div class="glyph">mood pack</div>
-      <h2>你的专属氛围包</h2>
-      <p class="esub">This minute of mountains and strings belongs only to you.<br>这一分钟的山水与琴音，独一无二。</p>
+      <div class="glyph" data-i18n="moodPackKicker">氛围包</div>
+      <h2 data-i18n="moodPackTitle">你的专属氛围包</h2>
+      <p class="esub" data-i18n-html="moodPackSubtitle">这一分钟的山水与琴音，只属于你。</p>
       <div class="export-grid">
-        <button id="dlWallpaper">🖼 竹林壁纸<span>静态 · PNG</span></button>
-        <button id="dlAudio">🎵 治愈环境音<span>音频 · WAV</span></button>
-        <button id="dlVideo">🎬 专属 MV<span>动态壁纸 / 视频</span></button>
+        <button id="dlWallpaper"><b data-i18n="wallpaper">竹林壁纸</b><span data-i18n="wallpaperFormat">静态壁纸 · PNG</span></button>
+        <button id="dlAudio"><b data-i18n="healingAudio">治愈环境音</b><span data-i18n="audioFormat">音频 · WAV</span></button>
+        <button id="dlVideo"><b data-i18n="personalMv">专属 MV</b><span data-i18n="videoFormat">动态壁纸 / 视频</span></button>
       </div>
-      <p class="enote" id="exportNote">MV 视频亦可用作动态壁纸 · 均在本地生成，不上传任何数据</p>
-      <button id="encoreBtn">再来一曲 · Encore</button>
+      <p class="enote" id="exportNote" data-i18n="exportNote">MV 亦可用作动态壁纸 · 所有内容均在本地生成，不上传任何数据</p>
+      <button id="encoreBtn" data-i18n="encore">再来一曲</button>
     </div>
   </div>
 
@@ -158,6 +207,84 @@
 <script>
 (function(){
   'use strict';
+
+  /* =========================================================  LANGUAGE  ========================================================= */
+  const COPY={
+    zh:{
+      documentTitle:'身若鸣弦 · TAO GARDEN',
+      title:'身若鸣弦',
+      slogan:'独坐幽篁，山水清音',
+      hudSlogan:'独坐幽篁，山水清音',
+      introGuide:'<span class="guide-line">远山入湖，竹影摇风。</span><span class="guide-line">挥手拂弦，五声自成旋律，</span><span class="guide-line">随手势高低急缓而变。</span><span class="guide-line">动静随心，山谷和鸣。</span>',
+      begin:'开始身心琴仪',
+      demo:'无摄像头 · 鼠标即琴手',
+      leftMelody:'左手 / 旋律',
+      rightVibration:'右手 / 振动',
+      finish:'完成演奏',
+      moodPackKicker:'氛围包',
+      moodPackTitle:'你的专属氛围包',
+      moodPackSubtitle:'这一分钟的山水与琴音，只属于你。',
+      wallpaper:'竹林壁纸', wallpaperFormat:'静态 · PNG',
+      healingAudio:'治愈环境音', audioFormat:'音频 · WAV',
+      personalMv:'专属 MV', videoFormat:'动态 · 视频',
+      exportNote:'内容均在本地生成 · 不上传任何数据',
+      videoUnsupported:'此浏览器不支持视频录制 · 壁纸与音频仍可下载',
+      encore:'再来一曲',
+      awakening:'正在唤醒感知…',
+      permissionDenied:'摄像头或音频权限未开启 · 可尝试下方演示模式'
+    },
+    en:{
+      documentTitle:'SOMATIC GUQIN · TAO GARDEN',
+      title:'SOMATIC GUQIN',
+      slogan:'Deep in the hidden bamboo, nature speaks through the strings.',
+      hudSlogan:'deep in the hidden bamboo, nature speaks through the strings.',
+      introGuide:'<span class="guide-line">Distant mountains dissolve into the lake; shadows of bamboo sway in the wind.</span><span class="guide-line">Brush the air to pluck the strings; a five-tone harmony weaves itself.</span><span class="guide-line">Pitch rises with your reach; tempo quickens with your pace.</span><span class="guide-line">Move with intent, or rest in silence. The valley echoes with your being.</span>',
+      begin:'Begin Somatic Ritual',
+      demo:'Demo Mode · Play with your cursor',
+      leftMelody:'left / melody',
+      rightVibration:'right / vibration',
+      finish:'Finish Performance',
+      moodPackKicker:'mood pack',
+      moodPackTitle:'Your Harvest of the Moment',
+      moodPackSubtitle:'A minute of strings, a landscape woven just for you.',
+      wallpaper:'Bamboo Wallpaper', wallpaperFormat:'Still · PNG',
+      healingAudio:'Healing Soundscape', audioFormat:'Audio · WAV',
+      personalMv:'Personal MV', videoFormat:'Motion · Video',
+      exportNote:'Generated locally. No data uploaded.',
+      videoUnsupported:'Video recording is unavailable in this browser · Wallpaper and audio are still ready to download',
+      encore:'Encore',
+      awakening:'awakening the senses…',
+      permissionDenied:'Camera or audio permission was denied · Try demo mode below'
+    }
+  };
+  let language=(()=>{
+    try{return localStorage.getItem('somatic-guqin-language')||(navigator.language.startsWith('zh')?'zh':'en');}
+    catch{return 'zh';}
+  })();
+  if(!COPY[language]) language='zh';
+  let overlayStatusKey='';
+  let exportNoteKey='exportNote';
+  const tr=(key)=>COPY[language][key]??key;
+  function applyLanguage(next){
+    language=COPY[next]?next:'zh';
+    document.documentElement.lang=language==='zh'?'zh-CN':'en';
+    document.title=tr('documentTitle');
+    document.querySelectorAll('[data-i18n]').forEach(el=>{const copy=tr(el.dataset.i18n);if(copy!==undefined)el.textContent=copy;});
+    document.querySelectorAll('[data-i18n-html]').forEach(el=>{const copy=tr(el.dataset.i18nHtml);if(copy!==undefined)el.innerHTML=copy;});
+    document.querySelectorAll('.lang-choice').forEach(button=>{
+      const active=button.dataset.lang===language;
+      button.classList.toggle('active',active);
+      button.setAttribute('aria-pressed',String(active));
+    });
+    const statusEl=document.getElementById('overlayStatus');
+    const noteEl=document.getElementById('exportNote');
+    if(statusEl&&overlayStatusKey) statusEl.textContent=tr(overlayStatusKey);
+    if(noteEl) noteEl.textContent=tr(exportNoteKey);
+    try{localStorage.setItem('somatic-guqin-language',language);}catch{}
+  }
+  function setOverlayStatus(key){overlayStatusKey=key;const el=document.getElementById('overlayStatus');if(el)el.textContent=key?tr(key):'';}
+  function setExportNote(key){exportNoteKey=key;const el=document.getElementById('exportNote');if(el)el.textContent=tr(key);}
+  document.querySelectorAll('.lang-choice').forEach(button=>button.addEventListener('click',()=>applyLanguage(button.dataset.lang)));
 
   /* =========================================================  UTILITIES  ========================================================= */
   const clamp = (v,a,b)=> v<a?a:(v>b?b:v);
@@ -1340,11 +1467,11 @@
     dlVideo.disabled=true;
     Recorder.stop(()=>{
       dlVideo.disabled = !(Recorder.videoBlob && Recorder.videoBlob.size>0);
-      if(dlVideo.disabled) exportNote.textContent='此浏览器不支持视频录制 · 壁纸与音频仍可下载';
+      if(dlVideo.disabled) setExportNote('videoUnsupported');
     });
     if(!Recorder.supported){
       dlVideo.disabled=true;
-      exportNote.textContent='此浏览器不支持视频录制 · 壁纸与音频仍可下载';
+      setExportNote('videoUnsupported');
     }
     exportOverlay.classList.remove('hidden');
   }
@@ -1365,7 +1492,7 @@
   /* ---------- begin ---------- */
   async function beginRitual(withCamera){
     beginBtn.disabled=true; demoBtn.disabled=true;
-    overlayStatus.textContent='awakening the senses…';
+    setOverlayStatus('awakening');
     try{
       resizeCanvas();
       particles=new ParticleSystem(canvas);
@@ -1385,13 +1512,14 @@
       requestAnimationFrame(renderLoop);
     }catch(err){
       console.error(err);
-      overlayStatus.textContent='摄像头或音频被拒绝 · 可尝试下方演示模式';
+      setOverlayStatus('permissionDenied');
       beginBtn.disabled=false; demoBtn.disabled=false;
     }
   }
   beginBtn.addEventListener('click', ()=>beginRitual(true));
   demoBtn.addEventListener('click', ()=>beginRitual(false));
 
+  applyLanguage(language);
   resizeCanvas();
   (function paintIdle(){
     const g=ctx.createRadialGradient(window.innerWidth*0.5,window.innerHeight*0.5,window.innerHeight*0.05,window.innerWidth*0.5,window.innerHeight*0.5,window.innerHeight*0.95);

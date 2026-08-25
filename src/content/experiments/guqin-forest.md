@@ -1,14 +1,14 @@
 ---
 number: 1
-name: 'Guqin Forest'
-nameZh: '古琴竹林'
+name: 'Somatic Guqin'
+nameZh: '身若鸣弦'
 title: 'Can an instrument answer a hand without asking it to perform?'
 titleZh: '乐器能否回应一只手，而不要求它表演？'
 date: 2026-06-30
 lenses: [embodied-interaction, computational-media, contemplative-traditions]
 evidence: built
-status: 'Eight versions built. Not evaluated.'
-statusZh: '造了八版。未做评估。'
+status: 'Eleven versions built. Not evaluated.'
+statusZh: '已完成十一版。尚未评估。'
 video: /video/exp-01-guqin.mp4
 poster: /image/exp-01-guqin.jpg
 demo: /demos/guqin-forest/
