@@ -26,7 +26,7 @@ export const SITE = {
     zh: '为人的丰盛，设计会回应的环境。',
   },
   thresholdQuestion: {
-    en: 'Why do humans suffer — and how might technology help us live with greater presence, awareness, and connection?',
+    en: 'Why do humans suffer? How might technology help us live with greater presence, awareness, and connection?',
     zh: '人为什么受苦——技术能否帮助我们以更多的在场、觉察与连接去生活？',
   },
   definition: {
